@@ -44,14 +44,15 @@
 //     setPlacePresent(projectId, { chapterId, placeId })  -> CharacterLocation
 //     removePlacePresent(projectId, { chapterId, placeId }) -> void
 
-import { createLocalRepository } from './localRepository.js'
+import { createSupabaseRepository } from './supabaseRepository.js'
 
 let _repo = null
 
 export function getRepository() {
   if (!_repo) {
-    // Single swap point: replace with createSupabaseRepository() in a later phase.
-    _repo = createLocalRepository()
+    // Single swap point. The local IndexedDB implementation still lives in
+    // ./localRepository.js for reference / future offline reconciliation.
+    _repo = createSupabaseRepository()
   }
   return _repo
 }

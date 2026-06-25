@@ -4,7 +4,6 @@
 import { createContext, useContext, useCallback, useEffect, useMemo, useState } from 'react'
 import { getRepository } from '../data/repository.js'
 
-const repo = getRepository()
 const ACTIVE_PROJECT_KEY = 'smartwriting.activeProjectId'
 const ACTIVE_CHAPTER_KEY = 'smartwriting.activeChapterId'
 
@@ -13,6 +12,34 @@ const StoreContext = createContext(null)
 export function StoreProvider({ children }) {
   const [ready, setReady] = useState(false)
   const [projects, setProjects] = useState([])
+  // Surfaced network state: never fail silently.
+  const [error, setError] = useState(null)
+  const [busy, setBusy] = useState(0)
+  const clearError = useCallback(() => setError(null), [])
+
+  // Wrap the repository so every call tracks in-flight writes (`saving`) and
+  // routes failures to a visible error. Stable identity (created once).
+  const repo = useMemo(() => {
+    const base = getRepository()
+    const wrapped = {}
+    for (const key of Object.keys(base)) {
+      const isWrite = !key.startsWith('list')
+      wrapped[key] = async (...args) => {
+        if (isWrite) setBusy((b) => b + 1)
+        try {
+          const result = await base[key](...args)
+          if (isWrite) setError(null)
+          return result
+        } catch (e) {
+          setError(e?.message || String(e))
+          throw e
+        } finally {
+          if (isWrite) setBusy((b) => b - 1)
+        }
+      }
+    }
+    return wrapped
+  }, [])
   const [activeProjectId, setActiveProjectId] = useState(
     () => localStorage.getItem(ACTIVE_PROJECT_KEY) || null,
   )
@@ -48,13 +75,18 @@ export function StoreProvider({ children }) {
     setLocations(pid ? await repo.listCharacterLocations(pid) : [])
   }, [])
 
-  // Initial load.
+  // Initial load. Always reach `ready` so a load error shows the app shell
+  // (with the error banner) rather than a stuck spinner.
   useEffect(() => {
     ;(async () => {
-      const list = await refreshProjects()
-      // Validate persisted active project still exists.
-      setActiveProjectId((cur) => (list.some((p) => p.id === cur) ? cur : list[0]?.id || null))
-      setReady(true)
+      try {
+        const list = await refreshProjects()
+        setActiveProjectId((cur) => (list.some((p) => p.id === cur) ? cur : list[0]?.id || null))
+      } catch {
+        /* error already surfaced via the guarded repo */
+      } finally {
+        setReady(true)
+      }
     })()
   }, [refreshProjects])
 
@@ -64,13 +96,17 @@ export function StoreProvider({ children }) {
     if (activeProjectId) localStorage.setItem(ACTIVE_PROJECT_KEY, activeProjectId)
     else localStorage.removeItem(ACTIVE_PROJECT_KEY)
     ;(async () => {
-      const [chs] = await Promise.all([
-        refreshChapters(activeProjectId),
-        refreshCharacters(activeProjectId),
-        refreshPlaces(activeProjectId),
-        refreshLocations(activeProjectId),
-      ])
-      setActiveChapterId((cur) => (chs.some((c) => c.id === cur) ? cur : null))
+      try {
+        const [chs] = await Promise.all([
+          refreshChapters(activeProjectId),
+          refreshCharacters(activeProjectId),
+          refreshPlaces(activeProjectId),
+          refreshLocations(activeProjectId),
+        ])
+        setActiveChapterId((cur) => (chs.some((c) => c.id === cur) ? cur : null))
+      } catch {
+        /* error already surfaced via the guarded repo */
+      }
     })()
   }, [activeProjectId, refreshChapters, refreshCharacters, refreshPlaces, refreshLocations])
 
@@ -240,6 +276,9 @@ export function StoreProvider({ children }) {
 
   const value = {
     ready,
+    saving: busy > 0,
+    error,
+    clearError,
     projects,
     activeProject,
     activeProjectId,

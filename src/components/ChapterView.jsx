@@ -25,8 +25,13 @@ export default function ChapterView() {
     setSaved(false)
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(async () => {
-      await updateChapter(activeChapter.id, { body: next })
-      setSaved(true)
+      try {
+        await updateChapter(activeChapter.id, { body: next })
+        setSaved(true)
+      } catch {
+        // Failure is surfaced by the global error banner; keep the indicator
+        // in the "speichert …" state so the unsaved change is visible.
+      }
     }, 500)
   }
 
