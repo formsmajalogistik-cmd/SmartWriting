@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useStore } from '../state/store.jsx'
 import PortraitField from './PortraitField.jsx'
 import ListField from './ListField.jsx'
 
@@ -12,10 +13,18 @@ import ListField from './ListField.jsx'
 //   onCreate(name) -> Promise<card>
 //   onUpdate(id, patch) -> Promise<card>
 //   onDelete(id) -> Promise<void>
-export default function CardsView({ config, items, onCreate, onUpdate, onDelete }) {
+export default function CardsView({ config, items, onCreate, onUpdate, onDelete, focusId, onFocusConsumed }) {
   const [selectedId, setSelectedId] = useState(null)
   const [search, setSearch] = useState('')
   const [onlyProvisional, setOnlyProvisional] = useState(false)
+
+  // Open a specific card when navigated here (e.g. clicking a #link).
+  useEffect(() => {
+    if (focusId) {
+      setSelectedId(focusId)
+      onFocusConsumed?.()
+    }
+  }, [focusId, onFocusConsumed])
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -127,15 +136,38 @@ function buildDraft(config, card) {
 }
 
 function CardEditor({ config, card, onUpdate, onDelete }) {
+  const { findReferences, renameReferences } = useStore()
   const [draft, setDraft] = useState(() => buildDraft(config, card))
   const saveTimer = useRef(null)
+  // The name as it was when this card was opened — to detect renames on blur.
+  const originalNameRef = useRef(card.name)
 
   // Re-seed when switching to a different card (component is keyed by id, so
   // this mainly guards against in-place identity changes).
   useEffect(() => {
     setDraft(buildDraft(config, card))
+    originalNameRef.current = card.name
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card.id])
+
+  // On rename, offer to update existing "#OldName" references — never silently.
+  async function onNameBlur() {
+    const oldName = (originalNameRef.current || '').trim()
+    const newName = (draft.name || '').trim()
+    if (!oldName || !newName || oldName === newName) {
+      originalNameRef.current = draft.name
+      return
+    }
+    const refs = findReferences(oldName)
+    const total = refs.reduce((n, r) => n + r.count, 0)
+    originalNameRef.current = draft.name // don't re-prompt for this rename
+    if (total === 0) return
+    const ok = window.confirm(
+      `„#${oldName}“ kommt ${total}× in ${refs.length} Kapitel(n) vor. ` +
+        `Diese Referenzen auf „#${newName}“ aktualisieren?`,
+    )
+    if (ok) await renameReferences(oldName, newName)
+  }
 
   function buildPatch(next) {
     const patch = { name: next.name, name_final: next.name_final, card: next.card }
@@ -195,6 +227,7 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
           value={draft.name}
           placeholder={`Name der ${config.singular}`}
           onChange={(e) => setTop('name', e.target.value)}
+          onBlur={onNameBlur}
         />
         <label className="checkbox name-final">
           <input

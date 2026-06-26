@@ -8,6 +8,7 @@ import {
   makeCharacter,
   makePlace,
   makeCharacterLocation,
+  makeEvent,
   nowIso,
 } from './types.js'
 
@@ -263,6 +264,35 @@ export function createLocalRepository() {
       const rows = await db.getAllFromIndex(STORES.character_locations, 'chapter_id', chapterId)
       const existing = rows.find((r) => r.character_id == null && r.place_id === placeId)
       if (existing) await db.delete(STORES.character_locations, existing.id)
+    },
+
+    // ---- Events ---------------------------------------------------------
+    async listEvents(projectId) {
+      const rows = await byProject(STORES.events, projectId)
+      return rows.sort(
+        (a, b) => (a.story_order || 0) - (b.story_order || 0) || a.title.localeCompare(b.title),
+      )
+    },
+
+    async createEvent(projectId, { title }) {
+      const db = await getDb()
+      const event = makeEvent({ project_id: projectId, title })
+      await db.put(STORES.events, event)
+      return event
+    },
+
+    async updateEvent(id, patch) {
+      const db = await getDb()
+      const existing = await db.get(STORES.events, id)
+      if (!existing) throw new Error(`Event ${id} not found`)
+      const updated = { ...existing, ...patch, updated_at: nowIso() }
+      await db.put(STORES.events, updated)
+      return updated
+    },
+
+    async deleteEvent(id) {
+      const db = await getDb()
+      await db.delete(STORES.events, id)
     },
 
     // ---- Portrait images (local backend: blobs in IndexedDB) -----------

@@ -3,7 +3,8 @@ import CardsView from './CardsView.jsx'
 import { CHARACTER_CONFIG } from './cardConfig.js'
 
 export default function CharactersView() {
-  const { characters, createCharacter, updateCharacter, deleteCharacter } = useStore()
+  const { characters, createCharacter, updateCharacter, deleteCharacter, focusCard, consumeFocusCard } =
+    useStore()
   return (
     <CardsView
       config={CHARACTER_CONFIG}
@@ -11,6 +12,8 @@ export default function CharactersView() {
       onCreate={createCharacter}
       onUpdate={updateCharacter}
       onDelete={deleteCharacter}
+      focusId={focusCard?.kind === 'character' ? focusCard.id : null}
+      onFocusConsumed={consumeFocusCard}
     />
   )
 }

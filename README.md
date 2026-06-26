@@ -55,6 +55,18 @@ public. The script is re-runnable.
 `character-portraits`, **Public = off** → then run just the policy statements
 from the migration. Running the SQL file does both.)
 
+### 1c. Add the events `card` column
+For events-as-cards, run the third migration in the **SQL Editor**:
+
+```
+supabase/migrations/0003_events_card.sql
+```
+
+The `events` table already exists (from `0001_init.sql`) with `title`,
+`place_id`, `book`, `story_order`, etc. and RLS. This migration only adds a
+`card jsonb` column (holding `description`, `involved_character_ids`,
+`chapter_ids`, `notes`). Re-runnable; no new RLS needed.
+
 ### 2. Configure env
 Copy the example and fill in your project's **public** values (Supabase →
 Project Settings → API):
@@ -157,6 +169,45 @@ its row. Every selector has an inline **"＋ „…“ anlegen"** that creates a
 minimal stub card (name only) and selects it immediately, so writing is never
 blocked — flesh the card out later in its view.
 
+### In-text linking (`#Name`)
+
+In the chapter editor, typing `#` followed by characters opens an autocomplete
+of matching **character** and **place** cards (👤 / 📍 icon to distinguish).
+Selecting one inserts the literal text `#Name` — the Markdown stays clean and
+portable, with **no hidden ids** in the prose. `#Name` (no space) is a link
+token; `# ` (hash + space at line start) stays a Markdown heading.
+
+In the **Vorschau** (preview) pane, `#Name` tokens render as links and resolve
+case-insensitively (multi-word names like `#Santal Porsiran` resolve via
+longest-match):
+
+- **resolved** → indigo link; hover/tap shows a compact card preview (portrait +
+  key details for a character; short description for a place) with an "open card"
+  action.
+- **provisional** → if the resolved card's `name_final` is false, the link is
+  styled amber/dotted automatically.
+- **unresolved** → if no card matches, the link is red/wavy (catches typos and
+  not-yet-carded names).
+
+**Rename safety:** renaming a card detects existing `#OldName` references across
+the project's chapters and **asks for confirmation** before rewriting them to
+`#NewName` — prose is never silently changed. Declined/again-missed references
+simply show as unresolved.
+
+The **Namen** view lists, project-wide, every unresolved `#reference` and every
+resolved link to a not-yet-final-name card — your running "names to finalize or
+fix" list, each entry linking to the chapters it appears in.
+
+### Events (Ereignisse)
+
+A new **Ereignisse** view (create / edit / delete event cards): `title`, `book`
++ `story_order` (timeline position), a **place** selector, an **involved
+characters** multi-selector (both over existing cards, with inline create-stub),
+`description`, and `notes`. The chapter metadata panel gains an **"Ereignisse in
+diesem Kapitel"** multi-select; selecting an event adds the chapter to that
+event's `card.chapter_ids`, linking chapters and events **both ways**. Run
+`supabase/migrations/0003_events_card.sql` once (adds the `card` jsonb column).
+
 ## Running without a backend (dev)
 
 Set `VITE_DATA_BACKEND=local` to run entirely against IndexedDB with no network
@@ -172,6 +223,7 @@ Both use the identical repository interface.
 | **Auth** | `src/auth/AuthProvider.jsx`, `src/components/AuthScreen.jsx` | Email/password auth, session persistence, logout, error surfacing; gates the whole app. |
 | **DB migration** | `supabase/migrations/0001_init.sql` | Tables + `updated_at` triggers + RLS policies. Run manually in Supabase. |
 | **Storage migration** | `supabase/migrations/0002_character_portraits_storage.sql` | Private `character-portraits` bucket + user-scoped `storage.objects` policies. Run manually. |
+| **Events migration** | `supabase/migrations/0003_events_card.sql` | Adds `card jsonb` to the existing `events` table. Run manually. |
 | **Data-access interface** | `src/data/repository.js` | The single contract the UI talks to. Selects Supabase (default) or the `local` IndexedDB backend via `VITE_DATA_BACKEND`; the **one swap point**. |
 | **Supabase implementation** | `src/data/supabaseRepository.js` | Implements the contract against Supabase: reads scoped to the active project, writes set `user_id` + `project_id`. |
 | **Local implementation** | `src/data/localRepository.js`, `src/data/db.js` | IndexedDB implementation of the same contract — the `local` dev backend / future offline reconciliation. |
@@ -179,11 +231,15 @@ Both use the identical repository interface.
 | **App store** | `src/state/store.jsx` | React context over the repository: loads the active project's data, exposes CRUD (incl. `updateCharacter`/`updatePlace`), tracks a global **error** + in-flight **saving** indicator. |
 | **Project shell** | `src/components/ProjectSwitcher.jsx` | Create / rename / delete projects; switching scopes the whole UI. |
 | **Books → Chapters tree** | `src/components/Sidebar.jsx` | Per-project sidebar tree; create/rename/delete; click to open instantly. |
-| **Editor** | `src/components/Editor.jsx`, `src/components/ChapterView.jsx` | Distraction-light Markdown editor, toggleable preview, debounced save with a save-state indicator. |
-| **Cards views** | `src/components/CardsView.jsx`, `CharactersView.jsx`, `PlacesView.jsx`, `cardConfig.js` | Generic card list+editor driven by per-type field config; provisional badge, name-finalization filter, autosave. Character config adds portrait + physical fields. |
+| **Editor** | `src/components/Editor.jsx`, `src/components/ChapterView.jsx` | Distraction-light Markdown editor with `#Name` autocomplete; toggleable preview that renders resolved/provisional/unresolved links + hover card preview; debounced save. |
+| **#-link engine** | `src/lib/hashlinks.js`, `src/lib/caret.js` | Token parsing/resolution, marked inline extension, rename detect/replace; caret coordinates for the autocomplete. |
+| **Cards views** | `src/components/CardsView.jsx`, `CharactersView.jsx`, `PlacesView.jsx`, `cardConfig.js` | Generic card list+editor driven by per-type field config; provisional badge, name-finalization filter, autosave, rename-reference prompt. Character config adds portrait + physical fields. |
+| **Events view** | `src/components/EventsView.jsx` | Event cards: title, book, story_order, place + involved-character selectors, description/notes, linked-chapter chips. |
+| **Names view** | `src/components/NamesView.jsx` | Project-wide unresolved + provisional `#reference` list, linking to chapters/cards. |
+| **Card preview** | `src/components/CardPreview.jsx` | Compact hover/tap preview for a resolved `#link`. |
 | **Portrait** | `src/components/PortraitField.jsx`, `src/lib/image.js` | Upload/preview/replace/remove with loading+error states; downscales/compresses before upload; persists only the storage path. |
 | **List field** | `src/components/ListField.jsx` | Repeatable short-entry list (recurring descriptors). |
-| **Card selectors** | `src/components/AddCombo.jsx` | Searchable add control (pick existing / create stub inline) used by the metadata panel. |
+| **Card selectors** | `src/components/AddCombo.jsx` | Searchable add control (pick existing / create stub inline) used by the metadata panel and events. |
 | **Metadata panel** | `src/components/MetadataPanel.jsx` | Per-chapter status, POV, summary; characters & places **selected** from cards (ids), per-character location → `character_locations`. |
 | **PWA** | `vite.config.js`, `scripts/gen-icons.mjs`, `public/favicon.svg` | `vite-plugin-pwa` manifest + Workbox service worker; generated icons. |
 
@@ -207,6 +263,7 @@ Books live in `projects.settings.books` (jsonb); chapters reference a book id.
 ## Not yet built (later phases, per SPEC)
 
 Offline/local-first reconciliation, 3D map, Google Drive backup, the translator,
-chapter versioning, the in-prose `[[link]]` preview / Open-Names text-marker
-system, and the compile view. (Phase 2's card-level `name_final` flag + filter
-is the lightweight precursor to the full Open-Names view.)
+chapter versioning, and the compile view. In-text `#Name` linking, the
+project-wide Names view, and events-as-cards are done (this phase); the editor
+links render in the **preview pane** (the writing surface stays a fast plain
+textarea).

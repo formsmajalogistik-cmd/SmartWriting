@@ -287,6 +287,37 @@ export function createSupabaseRepository() {
       )
     },
 
+    // ---- Events ---------------------------------------------------------
+    async listEvents(projectId) {
+      return unwrap(
+        await supabase
+          .from('events')
+          .select('*')
+          .eq('project_id', projectId)
+          .order('story_order', { ascending: true })
+          .order('title', { ascending: true }),
+      )
+    },
+
+    async createEvent(projectId, { title }) {
+      const user_id = await currentUserId()
+      const insert = {
+        user_id,
+        project_id: projectId,
+        card: { description: '', involved_character_ids: [], chapter_ids: [], notes: '' },
+      }
+      if (title?.trim()) insert.title = title.trim()
+      return unwrap(await supabase.from('events').insert(insert).select().single())
+    },
+
+    async updateEvent(id, patch) {
+      return unwrap(await supabase.from('events').update(patch).eq('id', id).select().single())
+    },
+
+    async deleteEvent(id) {
+      unwrap(await supabase.from('events').delete().eq('id', id))
+    },
+
     // ---- Portrait images (Supabase Storage, PRIVATE bucket) -------------
     // Object path is `{uid}/{characterId}/{uuid}.{ext}`. The bucket's RLS
     // policies scope access to the user whose id is the first path segment

@@ -7,19 +7,22 @@ import ChapterView from './components/ChapterView.jsx'
 import EmptyState from './components/EmptyState.jsx'
 import CharactersView from './components/CharactersView.jsx'
 import PlacesView from './components/PlacesView.jsx'
+import EventsView from './components/EventsView.jsx'
+import NamesView from './components/NamesView.jsx'
 
 const VIEWS = [
   { key: 'write', label: 'Schreiben' },
   { key: 'characters', label: 'Figuren' },
   { key: 'places', label: 'Orte' },
+  { key: 'events', label: 'Ereignisse' },
+  { key: 'names', label: 'Namen' },
 ]
 
 export default function App() {
-  const { ready, activeProject, activeChapter, saving, error, clearError } = useStore()
+  const { ready, activeProject, activeChapter, saving, error, clearError, view, setView } = useStore()
   const { user, signOut } = useAuth()
   // Mobile: sidebar slides over the writing surface.
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [view, setView] = useState('write')
 
   if (!ready) {
     return <div className="app-loading">Lädt …</div>
@@ -91,6 +94,14 @@ export default function App() {
         ) : view === 'places' ? (
           <main className="content">
             <PlacesView />
+          </main>
+        ) : view === 'events' ? (
+          <main className="content">
+            <EventsView />
+          </main>
+        ) : view === 'names' ? (
+          <main className="content">
+            <NamesView />
           </main>
         ) : (
           <>

@@ -12,9 +12,13 @@ export default function MetadataPanel({ chapter }) {
     characters,
     places,
     locations,
+    events,
     updateChapter,
     createCharacter,
     createPlace,
+    createEvent,
+    setEventInChapter,
+    openCard,
     setCharacterPresent,
     setCharacterPlace,
     setPlacePresent,
@@ -72,6 +76,21 @@ export default function MetadataPanel({ chapter }) {
   async function createPlacePresent(name) {
     const p = await createPlace(name)
     if (p) await setPlacePresent(chapter.id, p.id, true)
+  }
+
+  // Events whose card.chapter_ids includes this chapter (two-way link).
+  const chapterEvents = events.filter((e) =>
+    (e.card?.chapter_ids ?? []).includes(chapter.id),
+  )
+  const unselectedEvents = events.filter(
+    (e) => !(e.card?.chapter_ids ?? []).includes(chapter.id),
+  )
+  async function pickEvent(id) {
+    await setEventInChapter(id, chapter.id, true)
+  }
+  async function createEventPresent(title) {
+    const e = await createEvent(title)
+    if (e) await setEventInChapter(e.id, chapter.id, true)
   }
   // Removing a present place also clears it from any character located there
   // this chapter (a place can be "present" purely via a character location).
@@ -194,6 +213,39 @@ export default function MetadataPanel({ chapter }) {
                   className="chip-remove"
                   title="Aus Kapitel entfernen"
                   onClick={() => removePlace(p.id)}
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Events in this chapter -------------------------------------------- */}
+      <div className="field">
+        <div className="field-head">
+          <span>Ereignisse in diesem Kapitel</span>
+        </div>
+        <AddCombo
+          placeholder="Ereignis suchen oder anlegen …"
+          options={unselectedEvents.map((e) => ({ id: e.id, name: e.title }))}
+          onPick={pickEvent}
+          onCreate={createEventPresent}
+        />
+        {chapterEvents.length === 0 ? (
+          <p className="hint">Keine Ereignisse in diesem Kapitel.</p>
+        ) : (
+          <ul className="chip-list">
+            {chapterEvents.map((e) => (
+              <li key={e.id} className="chip">
+                <button className="chip-link" onClick={() => openCard('event', e.id)}>
+                  {e.title}
+                </button>
+                <button
+                  className="chip-remove"
+                  title="Verknüpfung entfernen"
+                  onClick={() => setEventInChapter(e.id, chapter.id, false)}
                 >
                   ✕
                 </button>

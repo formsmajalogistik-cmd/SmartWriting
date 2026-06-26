@@ -44,6 +44,12 @@
 //     setPlacePresent(projectId, { chapterId, placeId })  -> CharacterLocation
 //     removePlacePresent(projectId, { chapterId, placeId }) -> void
 //
+//   Events (card jsonb: description, involved_character_ids[], chapter_ids[], notes)
+//     listEvents(projectId)                -> Event[]
+//     createEvent(projectId, { title })    -> Event
+//     updateEvent(id, patch)               -> Event
+//     deleteEvent(id)                      -> void
+//
 //   Portrait images (stored in a private bucket / local blob store; only the
 //   path is kept on the character card jsonb)
 //     uploadPortrait(characterId, blob, { ext, contentType }) -> path

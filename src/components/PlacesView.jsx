@@ -3,7 +3,7 @@ import CardsView from './CardsView.jsx'
 import { PLACE_CONFIG } from './cardConfig.js'
 
 export default function PlacesView() {
-  const { places, createPlace, updatePlace, deletePlace } = useStore()
+  const { places, createPlace, updatePlace, deletePlace, focusCard, consumeFocusCard } = useStore()
   return (
     <CardsView
       config={PLACE_CONFIG}
@@ -11,6 +11,8 @@ export default function PlacesView() {
       onCreate={createPlace}
       onUpdate={updatePlace}
       onDelete={deletePlace}
+      focusId={focusCard?.kind === 'place' ? focusCard.id : null}
+      onFocusConsumed={consumeFocusCard}
     />
   )
 }

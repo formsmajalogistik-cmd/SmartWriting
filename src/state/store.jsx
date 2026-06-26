@@ -3,6 +3,7 @@
 // they call these actions, which mutate via the repo and refresh local state.
 import { createContext, useContext, useCallback, useEffect, useMemo, useState } from 'react'
 import { getRepository } from '../data/repository.js'
+import { findNameOccurrences, replaceNameReferences } from '../lib/hashlinks.js'
 
 const ACTIVE_PROJECT_KEY = 'smartwriting.activeProjectId'
 const ACTIVE_CHAPTER_KEY = 'smartwriting.activeChapterId'
@@ -50,9 +51,15 @@ export function StoreProvider({ children }) {
   const [characters, setCharacters] = useState([])
   const [places, setPlaces] = useState([])
   const [locations, setLocations] = useState([])
+  const [events, setEvents] = useState([])
   const [activeChapterId, setActiveChapterId] = useState(
     () => localStorage.getItem(ACTIVE_CHAPTER_KEY) || null,
   )
+
+  // Top-level navigation (which view is showing) + a card to focus when its
+  // view opens (e.g. clicking a #link in the editor jumps to that card).
+  const [view, setView] = useState('write')
+  const [focusCard, setFocusCard] = useState(null) // { kind, id } | null
 
   // --- loaders ---------------------------------------------------------
   const refreshProjects = useCallback(async () => {
@@ -74,6 +81,9 @@ export function StoreProvider({ children }) {
   }, [])
   const refreshLocations = useCallback(async (pid) => {
     setLocations(pid ? await repo.listCharacterLocations(pid) : [])
+  }, [])
+  const refreshEvents = useCallback(async (pid) => {
+    setEvents(pid ? await repo.listEvents(pid) : [])
   }, [])
 
   // Initial load. Always reach `ready` so a load error shows the app shell
@@ -103,13 +113,14 @@ export function StoreProvider({ children }) {
           refreshCharacters(activeProjectId),
           refreshPlaces(activeProjectId),
           refreshLocations(activeProjectId),
+          refreshEvents(activeProjectId),
         ])
         setActiveChapterId((cur) => (chs.some((c) => c.id === cur) ? cur : null))
       } catch {
         /* error already surfaced via the guarded repo */
       }
     })()
-  }, [activeProjectId, refreshChapters, refreshCharacters, refreshPlaces, refreshLocations])
+  }, [activeProjectId, refreshChapters, refreshCharacters, refreshPlaces, refreshLocations, refreshEvents])
 
   // Persist the active chapter so a reload reopens it.
   useEffect(() => {
@@ -268,6 +279,76 @@ export function StoreProvider({ children }) {
     [activeProjectId, refreshPlaces, refreshLocations],
   )
 
+  // --- event actions ---------------------------------------------------
+  const createEvent = useCallback(
+    async (title) => {
+      const e = await repo.createEvent(activeProjectId, { title })
+      await refreshEvents(activeProjectId)
+      return e
+    },
+    [activeProjectId, refreshEvents],
+  )
+  const updateEvent = useCallback(
+    async (id, patch) => {
+      const updated = await repo.updateEvent(id, patch)
+      setEvents((prev) => prev.map((e) => (e.id === id ? updated : e)))
+      return updated
+    },
+    [],
+  )
+  const deleteEvent = useCallback(
+    async (id) => {
+      await repo.deleteEvent(id)
+      await refreshEvents(activeProjectId)
+    },
+    [activeProjectId, refreshEvents],
+  )
+  // Two-way chapter<->event link lives in the event's card.chapter_ids list.
+  const setEventInChapter = useCallback(
+    async (eventId, chapterId, present) => {
+      const ev = events.find((e) => e.id === eventId)
+      if (!ev) return
+      const cur = Array.isArray(ev.card?.chapter_ids) ? ev.card.chapter_ids : []
+      const next = present ? [...new Set([...cur, chapterId])] : cur.filter((c) => c !== chapterId)
+      await updateEvent(eventId, { card: { ...ev.card, chapter_ids: next } })
+    },
+    [events, updateEvent],
+  )
+
+  // --- navigation ------------------------------------------------------
+  const openCard = useCallback((kind, id) => {
+    setView(kind === 'place' ? 'places' : kind === 'event' ? 'events' : 'characters')
+    setFocusCard({ kind, id })
+  }, [])
+  const consumeFocusCard = useCallback(() => setFocusCard(null), [])
+
+  // --- #reference rename helpers --------------------------------------
+  // Find chapters whose body contains "#oldName" references.
+  const findReferences = useCallback(
+    (name) =>
+      chapters
+        .map((ch) => ({ chapter: ch, count: findNameOccurrences(ch.body || '', name).length }))
+        .filter((r) => r.count > 0),
+    [chapters],
+  )
+  // Rewrite "#oldName" -> "#newName" across all chapters. Returns totals.
+  const renameReferences = useCallback(
+    async (oldName, newName) => {
+      let chaptersChanged = 0
+      let refsChanged = 0
+      for (const ch of chapters) {
+        const { text, count } = replaceNameReferences(ch.body || '', oldName, newName)
+        if (count > 0) {
+          await updateChapter(ch.id, { body: text })
+          chaptersChanged += 1
+          refsChanged += count
+        }
+      }
+      return { chaptersChanged, refsChanged }
+    },
+    [chapters, updateChapter],
+  )
+
   // --- character_locations actions ------------------------------------
   const setCharacterPresent = useCallback(
     async (chapterId, characterId, present) => {
@@ -312,9 +393,16 @@ export function StoreProvider({ children }) {
     characters,
     places,
     locations,
+    events,
     activeChapter,
     activeChapterId,
     setActiveChapterId,
+    // navigation
+    view,
+    setView,
+    focusCard,
+    openCard,
+    consumeFocusCard,
     // actions
     createProject,
     renameProject,
@@ -335,9 +423,15 @@ export function StoreProvider({ children }) {
     createPlace,
     updatePlace,
     deletePlace,
+    createEvent,
+    updateEvent,
+    deleteEvent,
+    setEventInChapter,
     setCharacterPresent,
     setCharacterPlace,
     setPlacePresent,
+    findReferences,
+    renameReferences,
   }
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>

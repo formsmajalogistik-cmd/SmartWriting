@@ -108,3 +108,24 @@ export function makeCharacterLocation({ project_id, character_id, chapter_id, pl
     place_id: place_id ?? null,
   }
 }
+
+// events — id, project_id, user_id, title, place_id, book, story_order,
+//          card (jsonb: description, involved_character_ids[], chapter_ids[], notes)
+export function makeEvent({ project_id, title }) {
+  return {
+    id: newId(),
+    user_id: LOCAL_USER_ID,
+    project_id,
+    title: title?.trim() || 'Neues Ereignis',
+    place_id: null,
+    book: null,
+    story_order: 0,
+    card: {
+      description: '',
+      involved_character_ids: [],
+      chapter_ids: [],
+      notes: '',
+    },
+    updated_at: nowIso(),
+  }
+}
