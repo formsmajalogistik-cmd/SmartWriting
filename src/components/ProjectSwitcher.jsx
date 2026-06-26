@@ -1,3 +1,4 @@
+import { Pencil, Trash2 } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 
 // Project list + switcher: create, rename, delete, and select the active
@@ -49,15 +50,15 @@ export default function ProjectSwitcher() {
             {p.name}
           </option>
         ))}
-        <option value="__new__">＋ Neues Projekt …</option>
+        <option value="__new__">+ Neues Projekt …</option>
       </select>
       {activeProject && (
         <>
-          <button className="icon-btn" title="Projekt umbenennen" onClick={handleRename}>
-            ✎
+          <button className="icon-btn" title="Projekt umbenennen" aria-label="Projekt umbenennen" onClick={handleRename}>
+            <Pencil size={16} />
           </button>
-          <button className="icon-btn danger" title="Projekt löschen" onClick={handleDelete}>
-            🗑
+          <button className="icon-btn danger" title="Projekt löschen" aria-label="Projekt löschen" onClick={handleDelete}>
+            <Trash2 size={16} />
           </button>
         </>
       )}

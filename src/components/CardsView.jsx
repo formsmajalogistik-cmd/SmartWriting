@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Plus, Trash2 } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 import PortraitField from './PortraitField.jsx'
 import ListField from './ListField.jsx'
@@ -53,8 +54,8 @@ export default function CardsView({ config, items, onCreate, onUpdate, onDelete,
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button className="toggle primary" onClick={handleCreate}>
-            ＋ Neu
+          <button className="toggle primary with-label" onClick={handleCreate}>
+            <Plus size={15} /> Neu
           </button>
         </div>
         <label className="cards-filter">
@@ -237,8 +238,8 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
           />
           <span>Name final</span>
         </label>
-        <button className="icon-btn danger" title="Löschen" onClick={onDelete}>
-          🗑
+        <button className="icon-btn danger" title="Löschen" aria-label="Löschen" onClick={onDelete}>
+          <Trash2 size={17} />
         </button>
       </div>
       {!draft.name_final && (

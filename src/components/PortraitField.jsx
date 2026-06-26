@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { User, AlertTriangle } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 import { downscaleImage } from '../lib/image.js'
 
@@ -92,7 +93,7 @@ export default function PortraitField({ characterId, path, onChange }) {
           <img className="portrait-img" src={url} alt="Porträt" />
         ) : (
           <div className="portrait-placeholder">
-            <span className="portrait-glyph">👤</span>
+            <User size={40} className="portrait-glyph" />
             <span>Kein Bild</span>
           </div>
         )}
@@ -121,7 +122,11 @@ export default function PortraitField({ characterId, path, onChange }) {
         />
       </div>
 
-      {error && <div className="portrait-error">⚠ {error}</div>}
+      {error && (
+        <div className="portrait-error">
+          <AlertTriangle size={14} /> {error}
+        </div>
+      )}
     </div>
   )
 }

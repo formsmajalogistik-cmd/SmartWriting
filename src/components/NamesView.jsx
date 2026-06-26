@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { User, MapPin, Check } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 import { makeResolver, extractHashRefs } from '../lib/hashlinks.js'
 
@@ -66,7 +67,9 @@ export default function NamesView() {
             <code>#Name</code> ohne passende Karte — Tippfehler oder noch nicht angelegt.
           </p>
           {unresolved.length === 0 ? (
-            <p className="hint">Keine. 🎉</p>
+            <p className="hint names-clear">
+              <Check size={15} /> Keine.
+            </p>
           ) : (
             <ul className="names-list">
               {unresolved.map((u) => (
@@ -95,7 +98,8 @@ export default function NamesView() {
                     onClick={() => openCard(p.card._kind, p.card.id)}
                     title="Karte öffnen"
                   >
-                    {p.card._kind === 'character' ? '👤' : '📍'} #{p.name}
+                    {p.card._kind === 'character' ? <User size={13} /> : <MapPin size={13} />} #
+                    {p.name}
                   </button>
                   <ChapterChips ids={p.chapters} />
                 </li>

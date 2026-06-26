@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { User, MapPin, ArrowRight } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 
 // Compact preview of a character or place card, shown when hovering/tapping a
@@ -39,11 +40,14 @@ export default function CardPreview({ kind, card, onOpen }) {
       <div className="card-preview-head">
         {kind === 'character' && (
           <div className="card-preview-portrait">
-            {url ? <img src={url} alt="" /> : <span className="portrait-glyph">👤</span>}
+            {url ? <img src={url} alt="" /> : <User size={26} className="portrait-glyph" />}
           </div>
         )}
         <div className="card-preview-title">
-          <span className="card-preview-kind">{kind === 'character' ? '👤 Figur' : '📍 Ort'}</span>
+          <span className="card-preview-kind">
+            {kind === 'character' ? <User size={12} /> : <MapPin size={12} />}
+            {kind === 'character' ? 'Figur' : 'Ort'}
+          </span>
           <strong>
             {card.name}
             {!card.name_final && <span className="badge provisional small">prov.</span>}
@@ -53,7 +57,7 @@ export default function CardPreview({ kind, card, onOpen }) {
       </div>
       {desc && <p className="card-preview-desc">{desc}</p>}
       <button className="toggle primary card-preview-open" onClick={onOpen}>
-        Karte öffnen →
+        Karte öffnen <ArrowRight size={14} />
       </button>
     </div>
   )

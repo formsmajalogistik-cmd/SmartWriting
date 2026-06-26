@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Plus, Trash2, MapPin, User, X } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 import AddCombo from './AddCombo.jsx'
 
@@ -59,8 +60,8 @@ export default function EventsView() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button className="toggle primary" onClick={handleCreate}>
-            ＋ Neu
+          <button className="toggle primary with-label" onClick={handleCreate}>
+            <Plus size={15} /> Neu
           </button>
         </div>
         {visible.length === 0 ? (
@@ -198,8 +199,8 @@ function EventEditor({ event, books, places, characters, chapters, onUpdate, onD
           placeholder="Titel des Ereignisses"
           onChange={(e) => setField('title', e.target.value)}
         />
-        <button className="icon-btn danger" title="Löschen" onClick={onDelete}>
-          🗑
+        <button className="icon-btn danger" title="Löschen" aria-label="Löschen" onClick={onDelete}>
+          <Trash2 size={17} />
         </button>
       </div>
 
@@ -231,12 +232,12 @@ function EventEditor({ event, books, places, characters, chapters, onUpdate, onD
           {place ? (
             <div className="chip-list">
               <span className="chip">
-                <span>
-                  📍 {place.name}
+                <span className="chip-label">
+                  <MapPin size={14} /> {place.name}
                   {!place.name_final && <span className="badge provisional small">prov.</span>}
                 </span>
                 <button className="chip-remove" title="Entfernen" onClick={() => setField('place_id', '', true)}>
-                  ✕
+                  <X size={14} />
                 </button>
               </span>
             </div>
@@ -271,8 +272,8 @@ function EventEditor({ event, books, places, characters, chapters, onUpdate, onD
             <ul className="chip-list">
               {involved.map((c) => (
                 <li key={c.id} className="chip">
-                  <span>
-                    👤 {c.name}
+                  <span className="chip-label">
+                    <User size={14} /> {c.name}
                     {!c.name_final && <span className="badge provisional small">prov.</span>}
                   </span>
                   <button
@@ -286,7 +287,7 @@ function EventEditor({ event, books, places, characters, chapters, onUpdate, onD
                       )
                     }
                   >
-                    ✕
+                    <X size={14} />
                   </button>
                 </li>
               ))}
@@ -315,7 +316,7 @@ function EventEditor({ event, books, places, characters, chapters, onUpdate, onD
                       setField('chapter_ids', draft.chapter_ids.filter((id) => id !== ch.id), true)
                     }
                   >
-                    ✕
+                    <X size={14} />
                   </button>
                 </li>
               ))}

@@ -49,6 +49,13 @@ export function AuthProvider({ children }) {
         run(() => supabase.auth.signInWithPassword({ email, password })),
       signUp: (email, password) => run(() => supabase.auth.signUp({ email, password })),
       signOut: () => supabase?.auth.signOut(),
+      // Change password (Supabase updateUser). Returns { ok, error } so callers
+      // can show their own feedback without touching the shared auth error.
+      changePassword: async (password) => {
+        if (!supabase) return { ok: false, error: 'Supabase ist nicht konfiguriert.' }
+        const { error: err } = await supabase.auth.updateUser({ password })
+        return err ? { ok: false, error: err.message } : { ok: true }
+      },
     }),
     [session, error, working],
   )

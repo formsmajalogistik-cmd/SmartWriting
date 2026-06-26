@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { X } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 import { CHAPTER_STATUSES } from '../data/types.js'
 import AddCombo from './AddCombo.jsx'
@@ -166,7 +167,7 @@ export default function MetadataPanel({ chapter }) {
                     title="Aus Kapitel entfernen"
                     onClick={() => setCharacterPresent(chapter.id, c.id, false)}
                   >
-                    ✕
+                    <X size={15} />
                   </button>
                 </div>
                 <select
@@ -214,7 +215,7 @@ export default function MetadataPanel({ chapter }) {
                   title="Aus Kapitel entfernen"
                   onClick={() => removePlace(p.id)}
                 >
-                  ✕
+                  <X size={15} />
                 </button>
               </li>
             ))}
@@ -247,7 +248,7 @@ export default function MetadataPanel({ chapter }) {
                   title="Verknüpfung entfernen"
                   onClick={() => setEventInChapter(e.id, chapter.id, false)}
                 >
-                  ✕
+                  <X size={15} />
                 </button>
               </li>
             ))}

@@ -208,6 +208,19 @@ diesem Kapitel"** multi-select; selecting an event adds the chapter to that
 event's `card.chapter_ids`, linking chapters and events **both ways**. Run
 `supabase/migrations/0003_events_card.sql` once (adds the `card` jsonb column).
 
+### Editor formatting + Profile
+
+- **Bold / italic:** the editor has a small toolbar (B / I) plus **Strg/Cmd+B**
+  (`**bold**`) and **Strg/Cmd+I** (`*italic*`) shortcuts that wrap — and unwrap —
+  the current selection; the preview renders both.
+- **Profile tab** (account menu, top-right): change your password (Supabase
+  `updateUser`, with new-password + confirm and clear success/error feedback)
+  and a **"Steuerung & Syntax"** reference guide covering headings, bold, italic,
+  blockquotes, lists, links, code, and `#Name` card links (incl. the resolved /
+  provisional / unresolved states).
+- **Icons:** all UI icons are [lucide-react](https://lucide.dev) SVGs — the app
+  uses no emoji.
+
 ## Running without a backend (dev)
 
 Set `VITE_DATA_BACKEND=local` to run entirely against IndexedDB with no network
@@ -231,7 +244,9 @@ Both use the identical repository interface.
 | **App store** | `src/state/store.jsx` | React context over the repository: loads the active project's data, exposes CRUD (incl. `updateCharacter`/`updatePlace`), tracks a global **error** + in-flight **saving** indicator. |
 | **Project shell** | `src/components/ProjectSwitcher.jsx` | Create / rename / delete projects; switching scopes the whole UI. |
 | **Books → Chapters tree** | `src/components/Sidebar.jsx` | Per-project sidebar tree; create/rename/delete; click to open instantly. |
-| **Editor** | `src/components/Editor.jsx`, `src/components/ChapterView.jsx` | Distraction-light Markdown editor with `#Name` autocomplete; toggleable preview that renders resolved/provisional/unresolved links + hover card preview; debounced save. |
+| **Editor** | `src/components/Editor.jsx`, `src/components/ChapterView.jsx` | Distraction-light Markdown editor with `#Name` autocomplete and a bold/italic toolbar (+ Cmd/Ctrl+B/I); toggleable preview that renders resolved/provisional/unresolved links + hover card preview; debounced save. |
+| **Profile** | `src/components/ProfileView.jsx` | Change-password form (Supabase `updateUser`) + a controls & Markdown/`#Name` syntax reference. |
+| **Icons** | `lucide-react` | All UI icons are lucide SVGs (no emoji anywhere). |
 | **#-link engine** | `src/lib/hashlinks.js`, `src/lib/caret.js` | Token parsing/resolution, marked inline extension, rename detect/replace; caret coordinates for the autocomplete. |
 | **Cards views** | `src/components/CardsView.jsx`, `CharactersView.jsx`, `PlacesView.jsx`, `cardConfig.js` | Generic card list+editor driven by per-type field config; provisional badge, name-finalization filter, autosave, rename-reference prompt. Character config adds portrait + physical fields. |
 | **Events view** | `src/components/EventsView.jsx` | Event cards: title, book, story_order, place + involved-character selectors, description/notes, linked-chapter chips. |

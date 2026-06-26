@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Marked } from 'marked'
+import { Bold, Italic, User, MapPin } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 import { makeResolver, hashlinkExtension } from '../lib/hashlinks.js'
 import { getCaretCoordinates } from '../lib/caret.js'
@@ -79,7 +80,53 @@ export default function Editor({ value, onChange, preview }) {
     })
   }
 
+  // ---- bold / italic formatting --------------------------------------
+  // Wrap (or unwrap) the current selection in `marker` (** for bold, * italic).
+  function wrapSelection(marker) {
+    const ta = taRef.current
+    if (!ta) return
+    const start = ta.selectionStart
+    const end = ta.selectionEnd
+    const val = ta.value
+    const sel = val.slice(start, end)
+    const mlen = marker.length
+    const before = val.slice(Math.max(0, start - mlen), start)
+    const after = val.slice(end, end + mlen)
+    let next, ns, ne
+    if (sel.length >= 2 * mlen && sel.startsWith(marker) && sel.endsWith(marker)) {
+      const inner = sel.slice(mlen, sel.length - mlen) // unwrap inside selection
+      next = val.slice(0, start) + inner + val.slice(end)
+      ns = start
+      ne = start + inner.length
+    } else if (before === marker && after === marker) {
+      next = val.slice(0, start - mlen) + sel + val.slice(end + mlen) // unwrap around
+      ns = start - mlen
+      ne = end - mlen
+    } else {
+      next = val.slice(0, start) + marker + sel + marker + val.slice(end) // wrap
+      ns = start + mlen
+      ne = end + mlen
+    }
+    onChange(next)
+    setAc(null)
+    requestAnimationFrame(() => {
+      ta.focus()
+      ta.setSelectionRange(ns, ne)
+    })
+  }
+
   function onKeyDown(e) {
+    if ((e.metaKey || e.ctrlKey) && !e.altKey) {
+      const k = e.key.toLowerCase()
+      if (k === 'b') {
+        e.preventDefault()
+        return wrapSelection('**')
+      }
+      if (k === 'i') {
+        e.preventDefault()
+        return wrapSelection('*')
+      }
+    }
     if (!ac) return
     if (e.key === 'ArrowDown') {
       e.preventDefault()
@@ -146,22 +193,50 @@ export default function Editor({ value, onChange, preview }) {
 
   return (
     <div className={`editor ${preview ? 'split' : ''}`}>
-      <textarea
-        ref={taRef}
-        className="editor-textarea"
-        value={value}
-        onChange={(e) => {
-          onChange(e.target.value)
-          refreshAutocomplete()
-        }}
-        onKeyDown={onKeyDown}
-        onKeyUp={onKeyUp}
-        onClick={refreshAutocomplete}
-        onBlur={() => setTimeout(() => setAc(null), 150)}
-        placeholder="Schreib los … tippe # für Figuren & Orte"
-        spellCheck
-        autoCapitalize="sentences"
-      />
+      <div className="editor-pane">
+        <div className="format-bar">
+          <button
+            type="button"
+            className="format-btn"
+            title="Fett (Strg/Cmd+B)"
+            aria-label="Fett"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              wrapSelection('**')
+            }}
+          >
+            <Bold size={16} />
+          </button>
+          <button
+            type="button"
+            className="format-btn"
+            title="Kursiv (Strg/Cmd+I)"
+            aria-label="Kursiv"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              wrapSelection('*')
+            }}
+          >
+            <Italic size={16} />
+          </button>
+        </div>
+        <textarea
+          ref={taRef}
+          className="editor-textarea"
+          value={value}
+          onChange={(e) => {
+            onChange(e.target.value)
+            refreshAutocomplete()
+          }}
+          onKeyDown={onKeyDown}
+          onKeyUp={onKeyUp}
+          onClick={refreshAutocomplete}
+          onBlur={() => setTimeout(() => setAc(null), 150)}
+          placeholder="Schreib los … tippe # für Figuren & Orte"
+          spellCheck
+          autoCapitalize="sentences"
+        />
+      </div>
       {preview && (
         <div
           className="editor-preview markdown"
@@ -184,7 +259,9 @@ export default function Editor({ value, onChange, preview }) {
               }}
               onMouseEnter={() => setAc((a) => ({ ...a, index: i }))}
             >
-              <span className="hash-ac-icon">{it.kind === 'character' ? '👤' : '📍'}</span>
+              <span className="hash-ac-icon">
+                {it.kind === 'character' ? <User size={15} /> : <MapPin size={15} />}
+              </span>
               <span className="hash-ac-name">{it.name}</span>
               {!it.name_final && <span className="badge provisional small">prov.</span>}
             </li>

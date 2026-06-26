@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Plus } from 'lucide-react'
 
 // A searchable add control: type to filter the given options, click one to add
 // it, or create a new stub inline when the typed name has no exact match.
@@ -66,7 +67,7 @@ export default function AddCombo({ placeholder, options, onPick, onCreate }) {
                 create()
               }}
             >
-              ＋ „{query}“ anlegen
+              <Plus size={14} /> „{query}“ anlegen
             </li>
           )}
         </ul>

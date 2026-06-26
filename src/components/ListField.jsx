@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Plus, X } from 'lucide-react'
 
 // A repeatable list of short text entries (e.g. recurring descriptors).
 // Each entry is removable; new entries are added via the input (Enter or +).
@@ -34,9 +35,10 @@ export default function ListField({ label, placeholder, hint, value, onChange })
                 type="button"
                 className="chip-remove"
                 title="Entfernen"
+                aria-label="Entfernen"
                 onClick={() => remove(i)}
               >
-                ✕
+                <X size={14} />
               </button>
             </li>
           ))}
@@ -55,8 +57,8 @@ export default function ListField({ label, placeholder, hint, value, onChange })
             }
           }}
         />
-        <button type="button" className="toggle" onClick={add} disabled={!draft.trim()}>
-          ＋
+        <button type="button" className="toggle" onClick={add} disabled={!draft.trim()} aria-label="Hinzufügen">
+          <Plus size={15} />
         </button>
       </div>
     </div>
