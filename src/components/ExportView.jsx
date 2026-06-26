@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { FileArchive, FileText, IdCard, Loader2, AlertTriangle, Check, Info } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
-import { slugify } from '../lib/export/util.js'
+import { slugify, triggerDownload } from '../lib/export/util.js'
 
 // Export hub: recoverable ZIP (Markdown + JSON) and readable PDFs.
 export default function ExportView() {
@@ -39,18 +39,21 @@ export default function ExportView() {
       })
       setS('zip', { busy: true, msg: 'Komprimiere ZIP …', type: 'info' })
       const blob = await bundleToZip(bundle)
-      const { triggerDownload } = await import('../lib/export/util.js')
       triggerDownload(blob, `${projectSlug}_backup.zip`)
       if (bundle.warnings.length) setWarnings(bundle.warnings)
     })
   }
 
   // --- PDFs ------------------------------------------------------------
+  // onStage surfaces "PDF-Bibliothek wird geladen …" on first use (the library
+  // downloads only when a PDF export is triggered).
+  const stage = (key) => (msg) => setS(key, { busy: true, msg, type: 'info' })
+
   async function exportManuscriptPdf() {
     await run('manuscript', 'Erzeuge Manuskript-PDF …', async () => {
       const snapshot = await exportSnapshot()
       const { exportManuscriptPdf } = await import('../lib/export/pdf.js')
-      await exportManuscriptPdf(snapshot, `${projectSlug}_manuskript.pdf`)
+      await exportManuscriptPdf(snapshot, `${projectSlug}_manuskript.pdf`, stage('manuscript'))
     })
   }
   async function exportChapterPdf() {
@@ -60,7 +63,7 @@ export default function ExportView() {
       const ch = snapshot.chapters.find((c) => c.id === chapterId)
       if (!ch) throw new Error('Kapitel nicht gefunden.')
       const { exportChapterPdf } = await import('../lib/export/pdf.js')
-      await exportChapterPdf(ch, snapshot, `${projectSlug}_${slugify(ch.title, 'kapitel')}.pdf`)
+      await exportChapterPdf(ch, snapshot, `${projectSlug}_${slugify(ch.title, 'kapitel')}.pdf`, stage('chapter'))
     })
   }
   async function exportCardPdf() {
@@ -72,7 +75,7 @@ export default function ExportView() {
       const card = list.find((c) => c.id === id)
       if (!card) throw new Error('Karte nicht gefunden.')
       const { exportCardPdf } = await import('../lib/export/pdf.js')
-      await exportCardPdf(kind, card, snapshot, { getPortraitUrl }, `${slugify(card.name, 'karte')}.pdf`)
+      await exportCardPdf(kind, card, snapshot, { getPortraitUrl }, `${slugify(card.name, 'karte')}.pdf`, stage('card'))
     })
   }
 

@@ -36,6 +36,22 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
         navigateFallback: '/index.html',
+        // The heavy PDF library + fonts (pdfmake / vfs_fonts) are loaded on
+        // demand — only when the user triggers a PDF export. Keep them OUT of
+        // the startup precache, then cache-on-first-use so offline PDF still
+        // works after one online export.
+        globIgnores: ['**/pdfmake.min-*.js', '**/vfs_fonts-*.js'],
+        runtimeCaching: [
+          {
+            urlPattern: /\/assets\/(pdfmake\.min|vfs_fonts)-[^/]*\.js$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'pdf-lib',
+              expiration: { maxEntries: 4 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
       devOptions: {
         enabled: true,

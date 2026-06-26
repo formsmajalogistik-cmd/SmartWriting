@@ -264,9 +264,13 @@ silently.
 `buildRecoverableBundle()` (`src/lib/export/bundle.js`), returns an in-memory
 file list `[{ path, bytes, mime }]`. `bundleToZip()` turns it into a ZIP today;
 the upcoming Google Drive integration can iterate the **same** list and upload
-each file — no rework. PDF generation (`src/lib/export/pdf.js`,
-pdfmake + html-to-pdfmake) and the ZIP writer (fflate) are **lazy-loaded**, so
-they don't bloat the app shell.
+each file — no rework. The ZIP writer (fflate) and `html-to-pdfmake` are
+dynamically imported on demand. The heavy PDF engine (`pdfmake` ~1.3 MB +
+fonts ~855 kB) is imported via Vite `?url` and injected as a `<script>` only on
+the **first PDF export** — so it is a plain static asset (not part of the JS
+bundle), never loads on app startup, and is excluded from the service-worker
+precache (`workbox.globIgnores`), then cached on first use so offline PDF still
+works. Markdown/JSON export never touches it.
 
 ## Running without a backend (dev)
 
@@ -293,7 +297,7 @@ Both use the identical repository interface.
 | **Books → Chapters tree** | `src/components/Sidebar.jsx` | Per-project sidebar tree; create/rename/delete; click to open instantly. |
 | **Editor** | `src/components/Editor.jsx`, `src/components/ChapterView.jsx` | Distraction-light Markdown editor with `#Name` autocomplete and a bold/italic toolbar (+ Cmd/Ctrl+B/I); toggleable preview that renders resolved/provisional/unresolved links + hover card preview; debounced save. |
 | **Profile** | `src/components/ProfileView.jsx` | Change-password form (Supabase `updateUser`) + a controls & Markdown/`#Name` syntax reference. |
-| **Export** | `src/components/ExportView.jsx`, `src/lib/export/*` | Recoverable ZIP (Markdown + JSON + portraits) and readable PDFs. `bundle.js` is the reusable engine core (file list → ZIP / future Drive); `pdf.js` lazy-loads pdfmake. |
+| **Export** | `src/components/ExportView.jsx`, `src/lib/export/*` | Recoverable ZIP (Markdown + JSON + portraits) and readable PDFs. `bundle.js` is the reusable engine core (file list → ZIP / future Drive); `pdf.js` loads pdfmake on demand (`?url` + script injection) only on first PDF export. |
 | **Icons** | `lucide-react` | All UI icons are lucide SVGs (no emoji anywhere). |
 | **#-link engine** | `src/lib/hashlinks.js`, `src/lib/caret.js` | Token parsing/resolution, marked inline extension, rename detect/replace; caret coordinates for the autocomplete. |
 | **Cards views** | `src/components/CardsView.jsx`, `CharactersView.jsx`, `PlacesView.jsx`, `cardConfig.js` | Generic card list+editor driven by per-type field config; provisional badge, name-finalization filter, autosave, rename-reference prompt. Character config adds portrait + physical fields. |

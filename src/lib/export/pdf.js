@@ -1,29 +1,61 @@
 // Client-side PDF generation (readability layer — not for recovery).
-// pdfmake + html-to-pdfmake are lazy-loaded so they never bloat the app shell.
+//
+// pdfmake (~1.3 MB) and its fonts (~855 kB) are heavy and only needed for the
+// occasional PDF export. They are imported as URLs (`?url`) — Vite emits them as
+// plain static assets, NOT as part of the JS module graph — and injected as
+// <script> tags ONLY on the first PDF export. So they never load on app
+// startup, never bloat the initial bundle, and don't trip the chunk-size
+// warning. (The service worker also excludes them from precache; see
+// vite.config.js.) Markdown/JSON export works without ever touching this file.
 //
 // Markdown is rendered to HTML (with the #Name extension) and converted to
 // pdfmake content; #Name references appear as plain, styled text (no links).
 import { Marked } from 'marked'
+import pdfMakeUrl from 'pdfmake/build/pdfmake.min.js?url'
+import vfsUrl from 'pdfmake/build/vfs_fonts.js?url'
 import { makeResolver, hashlinkExtension } from '../hashlinks.js'
 import { groupChaptersByBook } from './markdown.js'
 import { triggerDownload } from './util.js'
 import { CHARACTER_CONFIG, PLACE_CONFIG } from '../../components/cardConfig.js'
 
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[data-pdf-src="${src}"]`)
+    if (existing) {
+      if (existing.dataset.loaded) return resolve()
+      existing.addEventListener('load', () => resolve())
+      existing.addEventListener('error', () => reject(new Error('Skript-Ladefehler')))
+      return
+    }
+    const s = document.createElement('script')
+    s.src = src
+    s.async = true
+    s.dataset.pdfSrc = src
+    s.onload = () => {
+      s.dataset.loaded = '1'
+      resolve()
+    }
+    s.onerror = () => reject(new Error('PDF-Bibliothek konnte nicht geladen werden.'))
+    document.head.appendChild(s)
+  })
+}
+
 let _pdfMakePromise = null
-async function getPdfMake() {
+// Lazily load pdfmake + fonts on first use. pdfmake.min.js (UMD) defines
+// window.pdfMake; vfs_fonts.js then registers the fonts via
+// pdfMake.addVirtualFileSystem(). onStage reports progress for the UI.
+function getPdfMake(onStage) {
   if (!_pdfMakePromise) {
     _pdfMakePromise = (async () => {
-      const mod = await import('pdfmake/build/pdfmake')
-      const fontsMod = await import('pdfmake/build/vfs_fonts')
-      const pdfMake = mod.default || mod
-      const vfs =
-        fontsMod.default?.pdfMake?.vfs ||
-        fontsMod.pdfMake?.vfs ||
-        fontsMod.default?.vfs ||
-        fontsMod.vfs
-      if (vfs) pdfMake.vfs = vfs
-      return pdfMake
-    })()
+      onStage?.('PDF-Bibliothek wird geladen …')
+      await loadScript(pdfMakeUrl)
+      await loadScript(vfsUrl)
+      if (!window.pdfMake) throw new Error('PDF-Bibliothek nicht verfügbar.')
+      return window.pdfMake
+    })().catch((e) => {
+      _pdfMakePromise = null // allow retry after a failed load
+      throw e
+    })
   }
   return _pdfMakePromise
 }
@@ -81,8 +113,8 @@ function chapterMeta(ch) {
 }
 
 // ---- Public: single chapter ----------------------------------------------
-export async function exportChapterPdf(chapter, snapshot, filename) {
-  const pdfMake = await getPdfMake()
+export async function exportChapterPdf(chapter, snapshot, filename, onStage) {
+  const pdfMake = await getPdfMake(onStage)
   const resolver = makeResolver(snapshot.characters, snapshot.places)
   const content = [
     { text: chapter.title, style: 'h1' },
@@ -95,8 +127,8 @@ export async function exportChapterPdf(chapter, snapshot, filename) {
 }
 
 // ---- Public: whole manuscript (active versions, book order) ---------------
-export async function exportManuscriptPdf(snapshot, filename) {
-  const pdfMake = await getPdfMake()
+export async function exportManuscriptPdf(snapshot, filename, onStage) {
+  const pdfMake = await getPdfMake(onStage)
   const resolver = makeResolver(snapshot.characters, snapshot.places)
   const groups = groupChaptersByBook(snapshot.project, snapshot.chapters)
   const content = [{ text: snapshot.project?.name || 'Manuskript', style: 'title' }]
@@ -150,8 +182,8 @@ function fieldRows(card, fields, fromCard) {
   return rows
 }
 
-export async function exportCardPdf(kind, card, snapshot, opts, filename) {
-  const pdfMake = await getPdfMake()
+export async function exportCardPdf(kind, card, snapshot, opts, filename, onStage) {
+  const pdfMake = await getPdfMake(onStage)
   const config = kind === 'character' ? CHARACTER_CONFIG : PLACE_CONFIG
   const content = []
 
