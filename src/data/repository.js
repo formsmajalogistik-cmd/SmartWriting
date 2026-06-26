@@ -55,6 +55,10 @@
 //     uploadPortrait(characterId, blob, { ext, contentType }) -> path
 //     getPortraitUrl(path)                 -> signed/object URL (or null)
 //     deletePortrait(path)                 -> void
+//
+//   Drive backup linkage (per-user; opt-in flag + folder/file IDs, NO tokens)
+//     getDriveLink()                       -> DriveLink | null
+//     saveDriveLink(patch)                 -> DriveLink (upsert/merge, user-scoped)
 
 import { createSupabaseRepository } from './supabaseRepository.js'
 import { createLocalRepository } from './localRepository.js'

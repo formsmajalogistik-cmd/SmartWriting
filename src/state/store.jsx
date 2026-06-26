@@ -331,6 +331,10 @@ export function StoreProvider({ children }) {
     }
   }, [activeProjectId, activeProject, chapters, characters, places, events, locations])
 
+  // --- Drive backup linkage (read/write; Drive logic lives in DriveProvider) -
+  const getDriveLink = useCallback(() => repo.getDriveLink(), [])
+  const saveDriveLink = useCallback((patch) => repo.saveDriveLink(patch), [])
+
   // --- navigation ------------------------------------------------------
   const openCard = useCallback((kind, id) => {
     setView(kind === 'place' ? 'places' : kind === 'event' ? 'events' : 'characters')
@@ -449,6 +453,8 @@ export function StoreProvider({ children }) {
     findReferences,
     renameReferences,
     exportSnapshot,
+    getDriveLink,
+    saveDriveLink,
   }
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>

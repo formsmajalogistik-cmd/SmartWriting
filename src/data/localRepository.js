@@ -300,6 +300,25 @@ export function createLocalRepository() {
       return []
     },
 
+    // ---- Drive backup linkage (local: single IndexedDB row) ------------
+    async getDriveLink() {
+      const db = await getDb()
+      return (await db.get(STORES.drive, 'me')) || null
+    },
+    async saveDriveLink(patch) {
+      const db = await getDb()
+      const existing =
+        (await db.get(STORES.drive, 'me')) || {
+          id: 'me',
+          connected: false,
+          root_folder_id: null,
+          links: {},
+        }
+      const updated = { ...existing, ...patch, id: 'me', updated_at: new Date().toISOString() }
+      await db.put(STORES.drive, updated)
+      return updated
+    },
+
     // ---- Portrait images (local backend: blobs in IndexedDB) -----------
     async uploadPortrait(characterId, blob, { ext = 'webp' } = {}) {
       const db = await getDb()

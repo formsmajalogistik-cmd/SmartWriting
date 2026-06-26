@@ -67,6 +67,23 @@ The `events` table already exists (from `0001_init.sql`) with `title`,
 `card jsonb` column (holding `description`, `involved_character_ids`,
 `chapter_ids`, `notes`). Re-runnable; no new RLS needed.
 
+### 1d. (Optional) Google Drive backup table
+Only needed if you offer the opt-in **Google Drive backup**. Run:
+
+```
+supabase/migrations/0004_drive_backup.sql
+```
+
+Creates `drive_backup` (one row per user, `user_id` primary key) holding the
+opt-in flag and the Drive folder/file IDs, with RLS so a user can only see/touch
+their own row. **No OAuth tokens are stored** — access tokens stay in browser
+memory only. Re-runnable.
+
+To enable the feature, also create a **Google OAuth Client ID** (Web
+application) in Google Cloud Console, enable the Drive API, add your app origin
+to *Authorized JavaScript origins*, and set `VITE_GOOGLE_CLIENT_ID` (see env
+below). If unset, the Drive feature is simply hidden.
+
 ### 2. Configure env
 Copy the example and fill in your project's **public** values (Supabase →
 Project Settings → API):
@@ -272,6 +289,37 @@ bundle), never loads on app startup, and is excluded from the service-worker
 precache (`workbox.globIgnores`), then cached on first use so offline PDF still
 works. Markdown/JSON export never touches it.
 
+### Google Drive backup (per-user, opt-in)
+
+In **Profil → Google Drive Backup**. **Off by default** — if a user never
+connects, no backup code runs and Supabase stays the sole source of truth.
+
+- **Connect flow.** "Mit Google Drive verbinden" uses Google Identity Services
+  (browser token flow) requesting **only** the least-privilege `drive.file`
+  scope (the app can see/manage only files it creates). At the consent prompt the
+  user picks **which Google account** — that account's Drive is used. The opt-in
+  flag is saved to `drive_backup` (per user, RLS). Only the public Client ID
+  (`VITE_GOOGLE_CLIENT_ID`) is in client code — no client secret.
+- **What's written & where.** Reuses the export engine: the recoverable bundle
+  for the **active project** (per-chapter Markdown + `world-data.json` +
+  character portraits) is pushed to `SmartWriting Backups/<project>/` in the
+  user's Drive, mirroring the bundle's folder structure.
+- **No duplicates.** The root folder, the per-project subfolder, and every file
+  ID are stored in `drive_backup.links`; repeat backups **update the same files**
+  (Drive `PATCH`) instead of creating new ones. If a stored file/folder is gone
+  (e.g. the user switched accounts), it's recreated.
+- **Auto + manual.** A debounced timer backs up after changes while connected
+  and the token is valid; "Jetzt sichern" backs up on demand. The UI shows the
+  last-backup time and in-progress / success / error / token-expired states.
+- **Tokens & expiry.** Access tokens are short-lived and kept **in memory only**
+  (never persisted). On expiry, a silent refresh is attempted; if it can't, the
+  UI shows **"Sitzung abgelaufen — Erneut verbinden"** rather than failing
+  silently or implying permanent unattended backup. "Trennen" revokes the token
+  and clears the opt-in flag.
+- **Per-user isolation.** `drive_backup` is RLS-scoped to `user_id = auth.uid()`
+  — one user's Drive linkage is never visible or usable by another (verified
+  against Postgres with two users).
+
 ## Running without a backend (dev)
 
 Set `VITE_DATA_BACKEND=local` to run entirely against IndexedDB with no network
@@ -288,6 +336,8 @@ Both use the identical repository interface.
 | **DB migration** | `supabase/migrations/0001_init.sql` | Tables + `updated_at` triggers + RLS policies. Run manually in Supabase. |
 | **Storage migration** | `supabase/migrations/0002_character_portraits_storage.sql` | Private `character-portraits` bucket + user-scoped `storage.objects` policies. Run manually. |
 | **Events migration** | `supabase/migrations/0003_events_card.sql` | Adds `card jsonb` to the existing `events` table. Run manually. |
+| **Drive migration** | `supabase/migrations/0004_drive_backup.sql` | Per-user `drive_backup` table (opt-in flag + Drive folder/file IDs, no tokens) with RLS. Run manually if using Drive backup. |
+| **Drive backup** | `src/drive/DriveProvider.jsx`, `src/lib/drive/*` | Per-user opt-in Google Drive backup: GIS token flow (`drive.file`), REST upload/update, reuses the export bundle. Connect/disconnect + status live in Profile. |
 | **Data-access interface** | `src/data/repository.js` | The single contract the UI talks to. Selects Supabase (default) or the `local` IndexedDB backend via `VITE_DATA_BACKEND`; the **one swap point**. |
 | **Supabase implementation** | `src/data/supabaseRepository.js` | Implements the contract against Supabase: reads scoped to the active project, writes set `user_id` + `project_id`. |
 | **Local implementation** | `src/data/localRepository.js`, `src/data/db.js` | IndexedDB implementation of the same contract — the `local` dev backend / future offline reconciliation. |
@@ -329,8 +379,8 @@ Books live in `projects.settings.books` (jsonb); chapters reference a book id.
 
 ## Not yet built (later phases, per SPEC)
 
-Offline/local-first reconciliation, 3D map, Google Drive backup, the translator,
-chapter versioning, and the compile view. In-text `#Name` linking, the
-project-wide Names view, and events-as-cards are done (this phase); the editor
-links render in the **preview pane** (the writing surface stays a fast plain
-textarea).
+Offline/local-first reconciliation, 3D map, the translator, chapter versioning,
+and the compile view. Google Drive backup (per-user, opt-in) is done — see
+"Google Drive backup" above. In-text `#Name` linking, the project-wide Names
+view, and events-as-cards are also done; the editor links render in the
+**preview pane** (the writing surface stays a fast plain textarea).

@@ -358,5 +358,29 @@ export function createSupabaseRepository() {
       const { error } = await supabase.storage.from(PORTRAIT_BUCKET).remove([path])
       if (error) throw new Error(error.message || 'Bild konnte nicht gelöscht werden.')
     },
+
+    // ---- Drive backup linkage (per-user row in drive_backup, RLS) ------
+    async getDriveLink() {
+      const user_id = await currentUserId()
+      const { data, error } = await supabase
+        .from('drive_backup')
+        .select('*')
+        .eq('user_id', user_id)
+        .maybeSingle()
+      if (error) throw new Error(error.message || 'Drive-Verknüpfung konnte nicht geladen werden.')
+      return data || null
+    },
+    // Upsert by user_id — only the provided columns are written, so a partial
+    // patch (e.g. just { connected }) preserves the rest. RLS keeps it user-scoped.
+    async saveDriveLink(patch) {
+      const user_id = await currentUserId()
+      const { data, error } = await supabase
+        .from('drive_backup')
+        .upsert({ user_id, ...patch }, { onConflict: 'user_id' })
+        .select()
+        .single()
+      if (error) throw new Error(error.message || 'Drive-Verknüpfung konnte nicht gespeichert werden.')
+      return data
+    },
   }
 }

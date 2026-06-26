@@ -960,3 +960,20 @@ select:focus, input:focus, textarea:focus {
   font-size: 13px; color: #fbbf24; padding: 4px 0;
 }
 .export-warnings svg { flex-shrink: 0; margin-top: 2px; }
+
+/* ===================== Drive backup (Profile) ===================== */
+.drive-connected {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;
+}
+.drive-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.4);
+  color: #86efac; border-radius: 999px; padding: 3px 10px; font-size: 13px;
+}
+.drive-last { font-size: 13px; color: var(--text-dim); }
+.drive-status.info { background: var(--bg-3); border-color: var(--border); color: var(--text-dim); }
+.drive-status.warn {
+  background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.4); color: #fbbf24;
+}
+.toggle.danger-text { color: #fca5a5; }
+.toggle.danger-text:hover { border-color: rgba(239,68,68,0.5); }

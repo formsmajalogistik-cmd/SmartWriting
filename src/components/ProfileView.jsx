@@ -1,10 +1,23 @@
 import { useState } from 'react'
-import { ArrowLeft, KeyRound, BookOpen, Check, AlertTriangle, List } from 'lucide-react'
+import {
+  ArrowLeft,
+  KeyRound,
+  BookOpen,
+  Check,
+  AlertTriangle,
+  List,
+  Cloud,
+  CloudOff,
+  UploadCloud,
+  Loader2,
+  Link2,
+} from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 import { useAuth } from '../auth/AuthProvider.jsx'
+import { useDrive } from '../drive/DriveProvider.jsx'
 
-// Profile: change password (Supabase auth) + a "Controls & syntax" reference
-// for how the editor works.
+// Profile: change password (Supabase auth), Google Drive backup (opt-in), and a
+// "Controls & syntax" reference for how the editor works.
 export default function ProfileView() {
   const { setView } = useStore()
   const { user, isSupabaseConfigured } = useAuth()
@@ -21,9 +34,126 @@ export default function ProfileView() {
         </div>
 
         <PasswordSection enabled={isSupabaseConfigured} />
+        <DriveSection />
         <SyntaxGuide />
       </div>
     </div>
+  )
+}
+
+function fmtTime(iso) {
+  if (!iso) return null
+  try {
+    return new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })
+  } catch {
+    return iso
+  }
+}
+
+function DriveSection() {
+  const { configured, connected, status, lastBackupAt, hasProject, projectName, connect, reconnect, disconnect, backupNow } =
+    useDrive()
+  const busy = status.state === 'connecting' || status.state === 'backing-up'
+
+  return (
+    <section className="profile-section">
+      <h3>
+        <Cloud size={17} /> Google Drive Backup
+      </h3>
+      <p className="hint">
+        Optional und pro Konto. Sichert das aktive Projekt (Markdown + JSON inkl. Porträts) in deine
+        eigene Google-Drive. Es wird ausschließlich der eng begrenzte Scope <code>drive.file</code>{' '}
+        angefragt — die App sieht nur ihre eigenen Dateien. Tokens sind kurzlebig; bei Ablauf bitte
+        neu verbinden.
+      </p>
+
+      {!configured ? (
+        <p className="hint">
+          Nicht konfiguriert: setze <code>VITE_GOOGLE_CLIENT_ID</code> und starte neu.
+        </p>
+      ) : !connected ? (
+        <>
+          <button className="toggle primary with-label" onClick={connect} disabled={busy}>
+            {busy ? <Loader2 size={15} className="spin" /> : <Link2 size={15} />}
+            Mit Google Drive verbinden
+          </button>
+          <DriveStatus status={status} />
+        </>
+      ) : (
+        <>
+          <div className="drive-connected">
+            <span className="drive-badge">
+              <Cloud size={14} /> Verbunden
+            </span>
+            {lastBackupAt && (
+              <span className="drive-last">Letzte Sicherung: {fmtTime(lastBackupAt)}</span>
+            )}
+          </div>
+          <div className="export-row">
+            <button
+              className="toggle primary with-label"
+              onClick={backupNow}
+              disabled={busy || !hasProject}
+              title={hasProject ? `„${projectName}" jetzt sichern` : 'Kein aktives Projekt'}
+            >
+              {status.state === 'backing-up' ? (
+                <Loader2 size={15} className="spin" />
+              ) : (
+                <UploadCloud size={15} />
+              )}
+              Jetzt sichern
+            </button>
+            {status.state === 'token-expired' && (
+              <button className="toggle with-label" onClick={reconnect} disabled={busy}>
+                <Link2 size={15} /> Erneut verbinden
+              </button>
+            )}
+            <button className="toggle with-label danger-text" onClick={disconnect} disabled={busy}>
+              <CloudOff size={15} /> Trennen
+            </button>
+          </div>
+          <DriveStatus status={status} />
+        </>
+      )}
+    </section>
+  )
+}
+
+function DriveStatus({ status }) {
+  if (!status?.msg) return null
+  const { state, msg, warnings } = status
+  const Icon =
+    state === 'success'
+      ? Check
+      : state === 'error' || state === 'token-expired'
+        ? AlertTriangle
+        : state === 'connecting' || state === 'backing-up'
+          ? Loader2
+          : Check
+  const cls =
+    state === 'success'
+      ? 'ok'
+      : state === 'error'
+        ? 'err'
+        : state === 'token-expired'
+          ? 'warn'
+          : 'info'
+  return (
+    <>
+      <div className={`profile-msg drive-status ${cls}`}>
+        <Icon size={15} className={state === 'connecting' || state === 'backing-up' ? 'spin' : ''} />{' '}
+        {msg}
+      </div>
+      {warnings?.length > 0 && (
+        <ul className="export-warnings">
+          {warnings.map((w, i) => (
+            <li key={i}>
+              <AlertTriangle size={13} /> {w}
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   )
 }
 
