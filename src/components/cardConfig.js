@@ -10,6 +10,8 @@ export const CHARACTER_CONFIG = {
   newName: 'Neue Figur',
   // Shown under the name in the list to give each card a glanceable subtitle.
   subtitleKeys: ['role', 'origin'],
+  // Portrait image at the top of the card (character cards only).
+  portrait: true,
   topFields: [
     { key: 'role', label: 'Rolle', type: 'select', options: CHARACTER_ROLES, placeholder: '— Rolle —' },
     { key: 'origin', label: 'Herkunft', type: 'text' },
@@ -20,6 +22,29 @@ export const CHARACTER_CONFIG = {
       type: 'select',
       options: CHARACTER_LIFE_STATUSES,
       placeholder: '— Status —',
+    },
+  ],
+  // Compact physical block (stored in `card` jsonb), shown above the narrative
+  // fields. `detailFields` are short inputs; `listFields` are repeatable lines;
+  // `physicalNotes` are free-text areas.
+  detailFields: [
+    { key: 'age', label: 'Alter', placeholder: 'z. B. „wirkt 30“, „uralt“' },
+    { key: 'species', label: 'Spezies' },
+    { key: 'height', label: 'Größe', placeholder: 'z. B. „1,85 m“, „hochgewachsen“' },
+  ],
+  listFields: [
+    {
+      key: 'recurring_descriptors',
+      label: 'Wiederkehrende Beschreibungen',
+      placeholder: 'z. B. „markante Nase“, „Narbe über der Braue“',
+      hint: 'Kontinuitätshilfe — wie die Figur immer wieder beschrieben wird.',
+    },
+  ],
+  physicalNotes: [
+    {
+      key: 'habits',
+      label: 'Angewohnheiten / Manierismen',
+      placeholder: 'z. B. „spielt beim Lügen mit einem Ring“',
     },
   ],
   cardFields: [

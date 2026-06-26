@@ -4,7 +4,7 @@
 import { openDB } from 'idb'
 
 const DB_NAME = 'smartwriting'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 export const STORES = {
   projects: 'projects',
@@ -12,6 +12,8 @@ export const STORES = {
   characters: 'characters',
   places: 'places',
   character_locations: 'character_locations',
+  // Local-backend image blobs (the Supabase backend uses Storage instead).
+  portraits: 'portraits',
 }
 
 let _dbPromise = null
@@ -39,6 +41,10 @@ export function getDb() {
           const s = db.createObjectStore(STORES.character_locations, { keyPath: 'id' })
           s.createIndex('project_id', 'project_id')
           s.createIndex('chapter_id', 'chapter_id')
+        }
+        if (!db.objectStoreNames.contains(STORES.portraits)) {
+          // keyed by storage path; value: { path, blob }
+          db.createObjectStore(STORES.portraits, { keyPath: 'path' })
         }
       },
     })

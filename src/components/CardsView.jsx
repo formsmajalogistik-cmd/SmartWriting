@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import PortraitField from './PortraitField.jsx'
+import ListField from './ListField.jsx'
 
 // Generic worldbuilding cards view: a list of cards on the left, a detail
 // editor on the right. Driven by a config (see cardConfig.js) so Characters
@@ -115,6 +117,12 @@ function buildDraft(config, card) {
   for (const f of config.topFields) top[f.key] = card[f.key] ?? ''
   const cardObj = {}
   for (const f of config.cardFields) cardObj[f.key] = card.card?.[f.key] ?? ''
+  for (const f of config.detailFields ?? []) cardObj[f.key] = card.card?.[f.key] ?? ''
+  for (const f of config.physicalNotes ?? []) cardObj[f.key] = card.card?.[f.key] ?? ''
+  for (const f of config.listFields ?? []) {
+    cardObj[f.key] = Array.isArray(card.card?.[f.key]) ? card.card[f.key] : []
+  }
+  if (config.portrait) cardObj.portrait_path = card.card?.portrait_path ?? ''
   return { ...top, card: cardObj }
 }
 
@@ -129,15 +137,25 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card.id])
 
+  function buildPatch(next) {
+    const patch = { name: next.name, name_final: next.name_final, card: next.card }
+    for (const f of config.topFields) patch[f.key] = next[f.key]
+    return patch
+  }
+  function save(next) {
+    onUpdate(card.id, buildPatch(next)).catch(() => {
+      /* surfaced by the global error banner */
+    })
+  }
   function persist(next) {
     if (saveTimer.current) clearTimeout(saveTimer.current)
-    saveTimer.current = setTimeout(() => {
-      const patch = { name: next.name, name_final: next.name_final, card: next.card }
-      for (const f of config.topFields) patch[f.key] = next[f.key]
-      onUpdate(card.id, patch).catch(() => {
-        /* surfaced by the global error banner */
-      })
-    }, 500)
+    saveTimer.current = setTimeout(() => save(next), 500)
+  }
+  // Immediate save for discrete actions (e.g. portrait change) so the path is
+  // never lost to a pending debounce.
+  function persistNow(next) {
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    save(next)
   }
   useEffect(() => () => saveTimer.current && clearTimeout(saveTimer.current), [])
 
@@ -155,6 +173,19 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
       return next
     })
   }
+  function setPortrait(p) {
+    setDraft((d) => {
+      const next = { ...d, card: { ...d.card, portrait_path: p || '' } }
+      persistNow(next)
+      return next
+    })
+  }
+
+  const hasPhysical =
+    (config.detailFields?.length || 0) +
+      (config.listFields?.length || 0) +
+      (config.physicalNotes?.length || 0) >
+    0
 
   return (
     <div className="card-editor">
@@ -183,6 +214,14 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
         </div>
       )}
 
+      {config.portrait && (
+        <PortraitField
+          characterId={card.id}
+          path={draft.card.portrait_path}
+          onChange={setPortrait}
+        />
+      )}
+
       <div className="card-top-grid">
         {config.topFields.map((f) => (
           <label className="field" key={f.key}>
@@ -206,6 +245,47 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
           </label>
         ))}
       </div>
+
+      {hasPhysical && (
+        <div className="card-physical">
+          {config.detailFields?.length > 0 && (
+            <div className="detail-grid">
+              {config.detailFields.map((f) => (
+                <label className="field" key={f.key}>
+                  <span>{f.label}</span>
+                  <input
+                    type="text"
+                    value={draft.card[f.key] || ''}
+                    placeholder={f.placeholder}
+                    onChange={(e) => setCardField(f.key, e.target.value)}
+                  />
+                </label>
+              ))}
+            </div>
+          )}
+          {config.listFields?.map((f) => (
+            <ListField
+              key={f.key}
+              label={f.label}
+              placeholder={f.placeholder}
+              hint={f.hint}
+              value={draft.card[f.key]}
+              onChange={(arr) => setCardField(f.key, arr)}
+            />
+          ))}
+          {config.physicalNotes?.map((f) => (
+            <label className="field" key={f.key}>
+              <span>{f.label}</span>
+              <textarea
+                rows={2}
+                value={draft.card[f.key] || ''}
+                placeholder={f.placeholder}
+                onChange={(e) => setCardField(f.key, e.target.value)}
+              />
+            </label>
+          ))}
+        </div>
+      )}
 
       <div className="card-rich">
         {config.cardFields.map((f) => (

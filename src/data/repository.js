@@ -43,6 +43,12 @@
 //     removeCharacterLocation(projectId, { chapterId, characterId }) -> void
 //     setPlacePresent(projectId, { chapterId, placeId })  -> CharacterLocation
 //     removePlacePresent(projectId, { chapterId, placeId }) -> void
+//
+//   Portrait images (stored in a private bucket / local blob store; only the
+//   path is kept on the character card jsonb)
+//     uploadPortrait(characterId, blob, { ext, contentType }) -> path
+//     getPortraitUrl(path)                 -> signed/object URL (or null)
+//     deletePortrait(path)                 -> void
 
 import { createSupabaseRepository } from './supabaseRepository.js'
 import { createLocalRepository } from './localRepository.js'

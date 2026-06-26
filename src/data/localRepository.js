@@ -264,5 +264,27 @@ export function createLocalRepository() {
       const existing = rows.find((r) => r.character_id == null && r.place_id === placeId)
       if (existing) await db.delete(STORES.character_locations, existing.id)
     },
+
+    // ---- Portrait images (local backend: blobs in IndexedDB) -----------
+    async uploadPortrait(characterId, blob, { ext = 'webp' } = {}) {
+      const db = await getDb()
+      const path = `local/${characterId}/${crypto.randomUUID()}.${ext}`
+      await db.put(STORES.portraits, { path, blob })
+      return path
+    },
+
+    async getPortraitUrl(path) {
+      if (!path) return null
+      const db = await getDb()
+      const row = await db.get(STORES.portraits, path)
+      if (!row) return null
+      return URL.createObjectURL(row.blob)
+    },
+
+    async deletePortrait(path) {
+      if (!path) return
+      const db = await getDb()
+      await db.delete(STORES.portraits, path)
+    },
   }
 }

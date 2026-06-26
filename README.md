@@ -37,6 +37,24 @@ table** (a user can only select/insert/update/delete rows where
 > Providers**, ensure "Email" is enabled. For quick testing you may disable
 > "Confirm email"; otherwise confirm the link before signing in.
 
+### 1b. Create the portrait storage bucket
+For character portraits, run the second migration in the **SQL Editor**:
+
+```
+supabase/migrations/0002_character_portraits_storage.sql
+```
+
+It creates a **private** bucket `character-portraits` (`public = false`) and
+four RLS policies on `storage.objects` (select/insert/update/delete) scoped to
+the owning user — object paths are `{user_id}/{character_id}/{file}`, and a
+policy only allows access to objects whose first path segment equals
+`auth.uid()`. Images are served via short-lived signed URLs; the bucket is never
+public. The script is re-runnable.
+
+(Equivalent UI path, if you prefer: Storage → New bucket → name
+`character-portraits`, **Public = off** → then run just the policy statements
+from the migration. Running the SQL file does both.)
+
 ### 2. Configure env
 Copy the example and fill in your project's **public** values (Supabase →
 Project Settings → API):
@@ -110,6 +128,26 @@ Both views have a **"Nur provisorische Namen"** filter — your running list of
 names still to finalize — and edits autosave (debounced) through the same data
 layer, with the global error / save-in-flight indicators from Phase 1b.
 
+### Character portrait + physical details
+
+The **character card only** also carries (all in the `card` jsonb — no schema
+change):
+
+- A **portrait image** at the top: upload from device, preview, replace, remove.
+  Images are downscaled to ~800px on the longest side and re-encoded (WebP, JPEG
+  fallback) before upload. The bytes go to a **private** Supabase Storage bucket
+  (`character-portraits`); only the storage **path** is kept on the card, and
+  the UI displays the image via short-lived **signed URLs**. No-image cards show
+  a neutral placeholder; uploads show loading/error states.
+- A compact **physical block** beneath the portrait: `age`, `species`, `height`
+  (free text — e.g. "wirkt 30", "1,85 m"), a repeatable **recurring descriptors**
+  list (continuity aid — add/remove individual lines), and free-text **habits**.
+  The existing narrative fields (drive, wound, relationships, arc, …) follow.
+
+Run `supabase/migrations/0002_character_portraits_storage.sql` once to create
+the private bucket and its user-scoped policies (see "Storage bucket" below).
+The `local` dev backend stores portrait blobs in IndexedDB instead.
+
 **Metadata panel is now select-not-type.** "Anwesende Figuren" and "Anwesende
 Orte" are searchable selectors over the project's cards. Picking stores the
 card **id** (never a name). Each present character gets a place dropdown
@@ -133,6 +171,7 @@ Both use the identical repository interface.
 | **Supabase client** | `src/data/supabaseClient.js` | Single client from `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`. Anon key only. |
 | **Auth** | `src/auth/AuthProvider.jsx`, `src/components/AuthScreen.jsx` | Email/password auth, session persistence, logout, error surfacing; gates the whole app. |
 | **DB migration** | `supabase/migrations/0001_init.sql` | Tables + `updated_at` triggers + RLS policies. Run manually in Supabase. |
+| **Storage migration** | `supabase/migrations/0002_character_portraits_storage.sql` | Private `character-portraits` bucket + user-scoped `storage.objects` policies. Run manually. |
 | **Data-access interface** | `src/data/repository.js` | The single contract the UI talks to. Selects Supabase (default) or the `local` IndexedDB backend via `VITE_DATA_BACKEND`; the **one swap point**. |
 | **Supabase implementation** | `src/data/supabaseRepository.js` | Implements the contract against Supabase: reads scoped to the active project, writes set `user_id` + `project_id`. |
 | **Local implementation** | `src/data/localRepository.js`, `src/data/db.js` | IndexedDB implementation of the same contract — the `local` dev backend / future offline reconciliation. |
@@ -141,7 +180,9 @@ Both use the identical repository interface.
 | **Project shell** | `src/components/ProjectSwitcher.jsx` | Create / rename / delete projects; switching scopes the whole UI. |
 | **Books → Chapters tree** | `src/components/Sidebar.jsx` | Per-project sidebar tree; create/rename/delete; click to open instantly. |
 | **Editor** | `src/components/Editor.jsx`, `src/components/ChapterView.jsx` | Distraction-light Markdown editor, toggleable preview, debounced save with a save-state indicator. |
-| **Cards views** | `src/components/CardsView.jsx`, `CharactersView.jsx`, `PlacesView.jsx`, `cardConfig.js` | Generic card list+editor driven by per-type field config; provisional badge, name-finalization filter, autosave. |
+| **Cards views** | `src/components/CardsView.jsx`, `CharactersView.jsx`, `PlacesView.jsx`, `cardConfig.js` | Generic card list+editor driven by per-type field config; provisional badge, name-finalization filter, autosave. Character config adds portrait + physical fields. |
+| **Portrait** | `src/components/PortraitField.jsx`, `src/lib/image.js` | Upload/preview/replace/remove with loading+error states; downscales/compresses before upload; persists only the storage path. |
+| **List field** | `src/components/ListField.jsx` | Repeatable short-entry list (recurring descriptors). |
 | **Card selectors** | `src/components/AddCombo.jsx` | Searchable add control (pick existing / create stub inline) used by the metadata panel. |
 | **Metadata panel** | `src/components/MetadataPanel.jsx` | Per-chapter status, POV, summary; characters & places **selected** from cards (ids), per-character location → `character_locations`. |
 | **PWA** | `vite.config.js`, `scripts/gen-icons.mjs`, `public/favicon.svg` | `vite-plugin-pwa` manifest + Workbox service worker; generated icons. |

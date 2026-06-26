@@ -7,6 +7,12 @@
 // appropriate project_id. Books still live in projects.settings.books.
 import { supabase, currentUserId } from './supabaseClient.js'
 
+// Private Storage bucket for character portraits. Access is governed by the
+// bucket's RLS policies (user-scoped by path); images are served via short-
+// lived signed URLs.
+const PORTRAIT_BUCKET = 'character-portraits'
+const SIGNED_URL_TTL = 3600 // seconds
+
 function unwrap({ data, error }) {
   if (error) throw new Error(error.message || 'Supabase-Fehler')
   return data
@@ -279,6 +285,35 @@ export function createSupabaseRepository() {
           .is('character_id', null)
           .eq('place_id', placeId),
       )
+    },
+
+    // ---- Portrait images (Supabase Storage, PRIVATE bucket) -------------
+    // Object path is `{uid}/{characterId}/{uuid}.{ext}`. The bucket's RLS
+    // policies scope access to the user whose id is the first path segment
+    // (see supabase/migrations/0002_character_portraits_storage.sql).
+    async uploadPortrait(characterId, blob, { ext = 'webp', contentType } = {}) {
+      const user_id = await currentUserId()
+      const path = `${user_id}/${characterId}/${crypto.randomUUID()}.${ext}`
+      const { error } = await supabase.storage
+        .from(PORTRAIT_BUCKET)
+        .upload(path, blob, { contentType: contentType || blob.type, upsert: false })
+      if (error) throw new Error(error.message || 'Upload fehlgeschlagen.')
+      return path
+    },
+
+    async getPortraitUrl(path) {
+      if (!path) return null
+      const { data, error } = await supabase.storage
+        .from(PORTRAIT_BUCKET)
+        .createSignedUrl(path, SIGNED_URL_TTL)
+      if (error) throw new Error(error.message || 'Bild-URL konnte nicht erstellt werden.')
+      return data.signedUrl
+    },
+
+    async deletePortrait(path) {
+      if (!path) return
+      const { error } = await supabase.storage.from(PORTRAIT_BUCKET).remove([path])
+      if (error) throw new Error(error.message || 'Bild konnte nicht gelöscht werden.')
     },
   }
 }

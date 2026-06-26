@@ -23,7 +23,8 @@ export function StoreProvider({ children }) {
     const base = getRepository()
     const wrapped = {}
     for (const key of Object.keys(base)) {
-      const isWrite = !key.startsWith('list')
+      // `list*` and `get*` are reads — they don't flip the "saving" indicator.
+      const isWrite = !key.startsWith('list') && !key.startsWith('get')
       wrapped[key] = async (...args) => {
         if (isWrite) setBusy((b) => b + 1)
         try {
@@ -234,6 +235,14 @@ export function StoreProvider({ children }) {
     },
     [activeProjectId, refreshCharacters, refreshLocations],
   )
+
+  // --- portrait image (Supabase Storage / local blob store) -----------
+  // Storage-only: the resulting path is persisted onto the character card by
+  // the editor's normal update flow, keeping a single writer of the record.
+  const uploadPortrait = useCallback((characterId, blob, opts) =>
+    repo.uploadPortrait(characterId, blob, opts), [])
+  const getPortraitUrl = useCallback((path) => repo.getPortraitUrl(path), [])
+  const deletePortrait = useCallback((path) => repo.deletePortrait(path), [])
   const createPlace = useCallback(
     async (name) => {
       const p = await repo.createPlace(activeProjectId, { name })
@@ -320,6 +329,9 @@ export function StoreProvider({ children }) {
     createCharacter,
     updateCharacter,
     deleteCharacter,
+    uploadPortrait,
+    getPortraitUrl,
+    deletePortrait,
     createPlace,
     updatePlace,
     deletePlace,
