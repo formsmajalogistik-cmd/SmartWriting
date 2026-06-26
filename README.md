@@ -221,6 +221,53 @@ event's `card.chapter_ids`, linking chapters and events **both ways**. Run
 - **Icons:** all UI icons are [lucide-react](https://lucide.dev) SVGs — the app
   uses no emoji.
 
+### Export (Export tab)
+
+Turns the active project into downloadable files. **No SQL needed.**
+
+**Recoverable backup — ZIP (the important part).** "ZIP exportieren" downloads
+`<project>_backup.zip`:
+
+```
+<Project>/
+  README.txt                         explains the bundle
+  world-data.json                    full project snapshot (authoritative)
+  chapters/
+    01_<Book>/01_<Chapter>.md        one Markdown per chapter (book/number order)
+    01_<Book>/02_<Chapter>.md
+    Ohne-Buch/…                       chapters with no book
+  manuscript.md                      whole manuscript compiled in book order
+  portraits/<name>-<id>.<ext>        fetched copies of character portraits
+```
+
+- Each chapter `.md` has YAML frontmatter (id, title, book, book_id, number,
+  status, pov, summary, characters_present, places_present) + the verbatim body.
+- `world-data.json` contains project + books, **chapters (with body)**,
+  characters, places, events, character_locations, and lexicon (if present). It
+  is the authoritative rebuild source; the `.md` files are the readable mirror.
+  A rebuild = read `world-data.json` (everything) and re-upload `portraits/*`
+  (each character carries both `card.portrait_path` and the bundle-relative
+  `portrait_file`).
+
+**PDF (readability only).** Whole manuscript, a single chapter, or a
+character/place card (one page, portrait + details + narrative) as cleanly
+typeset PDFs. `#Name` references render as plain styled text. The UI states
+plainly that **Markdown/JSON is the recoverable backup and PDF is for reading.**
+
+**Portraits.** Exports fetch the actual image bytes (via the same signed
+URL / object URL the app uses) and place them under `portraits/` — the bundle is
+self-contained. If a portrait can't be fetched, the ZIP still completes and a
+visible warning lists it; the JSON keeps the reference so nothing is lost
+silently.
+
+**Reusable for Drive (later).** The engine core,
+`buildRecoverableBundle()` (`src/lib/export/bundle.js`), returns an in-memory
+file list `[{ path, bytes, mime }]`. `bundleToZip()` turns it into a ZIP today;
+the upcoming Google Drive integration can iterate the **same** list and upload
+each file — no rework. PDF generation (`src/lib/export/pdf.js`,
+pdfmake + html-to-pdfmake) and the ZIP writer (fflate) are **lazy-loaded**, so
+they don't bloat the app shell.
+
 ## Running without a backend (dev)
 
 Set `VITE_DATA_BACKEND=local` to run entirely against IndexedDB with no network
@@ -246,6 +293,7 @@ Both use the identical repository interface.
 | **Books → Chapters tree** | `src/components/Sidebar.jsx` | Per-project sidebar tree; create/rename/delete; click to open instantly. |
 | **Editor** | `src/components/Editor.jsx`, `src/components/ChapterView.jsx` | Distraction-light Markdown editor with `#Name` autocomplete and a bold/italic toolbar (+ Cmd/Ctrl+B/I); toggleable preview that renders resolved/provisional/unresolved links + hover card preview; debounced save. |
 | **Profile** | `src/components/ProfileView.jsx` | Change-password form (Supabase `updateUser`) + a controls & Markdown/`#Name` syntax reference. |
+| **Export** | `src/components/ExportView.jsx`, `src/lib/export/*` | Recoverable ZIP (Markdown + JSON + portraits) and readable PDFs. `bundle.js` is the reusable engine core (file list → ZIP / future Drive); `pdf.js` lazy-loads pdfmake. |
 | **Icons** | `lucide-react` | All UI icons are lucide SVGs (no emoji anywhere). |
 | **#-link engine** | `src/lib/hashlinks.js`, `src/lib/caret.js` | Token parsing/resolution, marked inline extension, rename detect/replace; caret coordinates for the autocomplete. |
 | **Cards views** | `src/components/CardsView.jsx`, `CharactersView.jsx`, `PlacesView.jsx`, `cardConfig.js` | Generic card list+editor driven by per-type field config; provisional badge, name-finalization filter, autosave, rename-reference prompt. Character config adds portrait + physical fields. |

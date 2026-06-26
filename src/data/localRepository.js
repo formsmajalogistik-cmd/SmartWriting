@@ -295,6 +295,11 @@ export function createLocalRepository() {
       await db.delete(STORES.events, id)
     },
 
+    // ---- Lexicon (local backend has no lexicon store yet) --------------
+    async listLexicon() {
+      return []
+    },
+
     // ---- Portrait images (local backend: blobs in IndexedDB) -----------
     async uploadPortrait(characterId, blob, { ext = 'webp' } = {}) {
       const db = await getDb()

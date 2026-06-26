@@ -11,6 +11,7 @@ import PlacesView from './components/PlacesView.jsx'
 import EventsView from './components/EventsView.jsx'
 import NamesView from './components/NamesView.jsx'
 import ProfileView from './components/ProfileView.jsx'
+import ExportView from './components/ExportView.jsx'
 
 const VIEWS = [
   { key: 'write', label: 'Schreiben' },
@@ -18,6 +19,7 @@ const VIEWS = [
   { key: 'places', label: 'Orte' },
   { key: 'events', label: 'Ereignisse' },
   { key: 'names', label: 'Namen' },
+  { key: 'export', label: 'Export' },
 ]
 
 export default function App() {
@@ -52,6 +54,7 @@ export default function App() {
     if (view === 'places') return <main className="content"><PlacesView /></main>
     if (view === 'events') return <main className="content"><EventsView /></main>
     if (view === 'names') return <main className="content"><NamesView /></main>
+    if (view === 'export') return <main className="content"><ExportView /></main>
     return (
       <>
         <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>

@@ -315,6 +315,22 @@ export function StoreProvider({ children }) {
     [events, updateEvent],
   )
 
+  // --- export ----------------------------------------------------------
+  // Gather a complete, current snapshot of the active project for export
+  // (lexicon is fetched fresh since it has no live UI state).
+  const exportSnapshot = useCallback(async () => {
+    const lexicon = await repo.listLexicon(activeProjectId).catch(() => [])
+    return {
+      project: activeProject,
+      chapters,
+      characters,
+      places,
+      events,
+      locations,
+      lexicon,
+    }
+  }, [activeProjectId, activeProject, chapters, characters, places, events, locations])
+
   // --- navigation ------------------------------------------------------
   const openCard = useCallback((kind, id) => {
     setView(kind === 'place' ? 'places' : kind === 'event' ? 'events' : 'characters')
@@ -432,6 +448,7 @@ export function StoreProvider({ children }) {
     setPlacePresent,
     findReferences,
     renameReferences,
+    exportSnapshot,
   }
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>

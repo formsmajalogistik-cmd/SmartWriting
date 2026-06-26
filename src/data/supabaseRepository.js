@@ -318,6 +318,18 @@ export function createSupabaseRepository() {
       unwrap(await supabase.from('events').delete().eq('id', id))
     },
 
+    // ---- Lexicon (read-only here; no UI yet — used by export) -----------
+    async listLexicon(projectId) {
+      const { data, error } = await supabase
+        .from('lexicon')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('root', { ascending: true })
+      // If the table is absent/unavailable, treat as "no lexicon".
+      if (error) return []
+      return data ?? []
+    },
+
     // ---- Portrait images (Supabase Storage, PRIVATE bucket) -------------
     // Object path is `{uid}/{characterId}/{uuid}.{ext}`. The bucket's RLS
     // policies scope access to the user whose id is the first path segment
