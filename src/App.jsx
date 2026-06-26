@@ -5,12 +5,21 @@ import ProjectSwitcher from './components/ProjectSwitcher.jsx'
 import Sidebar from './components/Sidebar.jsx'
 import ChapterView from './components/ChapterView.jsx'
 import EmptyState from './components/EmptyState.jsx'
+import CharactersView from './components/CharactersView.jsx'
+import PlacesView from './components/PlacesView.jsx'
+
+const VIEWS = [
+  { key: 'write', label: 'Schreiben' },
+  { key: 'characters', label: 'Figuren' },
+  { key: 'places', label: 'Orte' },
+]
 
 export default function App() {
   const { ready, activeProject, activeChapter, saving, error, clearError } = useStore()
   const { user, signOut } = useAuth()
   // Mobile: sidebar slides over the writing surface.
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [view, setView] = useState('write')
 
   if (!ready) {
     return <div className="app-loading">Lädt …</div>
@@ -19,14 +28,29 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <button
-          className="icon-btn sidebar-toggle"
-          aria-label="Menü"
-          onClick={() => setSidebarOpen((v) => !v)}
-        >
-          ☰
-        </button>
+        {view === 'write' && (
+          <button
+            className="icon-btn sidebar-toggle"
+            aria-label="Menü"
+            onClick={() => setSidebarOpen((v) => !v)}
+          >
+            ☰
+          </button>
+        )}
         <span className="brand">SmartWriting</span>
+        {activeProject && (
+          <nav className="view-nav">
+            {VIEWS.map((v) => (
+              <button
+                key={v.key}
+                className={`nav-tab ${view === v.key ? 'on' : ''}`}
+                onClick={() => setView(v.key)}
+              >
+                {v.label}
+              </button>
+            ))}
+          </nav>
+        )}
         {saving && (
           <span className="sync-indicator" title="Speichert …">
             ● speichert …
@@ -53,7 +77,22 @@ export default function App() {
       )}
 
       <div className="body">
-        {activeProject ? (
+        {!activeProject ? (
+          <main className="content">
+            <EmptyState
+              title="Kein Projekt ausgewählt"
+              hint="Erstelle oben rechts ein Projekt, um zu beginnen."
+            />
+          </main>
+        ) : view === 'characters' ? (
+          <main className="content">
+            <CharactersView />
+          </main>
+        ) : view === 'places' ? (
+          <main className="content">
+            <PlacesView />
+          </main>
+        ) : (
           <>
             <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
               <Sidebar onChapterPick={() => setSidebarOpen(false)} />
@@ -70,13 +109,6 @@ export default function App() {
               )}
             </main>
           </>
-        ) : (
-          <main className="content">
-            <EmptyState
-              title="Kein Projekt ausgewählt"
-              hint="Erstelle oben rechts ein Projekt, um zu beginnen."
-            />
-          </main>
         )}
       </div>
     </div>

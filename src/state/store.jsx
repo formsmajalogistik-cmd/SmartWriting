@@ -218,6 +218,14 @@ export function StoreProvider({ children }) {
     },
     [activeProjectId, refreshCharacters],
   )
+  const updateCharacter = useCallback(
+    async (id, patch) => {
+      const updated = await repo.updateCharacter(id, patch)
+      setCharacters((prev) => prev.map((c) => (c.id === id ? updated : c)))
+      return updated
+    },
+    [],
+  )
   const deleteCharacter = useCallback(
     async (id) => {
       await repo.deleteCharacter(id)
@@ -233,6 +241,14 @@ export function StoreProvider({ children }) {
       return p
     },
     [activeProjectId, refreshPlaces],
+  )
+  const updatePlace = useCallback(
+    async (id, patch) => {
+      const updated = await repo.updatePlace(id, patch)
+      setPlaces((prev) => prev.map((p) => (p.id === id ? updated : p)))
+      return updated
+    },
+    [],
   )
   const deletePlace = useCallback(
     async (id) => {
@@ -302,8 +318,10 @@ export function StoreProvider({ children }) {
     renameChapter,
     deleteChapter,
     createCharacter,
+    updateCharacter,
     deleteCharacter,
     createPlace,
+    updatePlace,
     deletePlace,
     setCharacterPresent,
     setCharacterPlace,

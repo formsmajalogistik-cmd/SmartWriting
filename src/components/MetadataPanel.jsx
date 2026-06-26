@@ -1,10 +1,12 @@
+import { useMemo } from 'react'
 import { useStore } from '../state/store.jsx'
 import { CHAPTER_STATUSES } from '../data/types.js'
+import AddCombo from './AddCombo.jsx'
 
-// Per-chapter metadata: status, POV, one-line summary, characters present,
-// places present, and — for each present character — where they are in this
-// chapter. The location pickers write character_locations rows now so the map
-// timeline (Phase 3) can read them later.
+// Per-chapter metadata. Characters and places present are now SELECTED from the
+// project's cards (storing ids, never names). Each present character gets a
+// place dropdown (limited to present places) that writes a character_locations
+// row (project_id, character_id, chapter_id, place_id).
 export default function MetadataPanel({ chapter }) {
   const {
     characters,
@@ -18,24 +20,66 @@ export default function MetadataPanel({ chapter }) {
     setPlacePresent,
   } = useStore()
 
-  const chapterLocs = locations.filter((l) => l.chapter_id === chapter.id)
-  const presentCharIds = new Set(chapterLocs.filter((l) => l.character_id).map((l) => l.character_id))
-  const presentPlaceIds = new Set(chapterLocs.filter((l) => l.place_id).map((l) => l.place_id))
-  const charPlace = (charId) =>
+  const chapterLocs = useMemo(
+    () => locations.filter((l) => l.chapter_id === chapter.id),
+    [locations, chapter.id],
+  )
+  const presentCharIds = chapterLocs.filter((l) => l.character_id).map((l) => l.character_id)
+  const presentPlaceIds = chapterLocs.filter((l) => l.place_id).map((l) => l.place_id)
+  const presentCharSet = new Set(presentCharIds)
+  const presentPlaceSet = new Set(presentPlaceIds)
+
+  const byId = (list, id) => list.find((x) => x.id === id)
+  const charPlaceId = (charId) =>
     chapterLocs.find((l) => l.character_id === charId)?.place_id || ''
 
-  async function addCharacter() {
-    const name = window.prompt('Name der Figur:')
-    if (!name || !name.trim()) return
-    const c = await createCharacter(name.trim())
-    await setCharacterPresent(chapter.id, c.id, true)
+  // Present characters as full card objects, in name order.
+  const presentCharacters = presentCharIds
+    .map((id) => byId(characters, id))
+    .filter(Boolean)
+    .sort((a, b) => a.name.localeCompare(b.name))
+  // Present places (no bound character or any) — distinct place cards.
+  const presentPlaces = [...presentPlaceSet]
+    .map((id) => byId(places, id))
+    .filter(Boolean)
+    .sort((a, b) => a.name.localeCompare(b.name))
+
+  const unselectedCharacters = characters.filter((c) => !presentCharSet.has(c.id))
+  const unselectedPlaces = places.filter((p) => !presentPlaceSet.has(p.id))
+
+  // Place options for a character's location dropdown: the present places, plus
+  // the character's current place if it is no longer marked present.
+  function placeOptionsFor(charId) {
+    const opts = [...presentPlaces]
+    const cur = charPlaceId(charId)
+    if (cur && !presentPlaceSet.has(cur)) {
+      const p = byId(places, cur)
+      if (p) opts.push(p)
+    }
+    return opts
   }
 
-  async function addPlace() {
-    const name = window.prompt('Name des Orts:')
-    if (!name || !name.trim()) return
-    const p = await createPlace(name.trim())
-    await setPlacePresent(chapter.id, p.id, true)
+  async function pickCharacter(id) {
+    await setCharacterPresent(chapter.id, id, true)
+  }
+  async function createCharacterPresent(name) {
+    const c = await createCharacter(name)
+    if (c) await setCharacterPresent(chapter.id, c.id, true)
+  }
+  async function pickPlace(id) {
+    await setPlacePresent(chapter.id, id, true)
+  }
+  async function createPlacePresent(name) {
+    const p = await createPlace(name)
+    if (p) await setPlacePresent(chapter.id, p.id, true)
+  }
+  // Removing a present place also clears it from any character located there
+  // this chapter (a place can be "present" purely via a character location).
+  async function removePlace(placeId) {
+    for (const c of presentCharacters) {
+      if (charPlaceId(c.id) === placeId) await setCharacterPlace(chapter.id, c.id, null)
+    }
+    await setPlacePresent(chapter.id, placeId, false)
   }
 
   return (
@@ -76,70 +120,87 @@ export default function MetadataPanel({ chapter }) {
         />
       </label>
 
+      {/* Characters present ------------------------------------------------ */}
       <div className="field">
         <div className="field-head">
           <span>Anwesende Figuren</span>
-          <button className="link-btn" onClick={addCharacter}>
-            ＋ neu
-          </button>
         </div>
-        {characters.length === 0 && <p className="hint">Noch keine Figuren angelegt.</p>}
-        <ul className="present-list">
-          {characters.map((c) => {
-            const present = presentCharIds.has(c.id)
-            return (
+        <AddCombo
+          placeholder="Figur suchen oder anlegen …"
+          options={unselectedCharacters}
+          onPick={pickCharacter}
+          onCreate={createCharacterPresent}
+        />
+        {presentCharacters.length === 0 ? (
+          <p className="hint">Keine Figuren in diesem Kapitel.</p>
+        ) : (
+          <ul className="present-list">
+            {presentCharacters.map((c) => (
               <li key={c.id} className="present-item">
-                <label className="checkbox">
-                  <input
-                    type="checkbox"
-                    checked={present}
-                    onChange={(e) => setCharacterPresent(chapter.id, c.id, e.target.checked)}
-                  />
-                  <span>{c.name}</span>
-                </label>
-                {present && (
-                  <select
-                    className="loc-select"
-                    value={charPlace(c.id)}
-                    onChange={(e) => setCharacterPlace(chapter.id, c.id, e.target.value || null)}
-                    title="Wo ist die Figur in diesem Kapitel?"
+                <div className="present-row">
+                  <span className="present-name">
+                    {c.name}
+                    {!c.name_final && <span className="badge provisional small">prov.</span>}
+                  </span>
+                  <button
+                    className="icon-btn"
+                    title="Aus Kapitel entfernen"
+                    onClick={() => setCharacterPresent(chapter.id, c.id, false)}
                   >
-                    <option value="">— Ort wählen —</option>
-                    {places.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
+                    ✕
+                  </button>
+                </div>
+                <select
+                  className="loc-select"
+                  value={charPlaceId(c.id)}
+                  onChange={(e) => setCharacterPlace(chapter.id, c.id, e.target.value || null)}
+                  title="Wo ist die Figur in diesem Kapitel?"
+                >
+                  <option value="">— Ort wählen —</option>
+                  {placeOptionsFor(c.id).map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
               </li>
-            )
-          })}
-        </ul>
+            ))}
+          </ul>
+        )}
       </div>
 
+      {/* Places present ---------------------------------------------------- */}
       <div className="field">
         <div className="field-head">
           <span>Anwesende Orte</span>
-          <button className="link-btn" onClick={addPlace}>
-            ＋ neu
-          </button>
         </div>
-        {places.length === 0 && <p className="hint">Noch keine Orte angelegt.</p>}
-        <ul className="present-list">
-          {places.map((p) => (
-            <li key={p.id} className="present-item">
-              <label className="checkbox">
-                <input
-                  type="checkbox"
-                  checked={presentPlaceIds.has(p.id)}
-                  onChange={(e) => setPlacePresent(chapter.id, p.id, e.target.checked)}
-                />
-                <span>{p.name}</span>
-              </label>
-            </li>
-          ))}
-        </ul>
+        <AddCombo
+          placeholder="Ort suchen oder anlegen …"
+          options={unselectedPlaces}
+          onPick={pickPlace}
+          onCreate={createPlacePresent}
+        />
+        {presentPlaces.length === 0 ? (
+          <p className="hint">Keine Orte in diesem Kapitel.</p>
+        ) : (
+          <ul className="chip-list">
+            {presentPlaces.map((p) => (
+              <li key={p.id} className="chip">
+                <span>
+                  {p.name}
+                  {!p.name_final && <span className="badge provisional small">prov.</span>}
+                </span>
+                <button
+                  className="chip-remove"
+                  title="Aus Kapitel entfernen"
+                  onClick={() => removePlace(p.id)}
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   )

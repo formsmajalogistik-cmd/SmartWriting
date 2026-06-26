@@ -45,14 +45,20 @@
 //     removePlacePresent(projectId, { chapterId, placeId }) -> void
 
 import { createSupabaseRepository } from './supabaseRepository.js'
+import { createLocalRepository } from './localRepository.js'
+
+// Backend selection. Default is Supabase (online-first, per Phase 1b).
+// Set VITE_DATA_BACKEND=local to run entirely against IndexedDB with no
+// network/auth — handy for offline dev and UI testing. Both implement the
+// identical interface, so nothing else in the app changes.
+export const DATA_BACKEND = import.meta.env.VITE_DATA_BACKEND === 'local' ? 'local' : 'supabase'
 
 let _repo = null
 
 export function getRepository() {
   if (!_repo) {
-    // Single swap point. The local IndexedDB implementation still lives in
-    // ./localRepository.js for reference / future offline reconciliation.
-    _repo = createSupabaseRepository()
+    // Single swap point.
+    _repo = DATA_BACKEND === 'local' ? createLocalRepository() : createSupabaseRepository()
   }
   return _repo
 }

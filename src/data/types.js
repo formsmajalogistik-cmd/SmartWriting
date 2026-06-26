@@ -10,6 +10,10 @@ export const LOCAL_USER_ID = 'local-user'
 
 export const CHAPTER_STATUSES = ['entwurf', 'aktiv', 'überarbeitung', 'final']
 
+// Worldbuilding card vocabularies (Phase 2).
+export const CHARACTER_ROLES = ['protagonist', 'antagonist', 'companion', 'minor', 'deity']
+export const CHARACTER_LIFE_STATUSES = ['lebt', 'tot', 'unbekannt']
+
 // Collision-resistant id without external deps.
 export function newId() {
   const rand =
