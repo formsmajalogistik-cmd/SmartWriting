@@ -20,9 +20,17 @@
 //
 //   Chapters
 //     listChapters(projectId)              -> Chapter[]
-//     createChapter(projectId, { book, title, number }) -> Chapter
-//     updateChapter(id, patch)             -> Chapter
-//     deleteChapter(id)                    -> void   (cascades character_locations)
+//     createChapter(projectId, { book, title, number }) -> Chapter (with active version)
+//     updateChapter(id, patch)             -> Chapter   (metadata only)
+//     deleteChapter(id)                    -> void   (cascades locations + versions)
+//
+//   Chapter versions (PROSE only; chapters.body mirrors the active version)
+//     listChapterVersions(projectId, { chapterId? }) -> ChapterVersion[]
+//     createChapterVersion(projectId, { chapterId, label, body }) -> ChapterVersion
+//     updateChapterVersion(id, { label?, body? }) -> ChapterVersion (mirrors if active)
+//     deleteChapterVersion(id)             -> void   (refuses the active version)
+//     setActiveVersion(chapterId, versionId) -> Chapter (mirrors body)
+//     saveActiveVersionBody(chapterId, body) -> Chapter (writes active version + mirror)
 //
 //   Characters
 //     listCharacters(projectId)            -> Character[]

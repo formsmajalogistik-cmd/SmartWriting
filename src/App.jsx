@@ -12,9 +12,11 @@ import EventsView from './components/EventsView.jsx'
 import NamesView from './components/NamesView.jsx'
 import ProfileView from './components/ProfileView.jsx'
 import ExportView from './components/ExportView.jsx'
+import CompileView from './components/CompileView.jsx'
 
 const VIEWS = [
   { key: 'write', label: 'Schreiben' },
+  { key: 'compile', label: 'Manuskript' },
   { key: 'characters', label: 'Figuren' },
   { key: 'places', label: 'Orte' },
   { key: 'events', label: 'Ereignisse' },
@@ -50,6 +52,7 @@ export default function App() {
         </main>
       )
     }
+    if (view === 'compile') return <main className="content"><CompileView /></main>
     if (view === 'characters') return <main className="content"><CharactersView /></main>
     if (view === 'places') return <main className="content"><PlacesView /></main>
     if (view === 'events') return <main className="content"><EventsView /></main>

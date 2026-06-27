@@ -52,6 +52,8 @@ export function StoreProvider({ children }) {
   const [places, setPlaces] = useState([])
   const [locations, setLocations] = useState([])
   const [events, setEvents] = useState([])
+  // Versions of the currently open chapter (PROSE only; metadata stays on the chapter).
+  const [chapterVersions, setChapterVersions] = useState([])
   const [activeChapterId, setActiveChapterId] = useState(
     () => localStorage.getItem(ACTIVE_CHAPTER_KEY) || null,
   )
@@ -84,6 +86,9 @@ export function StoreProvider({ children }) {
   }, [])
   const refreshEvents = useCallback(async (pid) => {
     setEvents(pid ? await repo.listEvents(pid) : [])
+  }, [])
+  const refreshChapterVersions = useCallback(async (pid, chapterId) => {
+    setChapterVersions(pid && chapterId ? await repo.listChapterVersions(pid, { chapterId }) : [])
   }, [])
 
   // Initial load. Always reach `ready` so a load error shows the app shell
@@ -127,6 +132,11 @@ export function StoreProvider({ children }) {
     if (activeChapterId) localStorage.setItem(ACTIVE_CHAPTER_KEY, activeChapterId)
     else localStorage.removeItem(ACTIVE_CHAPTER_KEY)
   }, [activeChapterId])
+
+  // Load the open chapter's versions (for the version selector / compare).
+  useEffect(() => {
+    refreshChapterVersions(activeProjectId, activeChapterId).catch(() => {})
+  }, [activeProjectId, activeChapterId, refreshChapterVersions])
 
   const activeProject = useMemo(
     () => projects.find((p) => p.id === activeProjectId) || null,
@@ -220,6 +230,48 @@ export function StoreProvider({ children }) {
     },
     [activeProjectId, refreshChapters, refreshLocations],
   )
+
+  // --- chapter version actions ----------------------------------------
+  // Editor body writes go through the ACTIVE version (and mirror chapters.body).
+  const saveChapterBody = useCallback(async (chapterId, body) => {
+    const updated = await repo.saveActiveVersionBody(chapterId, body)
+    setChapters((prev) => prev.map((c) => (c.id === chapterId ? updated : c)))
+    // Keep the open chapter's version bodies fresh in memory so Compare and the
+    // version selector reflect what was just typed (without a re-list per save).
+    setChapterVersions((prev) =>
+      prev.map((v) =>
+        v.id === updated.active_version_id ? { ...v, body, updated_at: updated.updated_at } : v,
+      ),
+    )
+    return updated
+  }, [])
+  const createVersion = useCallback(
+    async (chapterId, { label, body } = {}) => {
+      const v = await repo.createChapterVersion(activeProjectId, { chapterId, label, body })
+      await refreshChapterVersions(activeProjectId, chapterId)
+      return v
+    },
+    [activeProjectId, refreshChapterVersions],
+  )
+  const renameVersion = useCallback(
+    async (versionId, label, chapterId) => {
+      await repo.updateChapterVersion(versionId, { label })
+      await refreshChapterVersions(activeProjectId, chapterId)
+    },
+    [activeProjectId, refreshChapterVersions],
+  )
+  const deleteVersion = useCallback(
+    async (versionId, chapterId) => {
+      await repo.deleteChapterVersion(versionId)
+      await refreshChapterVersions(activeProjectId, chapterId)
+    },
+    [activeProjectId, refreshChapterVersions],
+  )
+  const setActiveVersion = useCallback(async (chapterId, versionId) => {
+    const updated = await repo.setActiveVersion(chapterId, versionId)
+    setChapters((prev) => prev.map((c) => (c.id === chapterId ? updated : c)))
+    return updated
+  }, [])
 
   // --- character / place actions --------------------------------------
   const createCharacter = useCallback(
@@ -359,14 +411,16 @@ export function StoreProvider({ children }) {
       for (const ch of chapters) {
         const { text, count } = replaceNameReferences(ch.body || '', oldName, newName)
         if (count > 0) {
-          await updateChapter(ch.id, { body: text })
+          // Write through the active version so the mirror stays consistent.
+          const updated = await repo.saveActiveVersionBody(ch.id, text)
+          setChapters((prev) => prev.map((c) => (c.id === ch.id ? updated : c)))
           chaptersChanged += 1
           refsChanged += count
         }
       }
       return { chaptersChanged, refsChanged }
     },
-    [chapters, updateChapter],
+    [chapters],
   )
 
   // --- character_locations actions ------------------------------------
@@ -414,6 +468,7 @@ export function StoreProvider({ children }) {
     places,
     locations,
     events,
+    chapterVersions,
     activeChapter,
     activeChapterId,
     setActiveChapterId,
@@ -434,6 +489,11 @@ export function StoreProvider({ children }) {
     updateChapter,
     renameChapter,
     deleteChapter,
+    saveChapterBody,
+    createVersion,
+    renameVersion,
+    deleteVersion,
+    setActiveVersion,
     createCharacter,
     updateCharacter,
     deleteCharacter,

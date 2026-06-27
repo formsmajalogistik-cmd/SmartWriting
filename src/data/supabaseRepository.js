@@ -119,7 +119,30 @@ export function createSupabaseRepository() {
       }
       const insert = { user_id, project_id: projectId, book: book ?? null, number: nextNumber }
       if (title?.trim()) insert.title = title.trim()
-      return unwrap(await supabase.from('chapters').insert(insert).select().single())
+      const chapter = unwrap(await supabase.from('chapters').insert(insert).select().single())
+      // Every chapter starts with one version; chapters.body mirrors it.
+      const version = unwrap(
+        await supabase
+          .from('chapter_versions')
+          .insert({
+            user_id,
+            project_id: projectId,
+            chapter_id: chapter.id,
+            version_number: 1,
+            label: 'Version 1',
+            body: '',
+          })
+          .select()
+          .single(),
+      )
+      return unwrap(
+        await supabase
+          .from('chapters')
+          .update({ active_version_id: version.id })
+          .eq('id', chapter.id)
+          .select()
+          .single(),
+      )
     },
 
     async updateChapter(id, patch) {
@@ -129,8 +152,112 @@ export function createSupabaseRepository() {
     },
 
     async deleteChapter(id) {
-      // character_locations cascade via chapter FK.
+      // character_locations + chapter_versions cascade via chapter FK.
       unwrap(await supabase.from('chapters').delete().eq('id', id))
+    },
+
+    // ---- Chapter versions (PROSE only; chapters.body mirrors active) ----
+    async listChapterVersions(projectId, { chapterId } = {}) {
+      let q = supabase.from('chapter_versions').select('*').eq('project_id', projectId)
+      if (chapterId) q = q.eq('chapter_id', chapterId)
+      return unwrap(await q.order('version_number', { ascending: true }))
+    },
+
+    async createChapterVersion(projectId, { chapterId, label, body }) {
+      const user_id = await currentUserId()
+      const existing = unwrap(
+        await supabase
+          .from('chapter_versions')
+          .select('version_number')
+          .eq('chapter_id', chapterId),
+      )
+      const nextNumber = existing.length
+        ? Math.max(...existing.map((v) => v.version_number || 0)) + 1
+        : 1
+      return unwrap(
+        await supabase
+          .from('chapter_versions')
+          .insert({
+            user_id,
+            project_id: projectId,
+            chapter_id: chapterId,
+            version_number: nextNumber,
+            label: label?.trim() || `Version ${nextNumber}`,
+            body: body ?? '',
+          })
+          .select()
+          .single(),
+      )
+    },
+
+    async updateChapterVersion(id, patch) {
+      const version = unwrap(
+        await supabase.from('chapter_versions').update(patch).eq('id', id).select().single(),
+      )
+      // Keep the chapter body mirror in sync if this is the active version.
+      if (patch.body != null) {
+        const chapter = unwrap(
+          await supabase
+            .from('chapters')
+            .select('id, active_version_id')
+            .eq('id', version.chapter_id)
+            .single(),
+        )
+        if (chapter.active_version_id === id) {
+          unwrap(
+            await supabase.from('chapters').update({ body: patch.body }).eq('id', chapter.id),
+          )
+        }
+      }
+      return version
+    },
+
+    async deleteChapterVersion(id) {
+      const version = unwrap(
+        await supabase.from('chapter_versions').select('id, chapter_id').eq('id', id).single(),
+      )
+      const chapter = unwrap(
+        await supabase.from('chapters').select('active_version_id').eq('id', version.chapter_id).single(),
+      )
+      if (chapter.active_version_id === id) {
+        throw new Error('Die aktive Version kann nicht gelöscht werden.')
+      }
+      unwrap(await supabase.from('chapter_versions').delete().eq('id', id))
+    },
+
+    async setActiveVersion(chapterId, versionId) {
+      const version = unwrap(
+        await supabase.from('chapter_versions').select('body').eq('id', versionId).single(),
+      )
+      return unwrap(
+        await supabase
+          .from('chapters')
+          .update({ active_version_id: versionId, body: version.body ?? '' })
+          .eq('id', chapterId)
+          .select()
+          .single(),
+      )
+    },
+
+    async saveActiveVersionBody(chapterId, body) {
+      const chapter = unwrap(
+        await supabase
+          .from('chapters')
+          .select('id, active_version_id')
+          .eq('id', chapterId)
+          .single(),
+      )
+      if (chapter.active_version_id) {
+        unwrap(
+          await supabase
+            .from('chapter_versions')
+            .update({ body })
+            .eq('id', chapter.active_version_id),
+        )
+      }
+      return unwrap(
+        await supabase.from('chapters').update({ body }).eq('id', chapterId).select().single(),
+      )
     },
 
     // ---- Characters -----------------------------------------------------

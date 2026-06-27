@@ -5,6 +5,7 @@ import { getDb, STORES } from './db.js'
 import {
   makeProject,
   makeChapter,
+  makeChapterVersion,
   makeCharacter,
   makePlace,
   makeCharacterLocation,
@@ -47,9 +48,11 @@ export function createLocalRepository() {
       // Cascade: delete every child row scoped to this project.
       for (const store of [
         STORES.chapters,
+        STORES.chapter_versions,
         STORES.characters,
         STORES.places,
         STORES.character_locations,
+        STORES.events,
       ]) {
         const rows = await db.getAllFromIndex(store, 'project_id', id)
         const tx = db.transaction(store, 'readwrite')
@@ -93,6 +96,10 @@ export function createLocalRepository() {
         const tx = db.transaction(STORES.character_locations, 'readwrite')
         await Promise.all(locs.map((l) => tx.store.delete(l.id)))
         await tx.done
+        const vers = await db.getAllFromIndex(STORES.chapter_versions, 'chapter_id', ch.id)
+        const vtx = db.transaction(STORES.chapter_versions, 'readwrite')
+        await Promise.all(vers.map((v) => vtx.store.delete(v.id)))
+        await vtx.done
         await db.delete(STORES.chapters, ch.id)
       }
       const updated = { ...project, settings: { ...project.settings, books } }
@@ -117,6 +124,16 @@ export function createLocalRepository() {
           : 1
       }
       const chapter = makeChapter({ project_id: projectId, book: book ?? null, title, number: nextNumber })
+      // Every chapter starts with one version; the chapter mirrors its body.
+      const version = makeChapterVersion({
+        project_id: projectId,
+        chapter_id: chapter.id,
+        version_number: 1,
+        label: 'Version 1',
+        body: '',
+      })
+      chapter.active_version_id = version.id
+      await db.put(STORES.chapter_versions, version)
       await db.put(STORES.chapters, chapter)
       return chapter
     },
@@ -136,7 +153,97 @@ export function createLocalRepository() {
       const tx = db.transaction(STORES.character_locations, 'readwrite')
       await Promise.all(locs.map((l) => tx.store.delete(l.id)))
       await tx.done
+      // Cascade: drop this chapter's versions.
+      const vers = await db.getAllFromIndex(STORES.chapter_versions, 'chapter_id', id)
+      const vtx = db.transaction(STORES.chapter_versions, 'readwrite')
+      await Promise.all(vers.map((v) => vtx.store.delete(v.id)))
+      await vtx.done
       await db.delete(STORES.chapters, id)
+    },
+
+    // ---- Chapter versions (PROSE only; chapters.body mirrors active) ----
+    async listChapterVersions(projectId, { chapterId } = {}) {
+      const db = await getDb()
+      const rows = chapterId
+        ? await db.getAllFromIndex(STORES.chapter_versions, 'chapter_id', chapterId)
+        : await db.getAllFromIndex(STORES.chapter_versions, 'project_id', projectId)
+      return rows.sort((a, b) => (a.version_number || 0) - (b.version_number || 0))
+    },
+
+    async createChapterVersion(projectId, { chapterId, label, body }) {
+      const db = await getDb()
+      const existing = await db.getAllFromIndex(STORES.chapter_versions, 'chapter_id', chapterId)
+      const nextNumber = existing.length
+        ? Math.max(...existing.map((v) => v.version_number || 0)) + 1
+        : 1
+      const version = makeChapterVersion({
+        project_id: projectId,
+        chapter_id: chapterId,
+        version_number: nextNumber,
+        label: label?.trim() || `Version ${nextNumber}`,
+        body: body ?? '',
+      })
+      await db.put(STORES.chapter_versions, version)
+      return version
+    },
+
+    async updateChapterVersion(id, patch) {
+      const db = await getDb()
+      const existing = await db.get(STORES.chapter_versions, id)
+      if (!existing) throw new Error(`Chapter version ${id} not found`)
+      const updated = { ...existing, ...patch, updated_at: nowIso() }
+      await db.put(STORES.chapter_versions, updated)
+      // If this is the active version, keep the chapter body mirror in sync.
+      if (patch.body != null) {
+        const chapter = await db.get(STORES.chapters, existing.chapter_id)
+        if (chapter && chapter.active_version_id === id) {
+          await db.put(STORES.chapters, { ...chapter, body: patch.body, updated_at: nowIso() })
+        }
+      }
+      return updated
+    },
+
+    async deleteChapterVersion(id) {
+      const db = await getDb()
+      const version = await db.get(STORES.chapter_versions, id)
+      if (!version) return
+      const chapter = await db.get(STORES.chapters, version.chapter_id)
+      if (chapter && chapter.active_version_id === id) {
+        throw new Error('Die aktive Version kann nicht gelöscht werden.')
+      }
+      await db.delete(STORES.chapter_versions, id)
+    },
+
+    // Make `versionId` the chapter's active version and mirror its body.
+    async setActiveVersion(chapterId, versionId) {
+      const db = await getDb()
+      const chapter = await db.get(STORES.chapters, chapterId)
+      const version = await db.get(STORES.chapter_versions, versionId)
+      if (!chapter || !version) throw new Error('Kapitel oder Version nicht gefunden.')
+      const updated = {
+        ...chapter,
+        active_version_id: versionId,
+        body: version.body ?? '',
+        updated_at: nowIso(),
+      }
+      await db.put(STORES.chapters, updated)
+      return updated
+    },
+
+    // Write the active version's body (used by the editor) and mirror it.
+    async saveActiveVersionBody(chapterId, body) {
+      const db = await getDb()
+      const chapter = await db.get(STORES.chapters, chapterId)
+      if (!chapter) throw new Error(`Chapter ${chapterId} not found`)
+      if (chapter.active_version_id) {
+        const version = await db.get(STORES.chapter_versions, chapter.active_version_id)
+        if (version) {
+          await db.put(STORES.chapter_versions, { ...version, body, updated_at: nowIso() })
+        }
+      }
+      const updated = { ...chapter, body, updated_at: nowIso() }
+      await db.put(STORES.chapters, updated)
+      return updated
     },
 
     // ---- Characters -----------------------------------------------------

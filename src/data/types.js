@@ -55,7 +55,23 @@ export function makeChapter({ project_id, book, number, title }) {
     status: 'entwurf',
     pov: '',
     summary: '',
-    body: '',
+    body: '', // MIRROR of the active version's body (source of truth: chapter_versions)
+    active_version_id: null,
+    updated_at: nowIso(),
+  }
+}
+
+// chapter_versions — id, project_id, chapter_id, version_number, label, body.
+// Versions hold ONLY the prose; all chapter metadata stays on the chapter row.
+export function makeChapterVersion({ project_id, chapter_id, version_number, label, body }) {
+  return {
+    id: newId(),
+    project_id,
+    chapter_id,
+    version_number: version_number ?? 1,
+    label: label ?? `Version ${version_number ?? 1}`,
+    body: body ?? '',
+    created_at: nowIso(),
     updated_at: nowIso(),
   }
 }
