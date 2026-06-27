@@ -40,6 +40,21 @@ export const BANDS = [
 ]
 export const BAND_INDEX = Object.fromEntries(BANDS.map((b, i) => [b.key, i]))
 
+// ---- manual terrain-type paints (override the height band) -----------------
+// Stored per cell as a small int id in the terrain_types byte layer; 0 = none
+// (cell keeps its height-band auto-colour). These are deliberately distinct
+// tones so painted features read against any natural band:
+//   Forest    — dark green, clearly darker than the grass band.
+//   Structure — a cool constructed grey for bridges / walls / buildings;
+//               paintable on ANY cell (incl. water) so a bridge reads across it.
+export const TYPE_NONE = 0
+export const TERRAIN_TYPES = [
+  { id: 1, key: 'forest', label: 'Wald', color: '#15401f' },
+  { id: 2, key: 'structure', label: 'Struktur', color: '#8a8d94' },
+]
+const TYPE_BY_ID = new Map(TERRAIN_TYPES.map((t) => [t.id, t]))
+export const STRUCTURE_TYPE_ID = TERRAIN_TYPES.find((t) => t.key === 'structure').id
+
 // Map a cell height + sea level to a band key. Above-water range is split into
 // sand (just above shore), grass, rock, then snow near the top.
 export function bandForHeight(height, seaLevel, maxHeight = MAX_HEIGHT) {
@@ -54,11 +69,13 @@ export function bandForHeight(height, seaLevel, maxHeight = MAX_HEIGHT) {
   return 'snow'
 }
 
-// Resolve a cell's colour. An optional terrain-type override (>0) wins over the
-// auto band — this is the clean seam for a future manual paint tool; with no
-// type data every cell falls through to height-band auto-colouring.
+// Resolve a cell's colour. A manual terrain-type paint (typeId > 0) overrides
+// the height band; cells with no paint (typeId 0) fall through to height-band
+// auto-colouring. Structure/forest tones are independent of height, so a
+// structure painted on a water cell still renders as structure (e.g. a bridge).
 export function colorForCell(height, seaLevel, maxHeight, typeId = 0) {
-  if (typeId > 0 && BANDS[typeId - 1]) return BANDS[typeId - 1].color
+  const t = typeId ? TYPE_BY_ID.get(typeId) : null
+  if (t) return t.color
   return BANDS[BAND_INDEX[bandForHeight(height, seaLevel, maxHeight)]].color
 }
 

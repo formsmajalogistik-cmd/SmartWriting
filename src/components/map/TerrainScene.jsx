@@ -7,6 +7,7 @@ import {
   worldToCell,
   inBounds,
   colorForCell,
+  STRUCTURE_TYPE_ID,
 } from '../../lib/terrain/model.js'
 
 // The 3D terrain: one InstancedMesh of stepped box columns (a single draw call)
@@ -25,7 +26,6 @@ function Cells({
   paintCell,
   endStroke,
   structRev,
-  colorRev,
 }) {
   const meshRef = useRef(null)
   const painting = useRef(false)
@@ -47,8 +47,13 @@ function Cells({
       const x = i % widthN
       const y = Math.floor(i / widthN)
       const { x: px, z: pz } = cellToWorld(x, y, widthN, heightN, cellSize)
-      const colH = h * step + baseDepth
-      dummy.position.set(px, (h * step - baseDepth) / 2, pz)
+      // Structure painted on/under water rises to just above the waterline, so a
+      // flat bridge across water reads on the surface instead of being hidden by
+      // the translucent sea plane. Stored height is unchanged — visual only.
+      let topY = h * step
+      if (type === STRUCTURE_TYPE_ID && h <= seaLevel) topY = seaLevel * step + 0.1
+      const colH = topY + baseDepth
+      dummy.position.set(px, (topY - baseDepth) / 2, pz)
       dummy.scale.set(cellSize, colH, cellSize)
       dummy.updateMatrix()
       mesh.setMatrixAt(i, dummy.matrix)
@@ -66,25 +71,14 @@ function Cells({
     invalidate()
   }, [invalidate])
 
-  // Full rebuild: initial mount, terrain (re)load, undo/redo.
+  // Full rebuild (matrices + colours): initial mount, terrain (re)load,
+  // undo/redo, and sea-level changes. writeInstance closes over seaLevel, so a
+  // sea-level change recreates it and re-runs this effect — repositioning
+  // structure-on-water cells and recolouring every band in one pass.
   useEffect(() => {
     for (let i = 0; i < count; i++) writeInstance(i)
     flush()
   }, [structRev, count, writeInstance, flush])
-
-  // Sea-level changes don't move cells, only recolour them (and the waterline).
-  useEffect(() => {
-    const mesh = meshRef.current
-    if (!mesh) return
-    for (let i = 0; i < count; i++) {
-      const h = heightsRef.current[i]
-      const type = typesRef.current ? typesRef.current[i] : 0
-      tmpColor.set(colorForCell(h, seaLevel, maxHeight, type))
-      mesh.setColorAt(i, tmpColor)
-    }
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
-    invalidate()
-  }, [colorRev, seaLevel, count, maxHeight, heightsRef, typesRef, tmpColor, invalidate])
 
   // End the stroke even if the pointer is released off the mesh / off-canvas.
   useEffect(() => {
