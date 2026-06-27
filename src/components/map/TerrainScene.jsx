@@ -191,7 +191,12 @@ function Cells({
   return (
     <instancedMesh ref={meshRef} args={[undefined, undefined, count]} frustumCulled={false}>
       <boxGeometry args={[1, 1, 1]} />
-      <meshLambertMaterial vertexColors flatShading />
+      {/* NO `vertexColors`: per-instance colour comes from InstancedMesh's
+          instanceColor (USE_INSTANCING_COLOR), applied automatically. Setting
+          vertexColors would define USE_COLOR and multiply by the geometry's
+          (absent) per-vertex `color` attribute — i.e. by 0 — turning every cell
+          black. */}
+      <meshLambertMaterial flatShading />
     </instancedMesh>
   )
 }
@@ -226,9 +231,10 @@ function WaterPlane({ widthN, heightN, settings, seaLevel }) {
 function DebugHook() {
   const camera = useThree((s) => s.camera)
   const gl = useThree((s) => s.gl)
+  const scene = useThree((s) => s.scene)
   const controls = useThree((s) => s.controls)
   useEffect(() => {
-    window.__luminiMap = { camera, gl, controls }
+    window.__luminiMap = { camera, gl, scene, controls }
     return () => {
       if (window.__luminiMap && window.__luminiMap.camera === camera) delete window.__luminiMap
     }
