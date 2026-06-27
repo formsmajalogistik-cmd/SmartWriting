@@ -10,7 +10,12 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons/icon-192.png', 'icons/icon-512.png'],
+      includeAssets: [
+        'favicon-32.png',
+        'apple-touch-icon.png',
+        'icons/icon-192.png',
+        'icons/icon-512.png',
+      ],
       manifest: {
         name: 'Lumini Writing — Schreiben & Worldbuilding',
         short_name: 'Lumini',
@@ -39,8 +44,9 @@ export default defineConfig({
         // The heavy PDF library + fonts (pdfmake / vfs_fonts) are loaded on
         // demand — only when the user triggers a PDF export. Keep them OUT of
         // the startup precache, then cache-on-first-use so offline PDF still
-        // works after one online export.
-        globIgnores: ['**/pdfmake.min-*.js', '**/vfs_fonts-*.js'],
+        // works after one online export. NewFavIcon.png is the 2048px icon
+        // source (consumed into the icons below) — never precache it.
+        globIgnores: ['**/pdfmake.min-*.js', '**/vfs_fonts-*.js', '**/NewFavIcon.png'],
         runtimeCaching: [
           {
             urlPattern: /\/assets\/(pdfmake\.min|vfs_fonts)-[^/]*\.js$/,

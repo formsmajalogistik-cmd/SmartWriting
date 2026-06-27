@@ -1,116 +1,101 @@
-// Generates the PWA PNG icons with no external dependencies.
-// Draws a solid indigo rounded background with a simple "L" glyph (Lumini) so
-// the installed app has recognizable icons. Output: public/icons/*.png
-// NOTE: placeholder mark — replace public/favicon.svg + this glyph (or drop real
-// PNGs into public/icons/) to use custom artwork, then re-run this script.
-import { deflateSync } from 'node:zlib'
-import { mkdirSync, writeFileSync } from 'node:fs'
+// Regenerate the favicon + PWA icons from the brand source `public/NewFavIcon.png`
+// (a large square PNG). Downscales with high-quality canvas resampling via a
+// headless Chromium, so the committed icons always derive from the real art.
+//
+// Requires Playwright + a Chromium build. Run:
+//   npm i -D playwright && npx playwright install chromium
+//   node scripts/gen-icons.mjs
+// (Or set PLAYWRIGHT_CHROMIUM to a chromium executable path.)
+//
+// Outputs:
+//   public/icons/icon-192.png, icon-512.png, icon-512-maskable.png
+//   public/favicon-32.png, public/apple-touch-icon.png
+import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const OUT = resolve(__dirname, '../public/icons')
-mkdirSync(OUT, { recursive: true })
+const PUBLIC = resolve(__dirname, '../public')
+const SOURCE = resolve(PUBLIC, 'NewFavIcon.png')
+const MASKABLE_BG = '#4f46e5' // theme color, only used if the source isn't full-bleed
 
-const BG = [79, 70, 229] // #4f46e5
-const FG = [255, 255, 255]
-
-function crc32(buf) {
-  let c = ~0
-  for (let i = 0; i < buf.length; i++) {
-    c ^= buf[i]
-    for (let k = 0; k < 8; k++) c = c & 1 ? (c >>> 1) ^ 0xedb88320 : c >>> 1
+let chromium
+try {
+  ;({ chromium } = await import('playwright'))
+} catch {
+  try {
+    ;({ chromium } = await import('playwright-core'))
+  } catch {
+    console.error(
+      'Playwright is required to regenerate icons.\n' +
+        '  npm i -D playwright && npx playwright install chromium\n' +
+        'then re-run: node scripts/gen-icons.mjs',
+    )
+    process.exit(1)
   }
-  return ~c >>> 0
 }
 
-function chunk(type, data) {
-  const len = Buffer.alloc(4)
-  len.writeUInt32BE(data.length, 0)
-  const typeBuf = Buffer.from(type, 'ascii')
-  const body = Buffer.concat([typeBuf, data])
-  const crc = Buffer.alloc(4)
-  crc.writeUInt32BE(crc32(body), 0)
-  return Buffer.concat([len, body, crc])
-}
+const b64 = readFileSync(SOURCE).toString('base64')
+const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM || undefined })
+const page = await browser.newPage()
+await page.setContent('<canvas id="c"></canvas>')
 
-function pointInGlyph(x, y, size, maskable) {
-  // Normalize to 0..1, draw a thick "L" within a centered safe area.
-  const pad = maskable ? 0.28 : 0.2
-  const nx = (x / size - pad) / (1 - 2 * pad)
-  const ny = (y / size - pad) / (1 - 2 * pad)
-  if (nx < 0 || nx > 1 || ny < 0 || ny > 1) return false
-  // Two strokes of an "L" using distance-to-segment.
-  const t = 0.15 // stroke half-thickness
-  const pts = [
-    [0.22, 0.0, 0.22, 1.0], // vertical stem
-    [0.22, 1.0, 0.84, 1.0], // bottom foot
-  ]
-  for (const [ax, ay, bx, by] of pts) {
-    const dx = bx - ax
-    const dy = by - ay
-    const len2 = dx * dx + dy * dy
-    let tt = ((nx - ax) * dx + (ny - ay) * dy) / len2
-    tt = Math.max(0, Math.min(1, tt))
-    const px = ax + tt * dx
-    const py = ay + tt * dy
-    const d = Math.hypot(nx - px, ny - py)
-    if (d < t) return true
-  }
-  return false
-}
+const out = await page.evaluate(
+  async ({ dataUrl, bg }) => {
+    const img = new Image()
+    await new Promise((res, rej) => {
+      img.onload = res
+      img.onerror = rej
+      img.src = dataUrl
+    })
+    const c = document.getElementById('c')
+    const ctx = c.getContext('2d')
+    // Detect a full-bleed (opaque-corner) source — then maskable can use it as-is.
+    c.width = img.width
+    c.height = img.height
+    ctx.drawImage(img, 0, 0)
+    const corners = [
+      [0, 0],
+      [img.width - 1, 0],
+      [0, img.height - 1],
+      [img.width - 1, img.height - 1],
+    ]
+    const fullBleed = corners.every(([x, y]) => ctx.getImageData(x, y, 1, 1).data[3] > 250)
 
-function makePng(size, maskable) {
-  const radius = maskable ? 0 : size * 0.19
-  const raw = Buffer.alloc(size * (size * 4 + 1))
-  let o = 0
-  for (let y = 0; y < size; y++) {
-    raw[o++] = 0 // filter: none
-    for (let x = 0; x < size; x++) {
-      // rounded corners (transparent outside radius) for non-maskable
-      let inside = true
-      if (!maskable && radius > 0) {
-        const cx = Math.min(x, size - 1 - x)
-        const cy = Math.min(y, size - 1 - y)
-        if (cx < radius && cy < radius) {
-          const d = Math.hypot(radius - cx, radius - cy)
-          inside = d <= radius
-        }
-      }
-      let r, g, b, a
-      if (!inside) {
-        r = g = b = a = 0
-      } else if (pointInGlyph(x, y, size, maskable)) {
-        ;[r, g, b] = FG
-        a = 255
+    function render(size, maskable) {
+      c.width = size
+      c.height = size
+      ctx.clearRect(0, 0, size, size)
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
+      if (maskable && !fullBleed) {
+        ctx.fillStyle = bg
+        ctx.fillRect(0, 0, size, size)
+        const s = Math.round(size * 0.8)
+        const off = Math.round((size - s) / 2)
+        ctx.drawImage(img, off, off, s, s)
       } else {
-        ;[r, g, b] = BG
-        a = 255
+        ctx.drawImage(img, 0, 0, size, size)
       }
-      raw[o++] = r
-      raw[o++] = g
-      raw[o++] = b
-      raw[o++] = a
+      return c.toDataURL('image/png')
     }
-  }
-  const ihdr = Buffer.alloc(13)
-  ihdr.writeUInt32BE(size, 0)
-  ihdr.writeUInt32BE(size, 4)
-  ihdr[8] = 8 // bit depth
-  ihdr[9] = 6 // color type RGBA
-  ihdr[10] = 0
-  ihdr[11] = 0
-  ihdr[12] = 0
-  const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
-  return Buffer.concat([
-    sig,
-    chunk('IHDR', ihdr),
-    chunk('IDAT', deflateSync(raw)),
-    chunk('IEND', Buffer.alloc(0)),
-  ])
-}
 
-writeFileSync(resolve(OUT, 'icon-192.png'), makePng(192, false))
-writeFileSync(resolve(OUT, 'icon-512.png'), makePng(512, false))
-writeFileSync(resolve(OUT, 'icon-512-maskable.png'), makePng(512, true))
-console.log('Generated PWA icons in', OUT)
+    return {
+      fullBleed,
+      files: {
+        'icons/icon-192.png': render(192, false),
+        'icons/icon-512.png': render(512, false),
+        'icons/icon-512-maskable.png': render(512, true),
+        'favicon-32.png': render(32, false),
+        'apple-touch-icon.png': render(180, false),
+      },
+    }
+  },
+  { dataUrl: 'data:image/png;base64,' + b64, bg: MASKABLE_BG },
+)
+
+for (const [rel, dataUrl] of Object.entries(out.files)) {
+  writeFileSync(resolve(PUBLIC, rel), Buffer.from(dataUrl.split(',')[1], 'base64'))
+}
+await browser.close()
+console.log(`Icons regenerated from ${SOURCE} (fullBleed=${out.fullBleed}).`)
