@@ -7,7 +7,6 @@ import {
   worldToCell,
   inBounds,
   colorForCell,
-  STRUCTURE_TYPE_ID,
 } from '../../lib/terrain/model.js'
 
 // The 3D terrain: one InstancedMesh of stepped box columns (a single draw call)
@@ -29,9 +28,13 @@ function Cells({
 }) {
   const meshRef = useRef(null)
   const painting = useRef(false)
-  const { invalidate } = useThree()
+  const { invalidate, camera, gl, raycaster } = useThree()
   const dummy = useMemo(() => new THREE.Object3D(), [])
   const tmpColor = useMemo(() => new THREE.Color(), [])
+  // Reused raycasting scratch objects for the edit pointer handler.
+  const ndc = useMemo(() => new THREE.Vector2(), [])
+  const editPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), [])
+  const hitPoint = useMemo(() => new THREE.Vector3(), [])
 
   const { step, cellSize, maxHeight } = settings
   const baseDepth = step * 2 // give even height-0 cells body + a clickable top
@@ -47,11 +50,13 @@ function Cells({
       const x = i % widthN
       const y = Math.floor(i / widthN)
       const { x: px, z: pz } = cellToWorld(x, y, widthN, heightN, cellSize)
-      // Structure painted on/under water rises to just above the waterline, so a
-      // flat bridge across water reads on the surface instead of being hidden by
-      // the translucent sea plane. Stored height is unchanged — visual only.
+      // Any painted override on a submerged cell rises to just above the
+      // waterline, so the paint is actually visible (a structure bridge, a
+      // coastal path, forest on the shore) instead of being hidden under the
+      // translucent sea plane. Stored height is unchanged — this is visual only;
+      // unpainted water cells (type 0) stay submerged and read as sea.
       let topY = h * step
-      if (type === STRUCTURE_TYPE_ID && h <= seaLevel) topY = seaLevel * step + 0.1
+      if (type > 0 && h <= seaLevel) topY = seaLevel * step + 0.1
       const colH = topY + baseDepth
       dummy.position.set(px, (topY - baseDepth) / 2, pz)
       dummy.scale.set(cellSize, colH, cellSize)
@@ -80,56 +85,111 @@ function Cells({
     flush()
   }, [structRev, count, writeInstance, flush])
 
-  // End the stroke even if the pointer is released off the mesh / off-canvas.
+  const applyChanged = useCallback(
+    (indices) => {
+      if (!indices || !indices.length) return
+      for (const i of indices) writeInstance(i)
+      flush()
+    },
+    [writeInstance, flush],
+  )
+
+  // Expose the mesh so e2e / debugging can read per-instance colours.
   useEffect(() => {
-    function up() {
-      if (painting.current) {
-        painting.current = false
-        endStroke()
-      }
-    }
-    window.addEventListener('pointerup', up)
-    window.addEventListener('pointercancel', up)
+    window.__terrainMesh = meshRef.current
     return () => {
-      window.removeEventListener('pointerup', up)
-      window.removeEventListener('pointercancel', up)
+      if (window.__terrainMesh === meshRef.current) delete window.__terrainMesh
     }
-  }, [endStroke])
+  }, [count])
 
-  function pick(e) {
-    const c = worldToCell(e.point.x, e.point.z, widthN, heightN, cellSize)
-    return inBounds(c.x, c.y, widthN, heightN) ? c : null
-  }
+  // Latest mode + edit callbacks, read by the (stable) DOM pointer handlers so
+  // the listeners attach once and never go stale.
+  const live = useRef(null)
+  live.current = { mode, beginStroke, paintCell, endStroke, applyChanged }
 
-  function applyChanged(indices) {
-    if (!indices || !indices.length) return
-    for (const i of indices) writeInstance(i)
-    flush()
-  }
+  // --- editing input -------------------------------------------------------
+  // We drive editing from RAW pointer events on the canvas (not R3F's
+  // per-object hover raycast), with pointer capture for the whole drag:
+  //   • A single click edits exactly one cell.
+  //   • A drag edits EVERY cell it crosses — capture means no dropped moves on
+  //     fast drags, and raycasting a FIXED horizontal plane (set at the start
+  //     cell's height) means a freshly raised ridge can't occlude the cells
+  //     ahead of the cursor (the old per-instance raycast stopped after a
+  //     couple of cells once a tall column blocked the ray).
+  //   • Only active in Edit mode; OrbitControls is disabled there, so camera
+  //     and editing never fight over the same drag.
+  useEffect(() => {
+    const el = gl.domElement
 
-  function onPointerDown(e) {
-    if (mode !== 'edit') return // navigate mode → let OrbitControls have the drag
-    e.stopPropagation()
-    painting.current = true
-    beginStroke()
-    const c = pick(e)
-    if (c) applyChanged(paintCell(c.x, c.y))
-  }
+    const aim = (e) => {
+      const rect = el.getBoundingClientRect()
+      ndc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
+      ndc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1
+      raycaster.setFromCamera(ndc, camera)
+    }
+    const cellOnPlane = () => {
+      if (!raycaster.ray.intersectPlane(editPlane, hitPoint)) return null
+      const c = worldToCell(hitPoint.x, hitPoint.z, widthN, heightN, cellSize)
+      return inBounds(c.x, c.y, widthN, heightN) ? c : null
+    }
+    const cellOnMesh = () => {
+      const mesh = meshRef.current
+      if (!mesh) return null
+      const hits = raycaster.intersectObject(mesh, false)
+      if (!hits.length) return null
+      const c = worldToCell(hits[0].point.x, hits[0].point.z, widthN, heightN, cellSize)
+      return inBounds(c.x, c.y, widthN, heightN) ? c : null
+    }
 
-  function onPointerMove(e) {
-    if (mode !== 'edit' || !painting.current) return
-    const c = pick(e)
-    if (c) applyChanged(paintCell(c.x, c.y))
-  }
+    const onDown = (e) => {
+      if (live.current.mode !== 'edit' || e.button !== 0) return
+      e.preventDefault()
+      try {
+        el.setPointerCapture(e.pointerId)
+      } catch {
+        /* capture is best-effort */
+      }
+      painting.current = true
+      aim(e)
+      // Accurate first pick on the real surface, then pin the edit plane at that
+      // cell's height for the rest of the stroke (occlusion-free, no drift).
+      const start = cellOnMesh()
+      const h0 = start ? heightsRef.current[start.y * widthN + start.x] : 0
+      editPlane.constant = -(h0 * step)
+      live.current.beginStroke()
+      if (start) live.current.applyChanged(live.current.paintCell(start.x, start.y))
+    }
+    const onMove = (e) => {
+      if (!painting.current) return
+      aim(e)
+      const c = cellOnPlane()
+      if (c) live.current.applyChanged(live.current.paintCell(c.x, c.y))
+    }
+    const onUp = (e) => {
+      if (!painting.current) return
+      painting.current = false
+      try {
+        el.releasePointerCapture(e.pointerId)
+      } catch {
+        /* ignore */
+      }
+      live.current.endStroke()
+    }
+
+    el.addEventListener('pointerdown', onDown)
+    el.addEventListener('pointermove', onMove)
+    el.addEventListener('pointerup', onUp)
+    el.addEventListener('pointercancel', onUp)
+    return () => {
+      el.removeEventListener('pointerdown', onDown)
+      el.removeEventListener('pointermove', onMove)
+      el.removeEventListener('pointerup', onUp)
+      el.removeEventListener('pointercancel', onUp)
+    }
+  }, [gl, camera, raycaster, widthN, heightN, cellSize, step, ndc, editPlane, hitPoint, heightsRef])
 
   return (
-    <instancedMesh
-      ref={meshRef}
-      args={[undefined, undefined, count]}
-      frustumCulled={false}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-    >
+    <instancedMesh ref={meshRef} args={[undefined, undefined, count]} frustumCulled={false}>
       <boxGeometry args={[1, 1, 1]} />
       <meshLambertMaterial vertexColors flatShading />
     </instancedMesh>
