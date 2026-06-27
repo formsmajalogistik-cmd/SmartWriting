@@ -6,6 +6,7 @@ import {
   makeProject,
   makeChapter,
   makeChapterVersion,
+  makeTerrain,
   makeCharacter,
   makePlace,
   makeCharacterLocation,
@@ -49,6 +50,7 @@ export function createLocalRepository() {
       for (const store of [
         STORES.chapters,
         STORES.chapter_versions,
+        STORES.terrains,
         STORES.characters,
         STORES.places,
         STORES.character_locations,
@@ -243,6 +245,37 @@ export function createLocalRepository() {
       }
       const updated = { ...chapter, body, updated_at: nowIso() }
       await db.put(STORES.chapters, updated)
+      return updated
+    },
+
+    // ---- Terrain (per project; one row, upsert by project_id) -----------
+    async getTerrain(projectId) {
+      const db = await getDb()
+      const rows = await db.getAllFromIndex(STORES.terrains, 'project_id', projectId)
+      return rows[0] || null
+    },
+
+    async createTerrain(projectId, opts) {
+      const db = await getDb()
+      const existing = await db.getAllFromIndex(STORES.terrains, 'project_id', projectId)
+      if (existing[0]) return existing[0] // one terrain per project
+      const terrain = makeTerrain({ project_id: projectId, ...opts })
+      await db.put(STORES.terrains, terrain)
+      return terrain
+    },
+
+    async saveTerrain(projectId, patch) {
+      const db = await getDb()
+      const rows = await db.getAllFromIndex(STORES.terrains, 'project_id', projectId)
+      const existing = rows[0]
+      if (!existing) {
+        // Upsert: create if missing so a save never silently no-ops.
+        const terrain = makeTerrain({ project_id: projectId, ...patch })
+        await db.put(STORES.terrains, terrain)
+        return terrain
+      }
+      const updated = { ...existing, ...patch, updated_at: nowIso() }
+      await db.put(STORES.terrains, updated)
       return updated
     },
 

@@ -273,6 +273,21 @@ export function StoreProvider({ children }) {
     return updated
   }, [])
 
+  // --- terrain actions (Phase 3, Stage A) -----------------------------
+  // Loaded on demand (only when the map view opens) — the heights blob can be
+  // tens of KB, so it is NOT pulled on every project switch. Reads/writes go
+  // through the guarded repo, so errors surface in the banner and saves flip
+  // the "speichert …" indicator.
+  const loadTerrain = useCallback((pid) => repo.getTerrain(pid ?? activeProjectId), [activeProjectId])
+  const createTerrain = useCallback(
+    (opts) => repo.createTerrain(activeProjectId, opts),
+    [activeProjectId],
+  )
+  const saveTerrain = useCallback(
+    (patch) => repo.saveTerrain(activeProjectId, patch),
+    [activeProjectId],
+  )
+
   // --- character / place actions --------------------------------------
   const createCharacter = useCallback(
     async (name) => {
@@ -494,6 +509,9 @@ export function StoreProvider({ children }) {
     renameVersion,
     deleteVersion,
     setActiveVersion,
+    loadTerrain,
+    createTerrain,
+    saveTerrain,
     createCharacter,
     updateCharacter,
     deleteCharacter,

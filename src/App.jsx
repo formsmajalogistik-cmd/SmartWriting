@@ -13,6 +13,7 @@ import NamesView from './components/NamesView.jsx'
 import ProfileView from './components/ProfileView.jsx'
 import ExportView from './components/ExportView.jsx'
 import CompileView from './components/CompileView.jsx'
+import MapView from './components/MapView.jsx'
 
 const VIEWS = [
   { key: 'write', label: 'Schreiben' },
@@ -20,6 +21,7 @@ const VIEWS = [
   { key: 'characters', label: 'Figuren' },
   { key: 'places', label: 'Orte' },
   { key: 'events', label: 'Ereignisse' },
+  { key: 'map', label: 'Karte' },
   { key: 'names', label: 'Namen' },
   { key: 'export', label: 'Export' },
 ]
@@ -56,6 +58,7 @@ export default function App() {
     if (view === 'characters') return <main className="content"><CharactersView /></main>
     if (view === 'places') return <main className="content"><PlacesView /></main>
     if (view === 'events') return <main className="content"><EventsView /></main>
+    if (view === 'map') return <main className="content map-content"><MapView /></main>
     if (view === 'names') return <main className="content"><NamesView /></main>
     if (view === 'export') return <main className="content"><ExportView /></main>
     return (

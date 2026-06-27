@@ -41,18 +41,33 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
         navigateFallback: '/index.html',
-        // The heavy PDF library + fonts (pdfmake / vfs_fonts) are loaded on
-        // demand — only when the user triggers a PDF export. Keep them OUT of
-        // the startup precache, then cache-on-first-use so offline PDF still
-        // works after one online export. NewFavIcon.png is the 2048px icon
-        // source (consumed into the icons below) — never precache it.
-        globIgnores: ['**/pdfmake.min-*.js', '**/vfs_fonts-*.js', '**/NewFavIcon.png'],
+        // The heavy PDF library + fonts (pdfmake / vfs_fonts) and the 3D map
+        // builder (three.js / react-three-fiber, in the MapBuilder chunk) are
+        // loaded on demand — only when the user triggers a PDF export or opens
+        // the map. Keep them OUT of the startup precache, then cache-on-first-
+        // use so offline still works after one online use. NewFavIcon.png is the
+        // 2048px icon source (consumed into the icons below) — never precache it.
+        globIgnores: [
+          '**/pdfmake.min-*.js',
+          '**/vfs_fonts-*.js',
+          '**/MapBuilder-*.js',
+          '**/NewFavIcon.png',
+        ],
         runtimeCaching: [
           {
             urlPattern: /\/assets\/(pdfmake\.min|vfs_fonts)-[^/]*\.js$/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'pdf-lib',
+              expiration: { maxEntries: 4 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /\/assets\/MapBuilder-[^/]*\.js$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'map-3d',
               expiration: { maxEntries: 4 },
               cacheableResponse: { statuses: [0, 200] },
             },

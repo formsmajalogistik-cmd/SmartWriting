@@ -4,7 +4,7 @@
 import { openDB } from 'idb'
 
 const DB_NAME = 'smartwriting'
-const DB_VERSION = 5
+const DB_VERSION = 6
 
 export const STORES = {
   projects: 'projects',
@@ -15,6 +15,8 @@ export const STORES = {
   events: 'events',
   // Per-version chapter prose (the chapter row mirrors its active version's body).
   chapter_versions: 'chapter_versions',
+  // Per-project 3D terrain (Phase 3, Stage A). One row per project.
+  terrains: 'terrains',
   // Local-backend image blobs (the Supabase backend uses Storage instead).
   portraits: 'portraits',
   // Local-backend Drive linkage (the Supabase backend uses the drive_backup table).
@@ -63,6 +65,10 @@ export function getDb() {
           const s = db.createObjectStore(STORES.chapter_versions, { keyPath: 'id' })
           s.createIndex('project_id', 'project_id')
           s.createIndex('chapter_id', 'chapter_id')
+        }
+        if (!db.objectStoreNames.contains(STORES.terrains)) {
+          const s = db.createObjectStore(STORES.terrains, { keyPath: 'id' })
+          s.createIndex('project_id', 'project_id')
         }
         // Backfill (lose no text): every existing chapter gets a "Version 1"
         // copying its current body, set as the active version.

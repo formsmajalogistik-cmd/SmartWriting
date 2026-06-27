@@ -260,6 +260,48 @@ export function createSupabaseRepository() {
       )
     },
 
+    // ---- Terrain (per project; one row, upsert by project_id) -----------
+    async getTerrain(projectId) {
+      const { data, error } = await supabase
+        .from('terrains')
+        .select('*')
+        .eq('project_id', projectId)
+        .maybeSingle()
+      if (error) throw new Error(error.message || 'Terrain konnte nicht geladen werden.')
+      return data || null
+    },
+
+    async createTerrain(projectId, opts) {
+      const user_id = await currentUserId()
+      // ON CONFLICT (project_id) keeps it to one terrain per project even if two
+      // tabs race the first create; ignoreDuplicates returns the existing row.
+      const { data, error } = await supabase
+        .from('terrains')
+        .upsert({ user_id, project_id: projectId, ...opts }, {
+          onConflict: 'project_id',
+          ignoreDuplicates: true,
+        })
+        .select()
+        .maybeSingle()
+      if (error) throw new Error(error.message || 'Terrain konnte nicht erstellt werden.')
+      if (data) return data
+      // A duplicate was ignored — fetch the existing row.
+      return unwrap(
+        await supabase.from('terrains').select('*').eq('project_id', projectId).single(),
+      )
+    },
+
+    async saveTerrain(projectId, patch) {
+      const user_id = await currentUserId()
+      const { data, error } = await supabase
+        .from('terrains')
+        .upsert({ user_id, project_id: projectId, ...patch }, { onConflict: 'project_id' })
+        .select()
+        .single()
+      if (error) throw new Error(error.message || 'Terrain konnte nicht gespeichert werden.')
+      return data
+    },
+
     // ---- Characters -----------------------------------------------------
     async listCharacters(projectId) {
       return unwrap(

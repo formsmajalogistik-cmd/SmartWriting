@@ -32,6 +32,12 @@
 //     setActiveVersion(chapterId, versionId) -> Chapter (mirrors body)
 //     saveActiveVersionBody(chapterId, body) -> Chapter (writes active version + mirror)
 //
+//   Terrain (per project; one row, upsert by project_id — Phase 3 Stage A)
+//     getTerrain(projectId)                -> Terrain | null
+//     createTerrain(projectId, { width, height, sea_level, heights, settings })
+//                                          -> Terrain (one per project)
+//     saveTerrain(projectId, patch)        -> Terrain (upsert/merge, user-scoped)
+//
 //   Characters
 //     listCharacters(projectId)            -> Character[]
 //     createCharacter(projectId, { name }) -> Character

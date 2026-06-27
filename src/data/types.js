@@ -76,6 +76,28 @@ export function makeChapterVersion({ project_id, chapter_id, version_number, lab
   }
 }
 
+// terrains — id, project_id, user_id, width, height, sea_level, heights
+//            (base64 Uint8Array of per-cell height steps), terrain_types
+//            (base64 Uint8Array of colour overrides, or null), settings, updated_at.
+// One terrain per project (Phase 3, Stage A). Only the PROSE… no — only the
+// per-cell heights are versioned data here; markers/timeline/routes (later
+// stages) read places/character_locations and sit on top of this grid.
+export function makeTerrain({ project_id, width, height, sea_level, heights, terrain_types, settings }) {
+  return {
+    id: newId(),
+    user_id: LOCAL_USER_ID,
+    project_id,
+    width,
+    height,
+    sea_level: sea_level ?? 2,
+    heights: heights ?? '',
+    terrain_types: terrain_types ?? null,
+    settings: settings ?? {},
+    created_at: nowIso(),
+    updated_at: nowIso(),
+  }
+}
+
 // characters — id, project_id, name, name_final, role, origin,
 //              language_name, status, card, updated_at
 export function makeCharacter({ project_id, name }) {

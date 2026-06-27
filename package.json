@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
     "@supabase/supabase-js": "^2.45.4",
     "fflate": "^0.8.3",
     "html-to-pdfmake": "^2.5.33",
@@ -18,7 +20,8 @@
     "marked": "^12.0.2",
     "pdfmake": "^0.2.23",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "three": "^0.169.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
