@@ -87,7 +87,7 @@ export default function App() {
             <Menu size={18} />
           </button>
         )}
-        <span className="brand">SmartWriting</span>
+        <span className="brand">Lumini Writing</span>
         {activeProject && view !== 'profile' && (
           <nav className="view-nav">
             {VIEWS.map((v) => (

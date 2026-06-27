@@ -17,8 +17,9 @@ export function portraitFileName(c) {
 
 export function buildWorldJson(snapshot, exportedAt = new Date().toISOString()) {
   return {
+    // `schema` is an internal, versioned identifier for rebuild tooling — keep stable.
     schema: 'smartwriting/project-export@1',
-    app: 'SmartWriting',
+    app: 'Lumini Writing',
     exported_at: exportedAt,
     note:
       'Vollständiger Projekt-Snapshot zur Wiederherstellung. Die .md-Dateien sind die lesbare Spiegelung; diese JSON ist die maßgebliche Quelle.',

@@ -15,7 +15,7 @@ import {
 } from './markdown.js'
 import { buildWorldJson, portraitFileName } from './worldJson.js'
 
-const README = (projectName) => `SmartWriting — Export: ${projectName}
+const README = (projectName) => `Lumini Writing — Export: ${projectName}
 
 Dieses Bundle enthält ZWEI Dinge:
 

@@ -1,9 +1,9 @@
 {
-  "name": "smartwriting",
+  "name": "lumini-writing",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Multi-project writing & worldbuilding PWA — Phase 1 skeleton (local-first)",
+  "description": "Multi-project writing & worldbuilding PWA (local-first).",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

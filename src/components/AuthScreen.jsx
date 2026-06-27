@@ -32,7 +32,7 @@ export default function AuthScreen() {
   return (
     <div className="auth-screen">
       <div className="auth-card">
-        <div className="auth-brand">SmartWriting</div>
+        <div className="auth-brand">Lumini Writing</div>
         <h1>{mode === 'signin' ? 'Anmelden' : 'Konto erstellen'}</h1>
 
         {!isSupabaseConfigured && (

@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/icon-192.png', 'icons/icon-512.png'],
       manifest: {
-        name: 'SmartWriting — Schreiben & Worldbuilding',
-        short_name: 'SmartWriting',
+        name: 'Lumini Writing — Schreiben & Worldbuilding',
+        short_name: 'Lumini',
         description:
           'Multi-project writing & worldbuilding PWA. Write chapters, track characters and places — local-first.',
         theme_color: '#4f46e5',

@@ -1,6 +1,8 @@
 // Generates the PWA PNG icons with no external dependencies.
-// Draws a solid indigo rounded background with a simple "W" glyph so the
-// installed app has recognizable icons. Output: public/icons/*.png
+// Draws a solid indigo rounded background with a simple "L" glyph (Lumini) so
+// the installed app has recognizable icons. Output: public/icons/*.png
+// NOTE: placeholder mark — replace public/favicon.svg + this glyph (or drop real
+// PNGs into public/icons/) to use custom artwork, then re-run this script.
 import { deflateSync } from 'node:zlib'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
@@ -32,19 +34,17 @@ function chunk(type, data) {
   return Buffer.concat([len, body, crc])
 }
 
-function pointInW(x, y, size, maskable) {
-  // Normalize to 0..1, draw a thick "W" within a centered safe area.
+function pointInGlyph(x, y, size, maskable) {
+  // Normalize to 0..1, draw a thick "L" within a centered safe area.
   const pad = maskable ? 0.28 : 0.2
   const nx = (x / size - pad) / (1 - 2 * pad)
   const ny = (y / size - pad) / (1 - 2 * pad)
   if (nx < 0 || nx > 1 || ny < 0 || ny > 1) return false
-  // Four diagonal strokes of a W using distance-to-segment.
-  const t = 0.16 // stroke half-thickness
+  // Two strokes of an "L" using distance-to-segment.
+  const t = 0.15 // stroke half-thickness
   const pts = [
-    [0.0, 0.0, 0.25, 1.0],
-    [0.25, 1.0, 0.5, 0.35],
-    [0.5, 0.35, 0.75, 1.0],
-    [0.75, 1.0, 1.0, 0.0],
+    [0.22, 0.0, 0.22, 1.0], // vertical stem
+    [0.22, 1.0, 0.84, 1.0], // bottom foot
   ]
   for (const [ax, ay, bx, by] of pts) {
     const dx = bx - ax
@@ -80,7 +80,7 @@ function makePng(size, maskable) {
       let r, g, b, a
       if (!inside) {
         r = g = b = a = 0
-      } else if (pointInW(x, y, size, maskable)) {
+      } else if (pointInGlyph(x, y, size, maskable)) {
         ;[r, g, b] = FG
         a = 255
       } else {

@@ -1,4 +1,4 @@
-# SmartWriting
+# Lumini Writing
 
 A multi-project writing & worldbuilding **PWA**. You sign in, create and switch
 between projects, organize Books → Chapters, write in a distraction-light
