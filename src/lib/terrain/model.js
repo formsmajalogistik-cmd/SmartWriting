@@ -41,19 +41,26 @@ export const BANDS = [
 export const BAND_INDEX = Object.fromEntries(BANDS.map((b, i) => [b.key, i]))
 
 // ---- manual terrain-type paints (override the height band) -----------------
-// Stored per cell as a small int id in the terrain_types byte layer; 0 = none
-// (cell keeps its height-band auto-colour). These are deliberately distinct
-// tones so painted features read against any natural band:
-//   Forest    — dark green, clearly darker than the grass band.
-//   Structure — a cool constructed grey for bridges / walls / buildings;
-//               paintable on ANY cell (incl. water) so a bridge reads across it.
+// EVERY legend colour is paintable as a per-cell override, stored as a small int
+// id in the terrain_types byte layer; 0 = none (the cell keeps its height-band
+// auto-colour). Painting is colour-only — it never changes a cell's elevation.
+//
+// Feature paints (forest, structure) have no auto-colour equivalent and keep
+// their original ids 1 & 2 so terrains painted before the full palette existed
+// still render correctly. The six height bands are also paintable as overrides,
+// reusing the band colours at ids 3..8.
 export const TYPE_NONE = 0
-export const TERRAIN_TYPES = [
+const FEATURE_PAINTS = [
   { id: 1, key: 'forest', label: 'Wald', color: '#15401f' },
   { id: 2, key: 'structure', label: 'Struktur', color: '#8a8d94' },
 ]
-const TYPE_BY_ID = new Map(TERRAIN_TYPES.map((t) => [t.id, t]))
-export const STRUCTURE_TYPE_ID = TERRAIN_TYPES.find((t) => t.key === 'structure').id
+// Palette order = legend order: the six natural bands, then the feature paints.
+export const PAINT_TYPES = [
+  ...BANDS.map((b, i) => ({ id: 3 + i, key: b.key, label: b.label, color: b.color })),
+  ...FEATURE_PAINTS,
+]
+const TYPE_BY_ID = new Map(PAINT_TYPES.map((t) => [t.id, t]))
+export const STRUCTURE_TYPE_ID = FEATURE_PAINTS.find((t) => t.key === 'structure').id
 
 // Map a cell height + sea level to a band key. Above-water range is split into
 // sand (just above shore), grass, rock, then snow near the top.

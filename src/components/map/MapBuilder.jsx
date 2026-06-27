@@ -12,16 +12,13 @@ import {
   Waves,
   Check,
   AlertTriangle,
-  Trees,
-  Building2,
   Eraser,
 } from 'lucide-react'
 import { useStore } from '../../state/store.jsx'
 import TerrainScene from './TerrainScene.jsx'
 import {
   DEFAULT_SETTINGS,
-  BANDS,
-  TERRAIN_TYPES,
+  PAINT_TYPES,
   cellsInBrush,
   clampHeight,
   decodeHeights,
@@ -31,9 +28,10 @@ import {
 const AUTOSAVE_MS = 1000
 
 // Paint tools write the per-cell terrain-type layer (override colour) instead
-// of the height layer. Value = the type id painted (0 = erase back to auto).
-const TYPE_TOOLS = { forest: 1, structure: 2, erase: 0 }
-const isTypeTool = (tool) => Object.prototype.hasOwnProperty.call(TYPE_TOOLS, tool)
+// of the height layer. Tool key -> painted type id; 'erase' -> 0 (back to the
+// height-based auto-colour). Every legend colour is paintable.
+const PAINT_VALUE = { erase: 0, ...Object.fromEntries(PAINT_TYPES.map((t) => [t.key, t.id])) }
+const isTypeTool = (tool) => Object.prototype.hasOwnProperty.call(PAINT_VALUE, tool)
 
 // The terrain sculptor. Owns the mutable heights buffer, the undo/redo history,
 // and autosave. The 3D scene is purely presentational + input; all edit logic
@@ -144,10 +142,11 @@ export default function MapBuilder({ terrain }) {
       const cells = cellsInBrush(cx, cy, brushRef.current, widthN, heightN)
       const changed = []
       if (stroke.layer === 'type') {
-        // Paint a terrain-type override. No height/sea checks → Structure (and
-        // Forest) can be painted on ANY cell, including water, for bridges.
+        // Paint a terrain-type override (colour only, never elevation). No
+        // height/sea checks → any type can be painted on ANY cell, including
+        // water (e.g. Structure across water for a bridge).
         const types = ensureTypes()
-        const value = TYPE_TOOLS[tool] // forest=1, structure=2, erase=0
+        const value = PAINT_VALUE[tool] // type id, or 0 for the eraser
         for (const i of cells) {
           if (stroke.map.has(i)) continue
           const before = types[i]
@@ -227,6 +226,13 @@ export default function MapBuilder({ terrain }) {
     // cells, whose waterline lift depends on the sea level.
     setStructRev((r) => r + 1)
     markDirty()
+  }
+
+  // Pick a paint colour from the palette (or the eraser). Selecting a paint is
+  // an intent to paint, so it switches into Edit mode in one click.
+  function selectPaint(toolKey) {
+    setTool(toolKey)
+    setMode('edit')
   }
 
   // Keyboard: undo / redo while sculpting.
@@ -312,33 +318,7 @@ export default function MapBuilder({ terrain }) {
           </button>
         </div>
 
-        {/* Manual terrain-type paints: override the height-based auto-colour. */}
-        <div className={`tool-group ${mode === 'edit' ? '' : 'disabled'}`}>
-          <button
-            className={`tool-btn ${tool === 'forest' ? 'on' : ''}`}
-            onClick={() => setTool('forest')}
-            disabled={mode !== 'edit'}
-            title="Wald malen"
-          >
-            <Trees size={15} /> Wald
-          </button>
-          <button
-            className={`tool-btn ${tool === 'structure' ? 'on' : ''}`}
-            onClick={() => setTool('structure')}
-            disabled={mode !== 'edit'}
-            title="Struktur malen (auch auf Wasser, z. B. Brücken)"
-          >
-            <Building2 size={15} /> Struktur
-          </button>
-          <button
-            className={`tool-btn ${tool === 'erase' ? 'on' : ''}`}
-            onClick={() => setTool('erase')}
-            disabled={mode !== 'edit'}
-            title="Bemalung entfernen (zurück zur Höhenfarbe)"
-          >
-            <Eraser size={15} /> Radierer
-          </button>
-        </div>
+        {/* Terrain-type paints live in the colour palette (canvas overlay). */}
 
         <label className="ctrl" title="Pinselgröße">
           <span>Pinsel</span>
@@ -408,8 +388,8 @@ export default function MapBuilder({ terrain }) {
       <div className="map-canvas-wrap">
         {mode === 'edit' && (
           <div className="map-mode-hint" role="status">
-            Bearbeiten — ziehe über das Raster, um zu modellieren. Zum Bewegen der Kamera auf
-            „Navigieren“ wechseln.
+            Bearbeiten — ziehe über das Raster, um zu modellieren oder zu malen. Zum Bewegen der
+            Kamera auf „Navigieren“ wechseln.
           </div>
         )}
         <TerrainScene
@@ -425,20 +405,29 @@ export default function MapBuilder({ terrain }) {
           endStroke={endStroke}
           structRev={structRev}
         />
-        <div className="map-legend" aria-hidden="true">
-          {BANDS.map((b) => (
-            <span className="legend-item" key={b.key}>
-              <span className="legend-swatch" style={{ background: b.color }} />
-              {b.label}
-            </span>
-          ))}
-          <span className="legend-sep" />
-          {TERRAIN_TYPES.map((t) => (
-            <span className="legend-item" key={t.key}>
+        {/* The legend IS the paint palette: each colour is a selectable override
+            paint; the eraser clears a cell back to its height-based auto-colour. */}
+        <div className="map-palette" role="group" aria-label="Farbpalette zum Malen">
+          {PAINT_TYPES.map((t) => (
+            <button
+              type="button"
+              key={t.key}
+              className={`palette-item ${tool === t.key ? 'on' : ''}`}
+              onClick={() => selectPaint(t.key)}
+              title={`${t.label} malen`}
+            >
               <span className="legend-swatch" style={{ background: t.color }} />
               {t.label}
-            </span>
+            </button>
           ))}
+          <button
+            type="button"
+            className={`palette-item ${tool === 'erase' ? 'on' : ''}`}
+            onClick={() => selectPaint('erase')}
+            title="Bemalung entfernen (zurück zur Höhenfarbe)"
+          >
+            <Eraser size={13} /> Radierer
+          </button>
         </div>
       </div>
     </div>

@@ -161,6 +161,21 @@ function WaterPlane({ widthN, heightN, settings, seaLevel }) {
   )
 }
 
+// Expose the live camera / controls on window for debugging and e2e checks.
+// Read-only references; harmless in this single-user PWA.
+function DebugHook() {
+  const camera = useThree((s) => s.camera)
+  const gl = useThree((s) => s.gl)
+  const controls = useThree((s) => s.controls)
+  useEffect(() => {
+    window.__luminiMap = { camera, gl, controls }
+    return () => {
+      if (window.__luminiMap && window.__luminiMap.camera === camera) delete window.__luminiMap
+    }
+  }, [camera, gl, controls])
+  return null
+}
+
 export default function TerrainScene(props) {
   const { widthN, heightN, settings, mode } = props
   const gridD = Math.max(widthN, heightN) * settings.cellSize
@@ -176,15 +191,22 @@ export default function TerrainScene(props) {
       <directionalLight position={[gridD, gridD * 1.6, gridD * 0.6]} intensity={1.15} />
       <Cells {...props} />
       <WaterPlane widthN={widthN} heightN={heightN} settings={settings} seaLevel={props.seaLevel} />
+      <DebugHook />
       <OrbitControls
         makeDefault
         enabled={mode === 'navigate'}
         enablePan
         enableZoom
         enableRotate
+        // Zoom toward the pointer instead of always toward the centre, and pan
+        // in screen space — together these let you reach every edge and corner:
+        // zoom into a corner, then pan the view freely across the whole map.
+        // Touch: one finger rotates, two fingers pinch-zoom + pan (drei default).
+        zoomToCursor
+        screenSpacePanning
         target={[0, 0, 0]}
         maxPolarAngle={1.45}
-        minDistance={gridD * 0.15}
+        minDistance={gridD * 0.04}
         maxDistance={gridD * 4}
       />
     </Canvas>
