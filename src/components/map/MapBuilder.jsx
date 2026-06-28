@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   Eraser,
   Compass,
+  PaintBucket,
 } from 'lucide-react'
 import { useStore } from '../../state/store.jsx'
 import TerrainScene from './TerrainScene.jsx'
@@ -24,15 +25,17 @@ import {
   clampHeight,
   decodeHeights,
   encodeHeights,
+  floodFillRegion,
 } from '../../lib/terrain/model.js'
 
 const AUTOSAVE_MS = 1000
 
-// Paint tools write the per-cell terrain-type layer (override colour) instead
-// of the height layer. Tool key -> painted type id; 'erase' -> 0 (back to the
-// height-based auto-colour). Every legend colour is paintable.
+// `tool` is the active editing tool; `paintType` (a separate selection) is the
+// colour the paint tools apply. Paint tools ('brush', 'fill') write the per-cell
+// terrain-type override layer; the others sculpt the height layer.
+//   paint key -> type id; 'erase' -> 0 (back to the height-based auto-colour).
 const PAINT_VALUE = { erase: 0, ...Object.fromEntries(PAINT_TYPES.map((t) => [t.key, t.id])) }
-const isTypeTool = (tool) => Object.prototype.hasOwnProperty.call(PAINT_VALUE, tool)
+const isPaintTool = (tool) => tool === 'brush' || tool === 'fill'
 
 // The terrain sculptor. Owns the mutable heights buffer, the undo/redo history,
 // and autosave. The 3D scene is purely presentational + input; all edit logic
@@ -56,7 +59,8 @@ export default function MapBuilder({ terrain }) {
 
   // --- UI state (mirrors are kept in refs for the stable paint callback) ---
   const [mode, setMode] = useState('navigate') // 'navigate' | 'edit'
-  const [tool, setTool] = useState('raise') // 'raise' | 'lower' | 'flatten'
+  const [tool, setTool] = useState('raise') // raise | lower | flatten | brush | fill
+  const [paintType, setPaintType] = useState('grass') // selected palette colour key
   const [brushSize, setBrushSize] = useState(2)
   const [flattenTarget, setFlattenTarget] = useState(4)
   const [seaLevel, setSeaLevel] = useState(terrain.sea_level ?? 2)
@@ -77,10 +81,12 @@ export default function MapBuilder({ terrain }) {
   const resetView = useCallback(() => setResetSignal((r) => r + 1), [])
 
   const toolRef = useRef(tool)
+  const paintTypeRef = useRef(paintType)
   const brushRef = useRef(brushSize)
   const targetRef = useRef(flattenTarget)
   const seaLevelRef = useRef(seaLevel)
   toolRef.current = tool
+  paintTypeRef.current = paintType
   brushRef.current = brushSize
   targetRef.current = flattenTarget
   seaLevelRef.current = seaLevel
@@ -142,7 +148,7 @@ export default function MapBuilder({ terrain }) {
   // A stroke targets ONE layer (heights or terrain-types), fixed at pointer-down
   // from the active tool, so undo can restore the right buffer.
   const beginStroke = useCallback(() => {
-    const layer = isTypeTool(toolRef.current) ? 'type' : 'height'
+    const layer = toolRef.current === 'brush' ? 'type' : 'height'
     strokeRef.current = { layer, map: new Map() }
   }, [])
 
@@ -158,7 +164,7 @@ export default function MapBuilder({ terrain }) {
         // height/sea checks → any type can be painted on ANY cell, including
         // water (e.g. Structure across water for a bridge).
         const types = ensureTypes()
-        const value = PAINT_VALUE[tool] // type id, or 0 for the eraser
+        const value = PAINT_VALUE[paintTypeRef.current] // type id, or 0 for the eraser
         for (const i of cells) {
           if (stroke.map.has(i)) continue
           const before = types[i]
@@ -207,6 +213,43 @@ export default function MapBuilder({ terrain }) {
     markDirty()
   }, [markDirty, ensureTypes])
 
+  // Bucket fill: flood the contiguous region matching the clicked cell's kind
+  // (its painted type, or its height-band if unpainted) and set it ALL to the
+  // selected paint, as ONE undo step + one batched buffer update. Returns the
+  // indices that actually changed (for the scene to recolour).
+  const fillCell = useCallback(
+    (cx, cy) => {
+      const types = ensureTypes()
+      const region = floodFillRegion({
+        heights: heightsRef.current,
+        types,
+        width: widthN,
+        height: heightN,
+        seaLevel: seaLevelRef.current,
+        maxHeight,
+        sx: cx,
+        sy: cy,
+      })
+      const value = PAINT_VALUE[paintTypeRef.current]
+      const entries = []
+      for (const i of region) {
+        const before = types[i]
+        if (before !== value) {
+          entries.push({ i, before, after: value })
+          types[i] = value
+        }
+      }
+      if (!entries.length) return []
+      undoRef.current.push({ layer: 'type', entries })
+      redoRef.current = []
+      setCanUndo(true)
+      setCanRedo(false)
+      markDirty()
+      return entries.map((e) => e.i)
+    },
+    [widthN, heightN, maxHeight, ensureTypes, markDirty],
+  )
+
   const undo = useCallback(() => {
     const item = undoRef.current.pop()
     if (!item) return
@@ -240,10 +283,11 @@ export default function MapBuilder({ terrain }) {
     markDirty()
   }
 
-  // Pick a paint colour from the palette (or the eraser). Selecting a paint is
-  // an intent to paint, so it switches into Edit mode in one click.
-  function selectPaint(toolKey) {
-    setTool(toolKey)
+  // Pick a paint colour from the palette (or the eraser). Switches to Edit mode;
+  // keeps Fill active if it was (so you can fill several colours), else brush.
+  function selectPaint(key) {
+    setPaintType(key)
+    setTool((cur) => (cur === 'fill' ? 'fill' : 'brush'))
     setMode('edit')
   }
 
@@ -327,6 +371,13 @@ export default function MapBuilder({ terrain }) {
             title="Auf Höhe ebnen"
           >
             <Minus size={15} /> Ebnen
+          </button>
+          <button
+            className={`tool-btn ${tool === 'fill' ? 'on' : ''}`}
+            onClick={() => { setTool('fill'); setMode('edit') }}
+            title="Füllen: zusammenhängenden Bereich mit der gewählten Farbe füllen"
+          >
+            <PaintBucket size={15} /> Füllen
           </button>
         </div>
 
@@ -415,9 +466,11 @@ export default function MapBuilder({ terrain }) {
           heightsRef={heightsRef}
           typesRef={typesRef}
           mode={mode}
+          tool={tool}
           beginStroke={beginStroke}
           paintCell={paintCell}
           endStroke={endStroke}
+          fillCell={fillCell}
           structRev={structRev}
           resetSignal={resetSignal}
           onHeading={onHeading}
@@ -446,9 +499,9 @@ export default function MapBuilder({ terrain }) {
             <button
               type="button"
               key={t.key}
-              className={`palette-item ${tool === t.key ? 'on' : ''}`}
+              className={`palette-item ${isPaintTool(tool) && paintType === t.key ? 'on' : ''}`}
               onClick={() => selectPaint(t.key)}
-              title={`${t.label} malen`}
+              title={`${t.label} ${tool === 'fill' ? 'füllen' : 'malen'}`}
             >
               <span className="legend-swatch" style={{ background: t.color }} />
               {t.label}
@@ -456,7 +509,7 @@ export default function MapBuilder({ terrain }) {
           ))}
           <button
             type="button"
-            className={`palette-item ${tool === 'erase' ? 'on' : ''}`}
+            className={`palette-item ${isPaintTool(tool) && paintType === 'erase' ? 'on' : ''}`}
             onClick={() => selectPaint('erase')}
             title="Bemalung entfernen (zurück zur Höhenfarbe)"
           >

@@ -22,9 +22,11 @@ function Cells({
   heightsRef,
   typesRef,
   mode,
+  tool,
   beginStroke,
   paintCell,
   endStroke,
+  fillCell,
   structRev,
 }) {
   const meshRef = useRef(null)
@@ -106,7 +108,7 @@ function Cells({
   // Latest mode + edit callbacks, read by the (stable) DOM pointer handlers so
   // the listeners attach once and never go stale.
   const live = useRef(null)
-  live.current = { mode, beginStroke, paintCell, endStroke, applyChanged }
+  live.current = { mode, tool, beginStroke, paintCell, endStroke, fillCell, applyChanged }
 
   // --- editing input -------------------------------------------------------
   // We drive editing from RAW pointer events on the canvas (not R3F's
@@ -145,20 +147,26 @@ function Cells({
     const onDown = (e) => {
       if (live.current.mode !== 'edit' || e.button !== 0) return
       e.preventDefault()
+      aim(e)
+      const start = cellOnMesh()
+      if (!start) return
+      // Fill is a single click — flood the region, no drag/capture.
+      if (live.current.tool === 'fill') {
+        live.current.applyChanged(live.current.fillCell(start.x, start.y))
+        return
+      }
       try {
         el.setPointerCapture(e.pointerId)
       } catch {
         /* capture is best-effort */
       }
       painting.current = true
-      aim(e)
-      // Accurate first pick on the real surface, then pin the edit plane at that
-      // cell's height for the rest of the stroke (occlusion-free, no drift).
-      const start = cellOnMesh()
-      const h0 = start ? heightsRef.current[start.y * widthN + start.x] : 0
+      // Pin the edit plane at the start cell's height for the rest of the stroke
+      // (occlusion-free, no drift).
+      const h0 = heightsRef.current[start.y * widthN + start.x]
       editPlane.constant = -(h0 * step)
       live.current.beginStroke()
-      if (start) live.current.applyChanged(live.current.paintCell(start.x, start.y))
+      live.current.applyChanged(live.current.paintCell(start.x, start.y))
     }
     const onMove = (e) => {
       if (!painting.current) return

@@ -174,3 +174,36 @@ export function cellsInBrush(cx, cy, size, width, height) {
 export function clampHeight(h, maxHeight = MAX_HEIGHT) {
   return Math.max(0, Math.min(maxHeight, h))
 }
+
+// ---- flood fill (bucket) ---------------------------------------------------
+// Indices of the cells 4-connected to (sx,sy) that share the START cell's
+// "kind" — its painted terrain-type if painted (>0), else its height-band.
+// Reads the original data only (no mutation); iterative stack so huge regions
+// don't overflow. The caller sets every returned index to the chosen paint id.
+export function floodFillRegion({ heights, types, width, height, seaLevel, maxHeight, sx, sy }) {
+  const n = width * height
+  const startIdx = sy * width + sx
+  if (sx < 0 || sy < 0 || sx >= width || sy >= height) return []
+  const kindOf = (i) => {
+    const t = types ? types[i] : 0
+    // Painted types and height-bands live in disjoint numeric ranges so a
+    // painted cell never matches an unpainted cell that happens to share a band.
+    return t > 0 ? 1000 + t : BAND_INDEX[bandForHeight(heights[i], seaLevel, maxHeight)]
+  }
+  const target = kindOf(startIdx)
+  const seen = new Uint8Array(n)
+  const out = []
+  const stack = [startIdx]
+  seen[startIdx] = 1
+  while (stack.length) {
+    const i = stack.pop()
+    out.push(i)
+    const x = i % width
+    const y = (i / width) | 0
+    if (x > 0 && !seen[i - 1] && kindOf(i - 1) === target) { seen[i - 1] = 1; stack.push(i - 1) }
+    if (x < width - 1 && !seen[i + 1] && kindOf(i + 1) === target) { seen[i + 1] = 1; stack.push(i + 1) }
+    if (y > 0 && !seen[i - width] && kindOf(i - width) === target) { seen[i - width] = 1; stack.push(i - width) }
+    if (y < height - 1 && !seen[i + width] && kindOf(i + width) === target) { seen[i + width] = 1; stack.push(i + width) }
+  }
+  return out
+}
