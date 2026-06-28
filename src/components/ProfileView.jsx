@@ -103,9 +103,9 @@ function DriveSection() {
               )}
               Jetzt sichern
             </button>
-            {status.state === 'token-expired' && (
-              <button className="toggle with-label" onClick={reconnect} disabled={busy}>
-                <Link2 size={15} /> Erneut verbinden
+            {status.state === 'needs-reconnect' && (
+              <button className="toggle primary with-label" onClick={reconnect} disabled={busy}>
+                <Link2 size={15} /> Google Drive neu verbinden
               </button>
             )}
             <button className="toggle with-label danger-text" onClick={disconnect} disabled={busy}>
@@ -125,7 +125,7 @@ function DriveStatus({ status }) {
   const Icon =
     state === 'success'
       ? Check
-      : state === 'error' || state === 'token-expired'
+      : state === 'error' || state === 'needs-reconnect'
         ? AlertTriangle
         : state === 'connecting' || state === 'backing-up'
           ? Loader2
@@ -135,7 +135,7 @@ function DriveStatus({ status }) {
       ? 'ok'
       : state === 'error'
         ? 'err'
-        : state === 'token-expired'
+        : state === 'needs-reconnect'
           ? 'warn'
           : 'info'
   return (

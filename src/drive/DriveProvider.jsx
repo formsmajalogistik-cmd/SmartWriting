@@ -77,11 +77,20 @@ export function DriveProvider({ children }) {
     [chapters, characters, places, events, locations],
   )
 
+  // Resolve an access token.
+  //   interactive (user gesture) → may open the GIS popup to (re)authorise.
+  //   non-interactive (auto-backup) → NEVER opens a popup; only a token already
+  //     held in memory is used. If none/expired, we throw a needs-reconnect
+  //     signal so auto-backup stops cleanly instead of flashing a blocked popup.
   async function ensureToken(interactive) {
     const t = tokenRef.current
     if (t && Date.now() < t.expires_at - TOKEN_SKEW_MS) return t
-    // Need a token: silent ('none') for auto-backup, interactive otherwise.
-    const fresh = await requestToken(interactive ? '' : 'none')
+    if (!interactive) {
+      const e = new Error('reconnect-required')
+      e.needsReconnect = true
+      throw e
+    }
+    const fresh = await requestToken('') // gesture → popup allowed
     tokenRef.current = fresh
     return fresh
   }
@@ -92,17 +101,24 @@ export function DriveProvider({ children }) {
       if (inFlightRef.current) return
       inFlightRef.current = true
       try {
-        setStatus({ state: 'backing-up', msg: 'Sicherung wird vorbereitet …' })
+        // Acquire the token FIRST (auto-path never pops up). Only show "saving"
+        // once we actually have a token and are about to upload — so the
+        // indicator is never "saving" when nothing can be uploaded.
         let token
         try {
           token = await ensureToken(interactive)
-        } catch {
-          setStatus({
-            state: 'token-expired',
-            msg: 'Google-Sitzung abgelaufen. Bitte „Erneut verbinden".',
-          })
+        } catch (e) {
+          if (e?.needsReconnect || e?.isAuth) {
+            setStatus({
+              state: 'needs-reconnect',
+              msg: 'Google Drive neu verbinden, um zu sichern.',
+            })
+          } else {
+            setStatus({ state: 'error', msg: e?.message || 'Sicherung fehlgeschlagen.' })
+          }
           return
         }
+        setStatus({ state: 'backing-up', msg: 'Sicherung wird vorbereitet …' })
         const snapshot = await exportSnapshot()
         const { buildRecoverableBundle } = await import('../lib/export/bundle.js')
         const bundle = await buildRecoverableBundle(snapshot, {
@@ -134,10 +150,12 @@ export function DriveProvider({ children }) {
           warnings: bundle.warnings,
         })
       } catch (e) {
-        if (e?.isAuth) {
+        // A failed token/upload must NEVER read as success. Auth failures →
+        // needs-reconnect (user fixes with a click); everything else → error.
+        if (e?.isAuth || e?.needsReconnect) {
           setStatus({
-            state: 'token-expired',
-            msg: 'Google-Sitzung abgelaufen. Bitte „Erneut verbinden".',
+            state: 'needs-reconnect',
+            msg: 'Google Drive neu verbinden, um zu sichern.',
           })
         } else {
           setStatus({ state: 'error', msg: e?.message || 'Sicherung fehlgeschlagen.' })
@@ -177,15 +195,18 @@ export function DriveProvider({ children }) {
     }
   }, [saveDriveLink, activeProjectId])
 
+  // User-initiated (button click) → popup is allowed. Re-runs the token flow and,
+  // on success, immediately backs up so the click has a visible result.
   const reconnect = useCallback(async () => {
     setStatus({ state: 'connecting', msg: 'Erneut verbinden …' })
     try {
       tokenRef.current = await requestToken('')
       setStatus({ state: 'idle', msg: 'Wieder verbunden.' })
+      runBackup({ interactive: true })
     } catch (e) {
       setStatus({ state: 'error', msg: e?.message || 'Verbindung fehlgeschlagen.' })
     }
-  }, [])
+  }, [runBackup])
 
   const disconnect = useCallback(async () => {
     if (tokenRef.current) revokeToken(tokenRef.current.access_token)
