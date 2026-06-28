@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { OrbitControls, Html } from '@react-three/drei'
 import * as THREE from 'three'
 import {
   cellToWorld,
   worldToCell,
   inBounds,
   colorForCell,
+  CARDINALS,
 } from '../../lib/terrain/model.js'
 
 // The 3D terrain: one InstancedMesh of stepped box columns (a single draw call)
@@ -226,6 +227,72 @@ function WaterPlane({ widthN, heightN, settings, seaLevel }) {
   )
 }
 
+// Fixed N/E/S/W markers anchored in WORLD space (at the grid's edge midpoints),
+// so they always point at the true cardinal directions no matter how the camera
+// orbits. North is -Z (see model.js). Rendered as DOM labels via drei <Html>.
+function Cardinals({ widthN, heightN, settings }) {
+  const { cellSize, step } = settings
+  const halfX = (widthN * cellSize) / 2
+  const halfZ = (heightN * cellSize) / 2
+  const margin = cellSize * 3
+  const y = step * 3
+  const posFor = ([dx, dz]) => [dx * (halfX + margin), y, dz * (halfZ + margin)]
+  return (
+    <>
+      {CARDINALS.map((c) => (
+        <Html key={c.key} position={posFor(c.dir)} center zIndexRange={[5, 0]} className="cardinal-html">
+          <span className={`cardinal-label ${c.key === 'N' ? 'north' : ''}`}>{c.label}</span>
+        </Html>
+      ))}
+    </>
+  )
+}
+
+// Deterministic camera: on mount AND on every reset, snap to a canonical view —
+// due SOUTH of centre, ~45° up, looking due NORTH (-Z) at the origin — so the
+// map ALWAYS opens correctly oriented. Also reports the camera heading (azimuth)
+// upward so the DOM compass can reflect which way we're facing.
+function ViewController({ gridD, resetSignal, onHeading }) {
+  const camera = useThree((s) => s.camera)
+  const controls = useThree((s) => s.controls)
+  const invalidate = useThree((s) => s.invalidate)
+
+  const applyDefault = useCallback(() => {
+    if (!controls) return
+    // drei's OrbitControls enables damping, so update() only DECAYS the leftover
+    // rotate/pan delta from a drag — never zeroes it — which would drift the
+    // reset. Temporarily disable damping: the first update() then fully clears
+    // that delta, and the second snaps EXACTLY to due north (azimuth 0).
+    const wasDamping = controls.enableDamping
+    controls.enableDamping = false
+    controls.update()
+    camera.position.set(0, gridD * 0.8, gridD * 0.85) // +Z = south, above → looks north
+    camera.up.set(0, 1, 0)
+    controls.target.set(0, 0, 0)
+    controls.update()
+    controls.enableDamping = wasDamping
+    invalidate()
+    onHeading?.(controls.getAzimuthalAngle())
+  }, [camera, controls, gridD, invalidate, onHeading])
+
+  // Mount + reset button. applyDefault changes identity once `controls` exists,
+  // so this also fires as soon as OrbitControls has registered.
+  useEffect(() => {
+    applyDefault()
+  }, [resetSignal, applyDefault])
+
+  // Keep the compass in sync with manual orbiting.
+  useEffect(() => {
+    if (!controls) return
+    const report = () => onHeading?.(controls.getAzimuthalAngle())
+    controls.addEventListener('change', report)
+    report()
+    return () => controls.removeEventListener('change', report)
+  }, [controls, onHeading])
+
+  return null
+}
+
 // Expose the live camera / controls on window for debugging and e2e checks.
 // Read-only references; harmless in this single-user PWA.
 function DebugHook() {
@@ -243,13 +310,13 @@ function DebugHook() {
 }
 
 export default function TerrainScene(props) {
-  const { widthN, heightN, settings, mode } = props
+  const { widthN, heightN, settings, mode, resetSignal, onHeading } = props
   const gridD = Math.max(widthN, heightN) * settings.cellSize
   return (
     <Canvas
       dpr={[1, 2]}
       frameloop="demand"
-      camera={{ position: [0, gridD * 0.85, gridD * 0.95], fov: 45, near: 0.1, far: gridD * 10 }}
+      camera={{ position: [0, gridD * 0.8, gridD * 0.85], fov: 45, near: 0.1, far: gridD * 10 }}
       style={{ touchAction: 'none' }}
     >
       <color attach="background" args={['#0b1220']} />
@@ -257,6 +324,8 @@ export default function TerrainScene(props) {
       <directionalLight position={[gridD, gridD * 1.6, gridD * 0.6]} intensity={1.15} />
       <Cells {...props} />
       <WaterPlane widthN={widthN} heightN={heightN} settings={settings} seaLevel={props.seaLevel} />
+      <Cardinals widthN={widthN} heightN={heightN} settings={settings} />
+      <ViewController gridD={gridD} resetSignal={resetSignal} onHeading={onHeading} />
       <DebugHook />
       <OrbitControls
         makeDefault

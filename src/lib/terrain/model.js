@@ -119,6 +119,20 @@ export function decodeHeights(b64, expectedLength) {
   return out
 }
 
+// ---- orientation -----------------------------------------------------------
+// CANONICAL NORTH = -Z (world). cellToWorld maps grid row y → world +Z, so the
+// top edge of the grid (row y = 0) is the NORTH edge. From North we fix the rest:
+//   North = -Z   South = +Z   East = +X   West = -X
+// The cardinal markers and the default camera (which looks due North) are all
+// derived from this single definition.
+export const NORTH = Object.freeze({ x: 0, z: -1 })
+export const CARDINALS = Object.freeze([
+  { key: 'N', label: 'N', dir: [0, -1] },
+  { key: 'E', label: 'E', dir: [1, 0] },
+  { key: 'S', label: 'S', dir: [0, 1] },
+  { key: 'W', label: 'W', dir: [-1, 0] },
+])
+
 // ---- coordinate maths (terrain centred on the origin) ----------------------
 // Exposed so later stages can place markers exactly on a cell's surface.
 export function idx(x, y, width) {

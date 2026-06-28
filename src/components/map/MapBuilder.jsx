@@ -13,6 +13,7 @@ import {
   Check,
   AlertTriangle,
   Eraser,
+  Compass,
 } from 'lucide-react'
 import { useStore } from '../../state/store.jsx'
 import TerrainScene from './TerrainScene.jsx'
@@ -63,6 +64,17 @@ export default function MapBuilder({ terrain }) {
   const [saveState, setSaveState] = useState('saved') // saved|dirty|saving|error
   const [canUndo, setCanUndo] = useState(false)
   const [canRedo, setCanRedo] = useState(false)
+  const [resetSignal, setResetSignal] = useState(0) // bump → camera back to default view
+  const [heading, setHeading] = useState(0) // camera azimuth (rad) → compass
+
+  // Throttle compass updates so orbiting doesn't re-render on every frame.
+  const headingRef = useRef(0)
+  const onHeading = useCallback((az) => {
+    if (Math.abs(az - headingRef.current) < 0.01) return
+    headingRef.current = az
+    setHeading(az)
+  }, [])
+  const resetView = useCallback(() => setResetSignal((r) => r + 1), [])
 
   const toolRef = useRef(tool)
   const brushRef = useRef(brushSize)
@@ -362,6 +374,9 @@ export default function MapBuilder({ terrain }) {
 
         <div className="map-toolbar-spacer" />
 
+        <button className="icon-btn" onClick={resetView} title="Ansicht zurücksetzen (Blick nach Norden)">
+          <Compass size={16} />
+        </button>
         <button className="icon-btn" onClick={undo} disabled={!canUndo} title="Rückgängig (Strg/Cmd+Z)">
           <Undo2 size={16} />
         </button>
@@ -404,7 +419,26 @@ export default function MapBuilder({ terrain }) {
           paintCell={paintCell}
           endStroke={endStroke}
           structRev={structRev}
+          resetSignal={resetSignal}
+          onHeading={onHeading}
         />
+        {/* Compass: rotates with the camera heading so North is always obvious;
+            click it to snap the view back to the default (looking North). */}
+        <button
+          className="map-compass"
+          onClick={resetView}
+          title="Norden — Ansicht zurücksetzen"
+          aria-label="Kompass: Ansicht nach Norden zurücksetzen"
+          style={{ '--compass-rot': `${(heading * 180) / Math.PI}deg` }}
+        >
+          <span className="compass-rose">
+            <span className="compass-pt n">N</span>
+            <span className="compass-pt e">E</span>
+            <span className="compass-pt s">S</span>
+            <span className="compass-pt w">W</span>
+            <span className="compass-needle" />
+          </span>
+        </button>
         {/* The legend IS the paint palette: each colour is a selectable override
             paint; the eraser clears a cell back to its height-based auto-colour. */}
         <div className="map-palette" role="group" aria-label="Farbpalette zum Malen">

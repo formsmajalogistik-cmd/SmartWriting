@@ -1187,7 +1187,42 @@ select:focus, input:focus, textarea:focus {
 .palette-item.on { border-color: var(--accent); background: var(--bg-3); color: var(--text); }
 .legend-swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.2); }
 
+/* World-anchored cardinal labels (drei <Html>) */
+.cardinal-html { pointer-events: none; user-select: none; }
+.cardinal-label {
+  display: inline-block; font-size: 13px; font-weight: 700; letter-spacing: 0.5px;
+  color: var(--text-dim); text-shadow: 0 1px 3px rgba(0,0,0,0.85);
+}
+.cardinal-label.north { color: #ff6b6b; }
+
+/* Compass overlay (top-right). Rotates with camera heading; click = reset view. */
+.map-compass {
+  position: absolute; top: 10px; right: 10px; z-index: 3;
+  width: 58px; height: 58px; border-radius: 50%;
+  background: rgba(15,17,23,0.82); border: 1px solid var(--border); padding: 0;
+  cursor: pointer; display: grid; place-items: center;
+}
+.map-compass:hover { border-color: var(--accent); }
+.compass-rose {
+  position: relative; width: 100%; height: 100%; border-radius: 50%;
+  transform: rotate(var(--compass-rot, 0deg)); transition: transform 0.08s linear;
+}
+.compass-pt {
+  position: absolute; left: 50%; top: 50%; font-size: 10px; font-weight: 700;
+  color: var(--text-dim); transform: translate(-50%, -50%);
+}
+.compass-pt.n { top: 9px; color: #ff6b6b; }
+.compass-pt.s { top: auto; bottom: 9px; transform: translate(-50%, 50%); }
+.compass-pt.e { left: auto; right: 8px; transform: translate(50%, -50%); }
+.compass-pt.w { left: 8px; transform: translate(-50%, -50%); }
+.compass-needle {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent;
+  border-bottom: 18px solid #ff6b6b; margin-top: -9px;
+}
+
 @media (max-width: 640px) {
   .ctrl input[type="range"] { width: 70px; }
   .map-palette { max-width: 92%; max-height: 38%; overflow-y: auto; }
+  .map-compass { width: 48px; height: 48px; }
 }
