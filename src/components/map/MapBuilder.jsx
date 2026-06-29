@@ -15,12 +15,15 @@ import {
   Eraser,
   Compass,
   PaintBucket,
+  Navigation,
 } from 'lucide-react'
 import { useStore } from '../../state/store.jsx'
 import TerrainScene from './TerrainScene.jsx'
 import {
   DEFAULT_SETTINGS,
   PAINT_TYPES,
+  NORTH_PRESETS,
+  normalizeDeg,
   cellsInBrush,
   clampHeight,
   decodeHeights,
@@ -70,6 +73,9 @@ export default function MapBuilder({ terrain }) {
   const [canRedo, setCanRedo] = useState(false)
   const [resetSignal, setResetSignal] = useState(0) // bump → camera back to default view
   const [heading, setHeading] = useState(0) // camera azimuth (rad) → compass
+  const [northOffset, setNorthOffset] = useState(() => normalizeDeg(settings.north_offset)) // chosen North, degrees
+  const northOffsetRef = useRef(northOffset)
+  northOffsetRef.current = northOffset
 
   // Throttle compass updates so orbiting doesn't re-render on every frame.
   const headingRef = useRef(0)
@@ -79,6 +85,11 @@ export default function MapBuilder({ terrain }) {
     setHeading(az)
   }, [])
   const resetView = useCallback(() => setResetSignal((r) => r + 1), [])
+
+  // Set the chosen North (degrees). Rotates the cardinal markers + compass live;
+  // the camera is NOT yanked (reset/reopen aligns). Persistence is handled by an
+  // effect below so it doesn't depend on markDirty being defined yet.
+  const setNorth = useCallback((deg) => setNorthOffset(normalizeDeg(deg)), [])
 
   const toolRef = useRef(tool)
   const paintTypeRef = useRef(paintType)
@@ -106,7 +117,8 @@ export default function MapBuilder({ terrain }) {
       sea_level: seaLevelRef.current,
       heights: encodeHeights(heightsRef.current),
       terrain_types: typesRef.current ? encodeHeights(typesRef.current) : null,
-      settings,
+      // Persist the chosen North into the settings jsonb (no new column needed).
+      settings: { ...settings, north_offset: northOffsetRef.current },
     }),
     [widthN, heightN, settings],
   )
@@ -116,17 +128,25 @@ export default function MapBuilder({ terrain }) {
       clearTimeout(saveTimerRef.current)
       saveTimerRef.current = null
     }
-    if (savingRef.current) return
+    if (savingRef.current) return // a save is running; its finally re-schedules
     savingRef.current = true
+    // Capture: we're about to persist the CURRENT state. If markDirty fires
+    // during the await it sets dirtyRef true again, and the finally below saves
+    // once more — so the latest value (e.g. a fresh North) is never dropped.
+    dirtyRef.current = false
     setSaveState('saving')
     try {
       await saveTerrain(buildPayload())
-      dirtyRef.current = false
-      setSaveState((s) => (dirtyRef.current ? 'dirty' : 'saved'))
+      setSaveState(dirtyRef.current ? 'dirty' : 'saved')
     } catch {
+      dirtyRef.current = true // failed → still unsaved
       setSaveState('error') // also surfaced by the global error banner
     } finally {
       savingRef.current = false
+      if (dirtyRef.current) {
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+        saveTimerRef.current = setTimeout(doSave, AUTOSAVE_MS)
+      }
     }
   }, [saveTerrain, buildPayload])
 
@@ -291,6 +311,17 @@ export default function MapBuilder({ terrain }) {
     setMode('edit')
   }
 
+  // Autosave a North change (skip the initial mount so just opening the map
+  // doesn't mark it dirty).
+  const northMountRef = useRef(true)
+  useEffect(() => {
+    if (northMountRef.current) {
+      northMountRef.current = false
+      return
+    }
+    markDirty()
+  }, [northOffset, markDirty])
+
   // Keyboard: undo / redo while sculpting.
   useEffect(() => {
     function onKey(e) {
@@ -423,6 +454,34 @@ export default function MapBuilder({ terrain }) {
           <span className="ctrl-val">{seaLevel}</span>
         </label>
 
+        {/* Set North: a dial (0–360°) + quick presets snapping North to an edge. */}
+        <div className="ctrl north-ctrl" title="Norden festlegen">
+          <Navigation size={14} />
+          <span>Norden</span>
+          <input
+            type="range"
+            min="0"
+            max="359"
+            value={northOffset}
+            onChange={(e) => setNorth(Number(e.target.value))}
+            aria-label="Nordrichtung in Grad"
+          />
+          <span className="ctrl-val north-val">{northOffset}°</span>
+          <span className="north-presets" role="group" aria-label="Norden auf Kante setzen">
+            {NORTH_PRESETS.map((p) => (
+              <button
+                key={p.key}
+                type="button"
+                className={`north-preset ${northOffset === p.deg ? 'on' : ''}`}
+                onClick={() => setNorth(p.deg)}
+                title={`Norden = Kante ${p.key}`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </span>
+        </div>
+
         <div className="map-toolbar-spacer" />
 
         <button className="icon-btn" onClick={resetView} title="Ansicht zurücksetzen (Blick nach Norden)">
@@ -474,6 +533,8 @@ export default function MapBuilder({ terrain }) {
           structRev={structRev}
           resetSignal={resetSignal}
           onHeading={onHeading}
+          northOffset={northOffset}
+          northOffsetRef={northOffsetRef}
         />
         {/* Compass: rotates with the camera heading so North is always obvious;
             click it to snap the view back to the default (looking North). */}
@@ -482,7 +543,7 @@ export default function MapBuilder({ terrain }) {
           onClick={resetView}
           title="Norden — Ansicht zurücksetzen"
           aria-label="Kompass: Ansicht nach Norden zurücksetzen"
-          style={{ '--compass-rot': `${(heading * 180) / Math.PI}deg` }}
+          style={{ '--compass-rot': `${(heading * 180) / Math.PI - northOffset}deg` }}
         >
           <span className="compass-rose">
             <span className="compass-pt n">N</span>

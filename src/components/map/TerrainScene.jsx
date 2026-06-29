@@ -235,24 +235,30 @@ function WaterPlane({ widthN, heightN, settings, seaLevel }) {
   )
 }
 
-// Fixed N/E/S/W markers anchored in WORLD space (at the grid's edge midpoints),
-// so they always point at the true cardinal directions no matter how the camera
-// orbits. North is -Z (see model.js). Rendered as DOM labels via drei <Html>.
-function Cardinals({ widthN, heightN, settings }) {
+// Fixed N/E/S/W markers anchored in WORLD space, so they always point at the
+// true cardinal directions no matter how the camera orbits. The whole ring is
+// rotated by the chosen North (`northRad`) around +Y — the terrain stays put,
+// only the cardinal assignment turns. Rendered as DOM labels via drei <Html>.
+function Cardinals({ widthN, heightN, settings, northRad }) {
   const { cellSize, step } = settings
   const halfX = (widthN * cellSize) / 2
   const halfZ = (heightN * cellSize) / 2
-  const margin = cellSize * 3
+  const R = Math.max(halfX, halfZ) + cellSize * 3 // ring radius, just outside the grid
   const y = step * 3
-  const posFor = ([dx, dz]) => [dx * (halfX + margin), y, dz * (halfZ + margin)]
   return (
-    <>
+    <group rotation-y={northRad}>
       {CARDINALS.map((c) => (
-        <Html key={c.key} position={posFor(c.dir)} center zIndexRange={[5, 0]} className="cardinal-html">
+        <Html
+          key={c.key}
+          position={[c.dir[0] * R, y, c.dir[1] * R]}
+          center
+          zIndexRange={[5, 0]}
+          className="cardinal-html"
+        >
           <span className={`cardinal-label ${c.key === 'N' ? 'north' : ''}`}>{c.label}</span>
         </Html>
       ))}
-    </>
+    </group>
   )
 }
 
@@ -260,7 +266,7 @@ function Cardinals({ widthN, heightN, settings }) {
 // due SOUTH of centre, ~45° up, looking due NORTH (-Z) at the origin — so the
 // map ALWAYS opens correctly oriented. Also reports the camera heading (azimuth)
 // upward so the DOM compass can reflect which way we're facing.
-function ViewController({ gridD, resetSignal, onHeading }) {
+function ViewController({ gridD, resetSignal, onHeading, northOffsetRef }) {
   const camera = useThree((s) => s.camera)
   const controls = useThree((s) => s.controls)
   const invalidate = useThree((s) => s.invalidate)
@@ -270,18 +276,23 @@ function ViewController({ gridD, resetSignal, onHeading }) {
     // drei's OrbitControls enables damping, so update() only DECAYS the leftover
     // rotate/pan delta from a drag — never zeroes it — which would drift the
     // reset. Temporarily disable damping: the first update() then fully clears
-    // that delta, and the second snaps EXACTLY to due north (azimuth 0).
+    // that delta, and the second snaps EXACTLY to the target pose.
     const wasDamping = controls.enableDamping
     controls.enableDamping = false
     controls.update()
-    camera.position.set(0, gridD * 0.8, gridD * 0.85) // +Z = south, above → looks north
+    // Place the camera opposite the chosen North so North is oriented AWAY (up)
+    // on screen. northOffsetRef is read live (a ref, not a dep) so changing
+    // North does NOT yank the camera — only reset/open re-aligns it.
+    const t = ((northOffsetRef?.current || 0) * Math.PI) / 180
+    const d = gridD * 0.85
+    camera.position.set(d * Math.sin(t), gridD * 0.8, d * Math.cos(t))
     camera.up.set(0, 1, 0)
     controls.target.set(0, 0, 0)
     controls.update()
     controls.enableDamping = wasDamping
     invalidate()
     onHeading?.(controls.getAzimuthalAngle())
-  }, [camera, controls, gridD, invalidate, onHeading])
+  }, [camera, controls, gridD, invalidate, onHeading, northOffsetRef])
 
   // Mount + reset button. applyDefault changes identity once `controls` exists,
   // so this also fires as soon as OrbitControls has registered.
@@ -318,8 +329,9 @@ function DebugHook() {
 }
 
 export default function TerrainScene(props) {
-  const { widthN, heightN, settings, mode, resetSignal, onHeading } = props
+  const { widthN, heightN, settings, mode, resetSignal, onHeading, northOffset, northOffsetRef } = props
   const gridD = Math.max(widthN, heightN) * settings.cellSize
+  const northRad = ((northOffset || 0) * Math.PI) / 180
   return (
     <Canvas
       dpr={[1, 2]}
@@ -332,8 +344,13 @@ export default function TerrainScene(props) {
       <directionalLight position={[gridD, gridD * 1.6, gridD * 0.6]} intensity={1.15} />
       <Cells {...props} />
       <WaterPlane widthN={widthN} heightN={heightN} settings={settings} seaLevel={props.seaLevel} />
-      <Cardinals widthN={widthN} heightN={heightN} settings={settings} />
-      <ViewController gridD={gridD} resetSignal={resetSignal} onHeading={onHeading} />
+      <Cardinals widthN={widthN} heightN={heightN} settings={settings} northRad={northRad} />
+      <ViewController
+        gridD={gridD}
+        resetSignal={resetSignal}
+        onHeading={onHeading}
+        northOffsetRef={northOffsetRef}
+      />
       <DebugHook />
       <OrbitControls
         makeDefault

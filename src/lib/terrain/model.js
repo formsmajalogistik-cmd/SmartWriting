@@ -22,6 +22,10 @@ export const DEFAULT_SETTINGS = {
   step: 0.5, // world units of elevation per height step
   cellSize: 1, // world units per cell edge
   encoding: ENCODING,
+  // Per-project chosen North, in degrees clockwise from the base North (-Z).
+  // 0 = North is the -Z edge (default). Only the cardinal assignment + default
+  // camera rotate by this; the terrain itself never moves.
+  north_offset: 0,
 }
 
 export const DEFAULT_SEA_LEVEL = 2
@@ -120,11 +124,13 @@ export function decodeHeights(b64, expectedLength) {
 }
 
 // ---- orientation -----------------------------------------------------------
-// CANONICAL NORTH = -Z (world). cellToWorld maps grid row y → world +Z, so the
-// top edge of the grid (row y = 0) is the NORTH edge. From North we fix the rest:
-//   North = -Z   South = +Z   East = +X   West = -X
-// The cardinal markers and the default camera (which looks due North) are all
-// derived from this single definition.
+// BASE North = -Z (world). cellToWorld maps grid row y → world +Z, so the top
+// edge of the grid (row y = 0) is the base-North edge. The author can CHOOSE a
+// different North per project via `settings.north_offset` (degrees, rotating the
+// cardinal assignment clockwise around +Y); the terrain never physically moves.
+//   At offset 0:  North = -Z   East = +X   South = +Z   West = -X
+// The cardinal markers, the compass and the default camera all derive from the
+// chosen offset.
 export const NORTH = Object.freeze({ x: 0, z: -1 })
 export const CARDINALS = Object.freeze([
   { key: 'N', label: 'N', dir: [0, -1] },
@@ -132,6 +138,21 @@ export const CARDINALS = Object.freeze([
   { key: 'S', label: 'S', dir: [0, 1] },
   { key: 'W', label: 'W', dir: [-1, 0] },
 ])
+
+// Quick presets: snap North to a grid edge. The offset that makes a base
+// direction become North (so the N marker sits on that edge):
+//   -Z → 0°   -X → 90°   +Z → 180°   +X → 270°
+export const NORTH_PRESETS = Object.freeze([
+  { key: '-Z', label: '−Z', deg: 0 },
+  { key: '-X', label: '−X', deg: 90 },
+  { key: '+Z', label: '+Z', deg: 180 },
+  { key: '+X', label: '+X', deg: 270 },
+])
+
+// Normalise any degree value into [0, 360).
+export function normalizeDeg(d) {
+  return ((Number(d) || 0) % 360 + 360) % 360
+}
 
 // ---- coordinate maths (terrain centred on the origin) ----------------------
 // Exposed so later stages can place markers exactly on a cell's surface.
