@@ -1255,6 +1255,79 @@ select:focus, input:focus, textarea:focus {
 }
 .marker-remove:hover { background: rgba(220,60,60,0.2); color: #fca5a5; border-color: rgba(220,60,60,0.5); }
 
+/* ---- Timeline: character tokens + event indicators (drei <Html>) ---- */
+.token-html { pointer-events: none; user-select: none; }
+.char-token {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: none; border: none; padding: 0; cursor: pointer;
+}
+.token-portrait {
+  width: 34px; height: 34px; border-radius: 50%; overflow: hidden;
+  display: grid; place-items: center;
+  background: var(--bg-3); border: 2px solid var(--accent);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.55);
+}
+.token-portrait img { width: 100%; height: 100%; object-fit: cover; }
+.token-initial { font-size: 16px; font-weight: 700; color: var(--text); }
+.char-token .token-label {
+  max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 11px; font-weight: 600; color: var(--text);
+  background: rgba(15,17,23,0.86); border: 1px solid var(--border);
+  border-radius: 5px; padding: 1px 6px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+.char-token .token-label.provisional { font-style: italic; color: #fbbf24; border-color: rgba(245,158,11,0.5); }
+.char-token:hover .token-portrait { border-color: #fff; }
+.event-indicator {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 11px; font-weight: 700; color: #fde68a;
+  background: rgba(120,80,10,0.85); border: 1px solid rgba(245,158,11,0.6);
+  border-radius: 10px; padding: 1px 7px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+/* Scrubber bar (bottom) */
+.timeline-bar {
+  position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 3;
+  display: flex; align-items: center; gap: 8px; width: min(680px, 92%);
+  background: rgba(15,17,23,0.92); border: 1px solid var(--border);
+  border-radius: 10px; padding: 7px 10px;
+}
+.timeline-track { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.timeline-track input[type="range"] { width: 100%; }
+.timeline-label {
+  font-size: 12px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.timeline-pos { color: var(--text-dim); font-variant-numeric: tabular-nums; margin-right: 4px; }
+.timeline-empty { font-size: 12px; color: var(--text-dim); margin: 0; }
+
+/* Per-chapter details (events + off-map characters), top-left */
+.timeline-panel {
+  position: absolute; top: 10px; left: 10px; z-index: 3;
+  width: 240px; max-height: calc(100% - 80px); overflow-y: auto;
+  display: flex; flex-direction: column; gap: 10px;
+  background: rgba(15,17,23,0.92); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px;
+}
+.timeline-section-title {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-dim);
+  margin-bottom: 5px;
+}
+.timeline-section-title.warn { color: #fca5a5; }
+.timeline-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.timeline-item {
+  width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  background: var(--bg-3); border: 1px solid transparent; color: var(--text);
+  border-radius: 6px; padding: 5px 8px; font-size: 13px; text-align: left; cursor: pointer;
+}
+.timeline-item:hover { background: var(--bg); border-color: var(--accent); }
+.timeline-item .prov { font-style: italic; color: #fbbf24; }
+.timeline-sub { font-size: 11px; color: var(--text-dim); }
+
+@media (max-width: 640px) {
+  .timeline-panel { width: 200px; max-height: 46%; }
+  .timeline-bar { bottom: 6px; padding: 6px 8px; }
+}
+
 /* Compass overlay (top-right). Rotates with camera heading; click = reset view. */
 .map-compass {
   position: absolute; top: 10px; right: 10px; z-index: 3;

@@ -19,9 +19,19 @@ import {
   MapPin,
   X,
   Triangle,
+  History,
+  ChevronLeft,
+  ChevronRight,
+  CalendarClock,
+  MapPinOff,
 } from 'lucide-react'
 import { useStore } from '../../state/store.jsx'
 import TerrainScene from './TerrainScene.jsx'
+import {
+  orderedChapters,
+  placementsForChapterIndex,
+  eventsForChapter,
+} from '../../lib/timeline/timeline.js'
 import {
   DEFAULT_SETTINGS,
   PAINT_TYPES,
@@ -49,7 +59,18 @@ const isPaintTool = (tool) => tool === 'brush' || tool === 'fill'
 // and autosave. The 3D scene is purely presentational + input; all edit logic
 // lives here so it stays testable and the scene never re-renders mid-stroke.
 export default function MapBuilder({ terrain }) {
-  const { saveTerrain, places, updatePlace, openCard } = useStore()
+  const {
+    saveTerrain,
+    places,
+    updatePlace,
+    openCard,
+    chapters,
+    characters,
+    locations,
+    events,
+    activeProject,
+    getPortraitUrl,
+  } = useStore()
   const widthN = terrain.width
   const heightN = terrain.height
   const settings = useMemo(() => ({ ...DEFAULT_SETTINGS, ...(terrain.settings || {}) }), [terrain])
@@ -72,6 +93,7 @@ export default function MapBuilder({ terrain }) {
   const [mode, setModeRaw] = useState('navigate')
   const [pendingPlaceId, setPendingPlaceId] = useState(null) // place awaiting a click-to-drop
   const [markerMsg, setMarkerMsg] = useState(null) // marker save/error notice
+  const [chapterIndex, setChapterIndex] = useState(0) // timeline scrubber position
   const [tool, setTool] = useState('raise') // raise | lower | flatten | brush | fill
   const [paintType, setPaintType] = useState('grass') // selected palette colour key
   const [brushSize, setBrushSize] = useState(2)
@@ -171,6 +193,80 @@ export default function MapBuilder({ terrain }) {
   )
   // Tap a marker → open its place card (reuses the existing place card view).
   const openMarker = useCallback((placeId) => openCard('place', placeId), [openCard])
+
+  // --- timeline ------------------------------------------------------------
+  // Chapters in book → chapter reading order, and the clamped scrubber index.
+  const books = activeProject?.settings?.books ?? []
+  const orderedChs = useMemo(() => orderedChapters(chapters, books), [chapters, books])
+  const chapterCount = orderedChs.length
+  const chIdx = Math.min(chapterIndex, Math.max(0, chapterCount - 1))
+  const selectedChapter = orderedChs[chIdx] || null
+
+  // Per-chapter scene data: character tokens at their (carried-forward) place,
+  // an off-map list for placements whose place has no coords, and the events
+  // linked to this chapter (with on-map indicators where the place is placed).
+  const placeById = useMemo(() => new Map(places.map((p) => [p.id, p])), [places])
+  const charById = useMemo(() => new Map(characters.map((c) => [c.id, c])), [characters])
+
+  const timeline = useMemo(() => {
+    if (!selectedChapter) return { tokens: [], offMap: [], chapterEvents: [], eventPlaces: [] }
+    const placements = placementsForChapterIndex(
+      locations,
+      orderedChs.map((c) => c.id),
+      chIdx,
+    )
+    const onByPlace = new Map() // placeId → tokens (for clustering)
+    const offMap = []
+    for (const [characterId, placeId] of placements) {
+      const ch = charById.get(characterId)
+      if (!ch) continue // character deleted; skip
+      const place = placeById.get(placeId)
+      const coords = place?.coords
+      const base = {
+        characterId,
+        name: ch.name,
+        name_final: ch.name_final,
+        portrait_path: ch.card?.portrait_path || null,
+      }
+      if (place && coords && Number.isFinite(coords.col) && Number.isFinite(coords.row)) {
+        const arr = onByPlace.get(placeId) || []
+        arr.push({ ...base, col: coords.col, row: coords.row })
+        onByPlace.set(placeId, arr)
+      } else {
+        offMap.push({ ...base, placeName: place?.name || '(unbekannter Ort)' })
+      }
+    }
+    const tokens = []
+    for (const arr of onByPlace.values()) {
+      arr.forEach((t, i) => tokens.push({ ...t, clusterIndex: i, clusterCount: arr.length }))
+    }
+    // Events linked to this chapter; group placed ones for an on-map indicator.
+    const chapterEvents = eventsForChapter(events, selectedChapter.id)
+    const evByPlace = new Map()
+    for (const ev of chapterEvents) {
+      const place = ev.place_id ? placeById.get(ev.place_id) : null
+      const coords = place?.coords
+      if (place && coords && Number.isFinite(coords.col) && Number.isFinite(coords.row)) {
+        const cur = evByPlace.get(place.id) || { placeId: place.id, col: coords.col, row: coords.row, count: 0 }
+        cur.count += 1
+        evByPlace.set(place.id, cur)
+      }
+    }
+    return { tokens, offMap, chapterEvents, eventPlaces: [...evByPlace.values()] }
+  }, [selectedChapter, locations, orderedChs, chIdx, charById, placeById, events])
+
+  const chapterLabel = useMemo(() => {
+    if (!selectedChapter) return ''
+    const bt = books.find((b) => b.id === selectedChapter.book)?.title
+    const num = selectedChapter.number != null ? `${selectedChapter.number}. ` : ''
+    return `${bt ? `${bt} · ` : ''}${num}${selectedChapter.title || 'Kapitel'}`
+  }, [selectedChapter, books])
+
+  const openCharacter = useCallback((id) => openCard('character', id), [openCard])
+  const stepChapter = useCallback(
+    (delta) => setChapterIndex((i) => Math.max(0, Math.min(chapterCount - 1, i + delta))),
+    [chapterCount],
+  )
 
   const toolRef = useRef(tool)
   const paintTypeRef = useRef(paintType)
@@ -496,6 +592,13 @@ export default function MapBuilder({ terrain }) {
           >
             <MapPin size={15} /> Marker
           </button>
+          <button
+            className={`seg-btn ${mode === 'timeline' ? 'on' : ''}`}
+            onClick={() => setMode('timeline')}
+            title="Zeitleiste: Figuren pro Kapitel auf der Karte verfolgen"
+          >
+            <History size={15} /> Zeitleiste
+          </button>
         </div>
 
         <div className={`tool-group ${mode === 'edit' ? '' : 'disabled'}`}>
@@ -690,6 +793,10 @@ export default function MapBuilder({ terrain }) {
           onPlaceMarker={placeMarker}
           onMoveMarker={moveMarker}
           onOpenMarker={openMarker}
+          tokens={mode === 'timeline' ? timeline.tokens : []}
+          eventPlaces={mode === 'timeline' ? timeline.eventPlaces : []}
+          getPortraitUrl={getPortraitUrl}
+          onOpenCharacter={openCharacter}
         />
         {/* Compass: rotates with the camera heading so North is always obvious;
             click it to snap the view back to the default (looking North). */}
@@ -710,8 +817,8 @@ export default function MapBuilder({ terrain }) {
         </button>
         {/* The legend IS the paint palette: each colour is a selectable override
             paint; the eraser clears a cell back to its height-based auto-colour.
-            Hidden in markers mode, where the marker panel takes its place. */}
-        {mode !== 'markers' && (
+            Hidden in marker / timeline modes, where their own panels take over. */}
+        {mode !== 'markers' && mode !== 'timeline' && (
           <div className="map-palette" role="group" aria-label="Farbpalette zum Malen">
             {PAINT_TYPES.map((t) => (
               <button
@@ -797,6 +904,107 @@ export default function MapBuilder({ terrain }) {
               </>
             )}
           </div>
+        )}
+
+        {/* Timeline: scrub through chapters; tokens reposition; events + off-map
+            characters are listed alongside. Read-only — no editing here. */}
+        {mode === 'timeline' && (
+          <>
+            <div className="timeline-bar" aria-label="Kapitel-Zeitleiste">
+              {chapterCount === 0 ? (
+                <span className="timeline-empty">Noch keine Kapitel in diesem Projekt.</span>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    onClick={() => stepChapter(-1)}
+                    disabled={chIdx <= 0}
+                    title="Vorheriges Kapitel"
+                    aria-label="Vorheriges Kapitel"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <div className="timeline-track">
+                    <input
+                      type="range"
+                      min="0"
+                      max={chapterCount - 1}
+                      value={chIdx}
+                      onChange={(e) => setChapterIndex(Number(e.target.value))}
+                      aria-label="Kapitel wählen"
+                    />
+                    <span className="timeline-label">
+                      <span className="timeline-pos">{chIdx + 1}/{chapterCount}</span> {chapterLabel}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    onClick={() => stepChapter(1)}
+                    disabled={chIdx >= chapterCount - 1}
+                    title="Nächstes Kapitel"
+                    aria-label="Nächstes Kapitel"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </>
+              )}
+            </div>
+
+            {chapterCount > 0 && (
+              <div className="timeline-panel" aria-label="Kapitel-Details">
+                {timeline.chapterEvents.length > 0 && (
+                  <div className="timeline-section">
+                    <div className="timeline-section-title">
+                      <CalendarClock size={13} /> Ereignisse ({timeline.chapterEvents.length})
+                    </div>
+                    <ul className="timeline-list">
+                      {timeline.chapterEvents.map((ev) => (
+                        <li key={ev.id}>
+                          <button
+                            type="button"
+                            className="timeline-item"
+                            onClick={() => openCard('event', ev.id)}
+                            title="Ereignis-Karte öffnen"
+                          >
+                            {ev.title || '(ohne Titel)'}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {timeline.offMap.length > 0 && (
+                  <div className="timeline-section">
+                    <div className="timeline-section-title warn">
+                      <MapPinOff size={13} /> Nicht auf der Karte ({timeline.offMap.length})
+                    </div>
+                    <ul className="timeline-list">
+                      {timeline.offMap.map((o) => (
+                        <li key={o.characterId}>
+                          <button
+                            type="button"
+                            className="timeline-item"
+                            onClick={() => openCharacter(o.characterId)}
+                            title="Figur-Karte öffnen"
+                          >
+                            <span className={o.name_final ? '' : 'prov'}>{o.name || '(ohne Namen)'}</span>
+                            <span className="timeline-sub">@ {o.placeName}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {timeline.tokens.length === 0 && timeline.offMap.length === 0 && (
+                  <p className="timeline-empty">Keine Figuren in diesem Kapitel platziert.</p>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

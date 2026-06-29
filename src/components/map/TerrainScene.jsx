@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls, Html } from '@react-three/drei'
 import * as THREE from 'three'
-import { MapPin } from 'lucide-react'
+import { MapPin, CalendarClock } from 'lucide-react'
 import {
   cellToWorld,
   worldToCell,
   inBounds,
   colorForCell,
   markerWorldPos,
+  MARKER_FLOAT,
   CARDINALS,
 } from '../../lib/terrain/model.js'
 
@@ -404,6 +405,131 @@ function Markers({
   })
 }
 
+// Spread tokens that share a place around a small ring so they don't overlap.
+function clusterOffset(i, n, cellSize) {
+  if (n <= 1) return [0, 0]
+  const ring = cellSize * (0.55 + 0.35 * Math.floor(i / 8))
+  const ang = (2 * Math.PI * (i % 8)) / Math.min(n, 8)
+  return [Math.cos(ang) * ring, Math.sin(ang) * ring]
+}
+
+// Timeline layer: character tokens at their per-chapter places, plus an event
+// indicator on places with chapter-linked events. Tokens are DOM billboards
+// (drei <Html>) showing the character's portrait thumbnail (or an initial when
+// none), with the name in provisional styling; clicking one opens that
+// character's card. Tokens are interactive only in timeline mode. Positions are
+// read from the place coords (same source as the markers) and float above the
+// terrain at the cell's current height.
+function Tokens({
+  widthN,
+  heightN,
+  settings,
+  heightsRef,
+  tokens,
+  eventPlaces,
+  getPortraitUrl,
+  onOpenCharacter,
+  mode,
+  structRev,
+}) {
+  const invalidate = useThree((s) => s.invalidate)
+  const [urls, setUrls] = useState({}) // portrait_path → object URL (or null)
+
+  // Resolve portrait thumbnails lazily; cache by path so we fetch each once.
+  useEffect(() => {
+    let cancelled = false
+    const paths = [...new Set(tokens.map((t) => t.portrait_path).filter(Boolean))]
+    const missing = paths.filter((p) => !(p in urls))
+    if (!missing.length) return
+    Promise.all(
+      missing.map(async (p) => [p, await getPortraitUrl(p).catch(() => null)]),
+    ).then((pairs) => {
+      if (cancelled) return
+      setUrls((cur) => {
+        const next = { ...cur }
+        for (const [p, u] of pairs) next[p] = u
+        return next
+      })
+      invalidate()
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [tokens, getPortraitUrl, urls, invalidate])
+
+  // Revoke object URLs when the layer unmounts (avoid blob leaks).
+  const urlsRef = useRef(urls)
+  urlsRef.current = urls
+  useEffect(
+    () => () => {
+      Object.values(urlsRef.current).forEach((u) => u && URL.revokeObjectURL(u))
+    },
+    [],
+  )
+
+  // Reproject billboards when the data or terrain changes (on-demand frameloop).
+  useEffect(() => {
+    invalidate()
+  }, [tokens, eventPlaces, structRev, invalidate])
+
+  const pointer = mode === 'timeline' ? 'auto' : 'none'
+
+  return (
+    <>
+      {eventPlaces.map((ep) => {
+        const { x, y, z } = markerWorldPos(
+          ep.col, ep.row, heightsRef.current, widthN, heightN, settings, MARKER_FLOAT + 3,
+        )
+        return (
+          <Html key={`ev-${ep.placeId}`} position={[x, y, z]} center zIndexRange={[18, 0]} className="token-html">
+            <span className="event-indicator" title={`${ep.count} Ereignis(se) in diesem Kapitel`}>
+              <CalendarClock size={12} /> {ep.count}
+            </span>
+          </Html>
+        )
+      })}
+      {tokens.map((t) => {
+        const [ox, oz] = clusterOffset(t.clusterIndex, t.clusterCount, settings.cellSize)
+        const base = markerWorldPos(
+          t.col, t.row, heightsRef.current, widthN, heightN, settings, MARKER_FLOAT + 1.5,
+        )
+        const url = t.portrait_path ? urls[t.portrait_path] : null
+        return (
+          <Html
+            key={t.characterId}
+            position={[base.x + ox, base.y, base.z + oz]}
+            center
+            zIndexRange={[22, 0]}
+            className="token-html"
+          >
+            <button
+              type="button"
+              className="char-token"
+              style={{ pointerEvents: pointer }}
+              onClick={(e) => {
+                e.stopPropagation()
+                onOpenCharacter(t.characterId)
+              }}
+              title={t.name || '(ohne Namen)'}
+            >
+              <span className="token-portrait">
+                {url ? (
+                  <img src={url} alt="" />
+                ) : (
+                  <span className="token-initial">{(t.name || '?').trim().charAt(0).toUpperCase()}</span>
+                )}
+              </span>
+              <span className={`token-label ${t.name_final ? '' : 'provisional'}`}>
+                {t.name || '(ohne Namen)'}
+              </span>
+            </button>
+          </Html>
+        )
+      })}
+    </>
+  )
+}
+
 // Deterministic camera: on mount AND on every reset, snap to a canonical view —
 // due SOUTH of centre, ~45° up, looking due NORTH (-Z) at the origin — so the
 // map ALWAYS opens correctly oriented. Also reports the camera heading (azimuth)
@@ -504,6 +630,18 @@ export default function TerrainScene(props) {
         onOpenMarker={props.onOpenMarker}
         structRev={props.structRev}
       />
+      <Tokens
+        widthN={widthN}
+        heightN={heightN}
+        settings={settings}
+        heightsRef={props.heightsRef}
+        tokens={props.tokens || []}
+        eventPlaces={props.eventPlaces || []}
+        getPortraitUrl={props.getPortraitUrl}
+        onOpenCharacter={props.onOpenCharacter}
+        mode={mode}
+        structRev={props.structRev}
+      />
       <ViewController
         gridD={gridD}
         resetSignal={resetSignal}
@@ -513,7 +651,7 @@ export default function TerrainScene(props) {
       <DebugHook />
       <OrbitControls
         makeDefault
-        enabled={mode === 'navigate'}
+        enabled={mode === 'navigate' || mode === 'timeline'}
         enablePan
         enableZoom
         enableRotate
