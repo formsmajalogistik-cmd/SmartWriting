@@ -175,6 +175,27 @@ export function worldToCell(wx, wz, width, height, cellSize = 1) {
   }
 }
 
+// ---- markers ---------------------------------------------------------------
+// A place's position on the map is stored on the place row itself, in its
+// existing `coords` jsonb column (no new column / migration needed). The value
+// is snapped to the tile grid:
+//   coords = { col, row }   // 0-based cell column/row. Height is NOT stored —
+//                           // it is read live from the terrain at that cell, so
+//                           // a marker always sits on the surface even after the
+//                           // ground beneath it is resculpted.
+// A place whose coords is null/missing simply isn't on the map yet.
+export const MARKER_FLOAT = 1.4 // world units a marker floats above its cell top
+
+// World position for a marker sitting on cell (col,row): centred on the cell and
+// lifted to the cell's current top plus a constant float, so the pin clears the
+// terrain (and the sea plane) and stays visible at any height. `heights` is the
+// live Uint8Array; out-of-range cells fall back to height 0.
+export function markerWorldPos(col, row, heights, width, height, settings, float = MARKER_FLOAT) {
+  const { x, z } = cellToWorld(col, row, width, height, settings.cellSize)
+  const h = inBounds(col, row, width, height) ? heights[idx(col, row, width)] : 0
+  return { x, y: h * settings.step + float, z }
+}
+
 // ---- brush ----------------------------------------------------------------
 // Indices of cells within a circular brush of the given radius (in cells).
 // size 1 = a single cell; size 2 = a 3-wide diamond/disc, etc.

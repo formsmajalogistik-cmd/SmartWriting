@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls, Html } from '@react-three/drei'
 import * as THREE from 'three'
+import { MapPin } from 'lucide-react'
 import {
   cellToWorld,
   worldToCell,
   inBounds,
   colorForCell,
+  markerWorldPos,
   CARDINALS,
 } from '../../lib/terrain/model.js'
 
@@ -28,8 +30,8 @@ function Cells({
   endStroke,
   fillCell,
   structRev,
+  meshRef,
 }) {
-  const meshRef = useRef(null)
   const painting = useRef(false)
   const { invalidate, camera, gl, raycaster } = useThree()
   const dummy = useMemo(() => new THREE.Object3D(), [])
@@ -262,6 +264,146 @@ function Cardinals({ widthN, heightN, settings, northRad }) {
   )
 }
 
+// Location markers: lightweight DOM billboards (drei <Html>) pinned to a cell.
+// Constant screen size → readable at any zoom. Behaviour is gated by `mode`:
+//   • navigate / edit : a tap opens the place card; markers are NOT draggable
+//                       (in edit mode they're click-through so painting works).
+//   • markers         : tap opens the card, drag moves the marker (snapping to
+//                       the cell under the cursor), and — with a place pending —
+//                       a click on the terrain drops a new marker there.
+// Positions are raycast against the terrain InstancedMesh (shared `meshRef`).
+function Markers({
+  meshRef,
+  widthN,
+  heightN,
+  settings,
+  heightsRef,
+  mode,
+  markers,
+  pendingPlaceId,
+  onPlaceMarker,
+  onMoveMarker,
+  onOpenMarker,
+  structRev,
+}) {
+  const { camera, gl, raycaster, invalidate } = useThree()
+  const ndc = useMemo(() => new THREE.Vector2(), [])
+  const [dragId, setDragId] = useState(null)
+  const [dragCell, setDragCell] = useState(null) // live {col,row} during a drag
+  const dragCellRef = useRef(null)
+  const movedRef = useRef(false)
+
+  // Resolve the grid cell under a client point by raycasting the terrain mesh.
+  const aimCell = useCallback(
+    (clientX, clientY) => {
+      const mesh = meshRef.current
+      if (!mesh) return null
+      const rect = gl.domElement.getBoundingClientRect()
+      ndc.x = ((clientX - rect.left) / rect.width) * 2 - 1
+      ndc.y = -((clientY - rect.top) / rect.height) * 2 + 1
+      raycaster.setFromCamera(ndc, camera)
+      const hits = raycaster.intersectObject(mesh, false)
+      if (!hits.length) return null
+      const c = worldToCell(hits[0].point.x, hits[0].point.z, widthN, heightN, settings.cellSize)
+      return inBounds(c.x, c.y, widthN, heightN) ? { col: c.x, row: c.y } : null
+    },
+    [meshRef, gl, ndc, raycaster, camera, widthN, heightN, settings.cellSize],
+  )
+
+  // Placement: in markers mode with a place selected, a click on the terrain
+  // drops that marker on the clicked cell. Stable listener; reads live state.
+  const live = useRef(null)
+  live.current = { mode, pendingPlaceId, onPlaceMarker }
+  useEffect(() => {
+    const el = gl.domElement
+    const onDown = (e) => {
+      const L = live.current
+      if (L.mode !== 'markers' || !L.pendingPlaceId || e.button !== 0) return
+      const cell = aimCell(e.clientX, e.clientY)
+      if (cell) {
+        e.preventDefault()
+        L.onPlaceMarker(L.pendingPlaceId, cell)
+      }
+    }
+    el.addEventListener('pointerdown', onDown)
+    return () => el.removeEventListener('pointerdown', onDown)
+  }, [gl, aimCell])
+
+  // Reproject the DOM billboards whenever the data or terrain changes (the scene
+  // renders on demand, so without this nudge a marker added while the camera is
+  // still wouldn't appear until the next interaction).
+  useEffect(() => {
+    invalidate()
+  }, [markers, structRev, dragCell, invalidate])
+
+  const setLiveCell = (c) => {
+    dragCellRef.current = c
+    setDragCell(c)
+  }
+
+  const startDrag = (placeId, e) => {
+    if (mode !== 'markers' || e.button !== 0) return
+    e.preventDefault()
+    e.stopPropagation()
+    movedRef.current = false
+    setDragId(placeId)
+    setLiveCell(null)
+    const onMove = (ev) => {
+      const cell = aimCell(ev.clientX, ev.clientY)
+      if (cell) {
+        movedRef.current = true
+        setLiveCell(cell)
+        invalidate()
+      }
+    }
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      const cell = dragCellRef.current
+      setDragId(null)
+      setLiveCell(null)
+      if (movedRef.current && cell) onMoveMarker(placeId, cell)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }
+
+  return markers.map((m) => {
+    const cell = dragId === m.placeId && dragCell ? dragCell : m
+    const { x, y, z } = markerWorldPos(cell.col, cell.row, heightsRef.current, widthN, heightN, settings)
+    return (
+      <Html
+        key={m.placeId}
+        position={[x, y, z]}
+        center
+        zIndexRange={[20, 0]}
+        className="marker-html"
+      >
+        <button
+          type="button"
+          className={`map-marker ${dragId === m.placeId ? 'dragging' : ''}`}
+          style={{ pointerEvents: mode === 'edit' ? 'none' : 'auto' }}
+          onPointerDown={(e) => startDrag(m.placeId, e)}
+          onClick={(e) => {
+            e.stopPropagation()
+            if (movedRef.current) {
+              movedRef.current = false
+              return // that was a drag, not a tap
+            }
+            onOpenMarker(m.placeId)
+          }}
+          title={m.name || '(ohne Namen)'}
+        >
+          <span className={`marker-label ${m.name_final ? '' : 'provisional'}`}>
+            {m.name || '(ohne Namen)'}
+          </span>
+          <MapPin className="marker-pin" size={18} />
+        </button>
+      </Html>
+    )
+  })
+}
+
 // Deterministic camera: on mount AND on every reset, snap to a canonical view —
 // due SOUTH of centre, ~45° up, looking due NORTH (-Z) at the origin — so the
 // map ALWAYS opens correctly oriented. Also reports the camera heading (azimuth)
@@ -332,6 +474,9 @@ export default function TerrainScene(props) {
   const { widthN, heightN, settings, mode, resetSignal, onHeading, northOffset, northOffsetRef } = props
   const gridD = Math.max(widthN, heightN) * settings.cellSize
   const northRad = ((northOffset || 0) * Math.PI) / 180
+  // One shared handle on the terrain InstancedMesh: Cells writes it, the marker
+  // layer raycasts against it for placement / dragging.
+  const terrainMeshRef = useRef(null)
   return (
     <Canvas
       dpr={[1, 2]}
@@ -342,9 +487,23 @@ export default function TerrainScene(props) {
       <color attach="background" args={['#0b1220']} />
       <ambientLight intensity={0.75} />
       <directionalLight position={[gridD, gridD * 1.6, gridD * 0.6]} intensity={1.15} />
-      <Cells {...props} />
+      <Cells {...props} meshRef={terrainMeshRef} />
       <WaterPlane widthN={widthN} heightN={heightN} settings={settings} seaLevel={props.seaLevel} />
       <Cardinals widthN={widthN} heightN={heightN} settings={settings} northRad={northRad} />
+      <Markers
+        meshRef={terrainMeshRef}
+        widthN={widthN}
+        heightN={heightN}
+        settings={settings}
+        heightsRef={props.heightsRef}
+        mode={mode}
+        markers={props.markers || []}
+        pendingPlaceId={props.pendingPlaceId}
+        onPlaceMarker={props.onPlaceMarker}
+        onMoveMarker={props.onMoveMarker}
+        onOpenMarker={props.onOpenMarker}
+        structRev={props.structRev}
+      />
       <ViewController
         gridD={gridD}
         resetSignal={resetSignal}

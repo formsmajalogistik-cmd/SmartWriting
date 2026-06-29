@@ -16,6 +16,8 @@ import {
   Compass,
   PaintBucket,
   Navigation,
+  MapPin,
+  X,
 } from 'lucide-react'
 import { useStore } from '../../state/store.jsx'
 import TerrainScene from './TerrainScene.jsx'
@@ -44,7 +46,7 @@ const isPaintTool = (tool) => tool === 'brush' || tool === 'fill'
 // and autosave. The 3D scene is purely presentational + input; all edit logic
 // lives here so it stays testable and the scene never re-renders mid-stroke.
 export default function MapBuilder({ terrain }) {
-  const { saveTerrain } = useStore()
+  const { saveTerrain, places, updatePlace, openCard } = useStore()
   const widthN = terrain.width
   const heightN = terrain.height
   const settings = useMemo(() => ({ ...DEFAULT_SETTINGS, ...(terrain.settings || {}) }), [terrain])
@@ -61,7 +63,12 @@ export default function MapBuilder({ terrain }) {
   }
 
   // --- UI state (mirrors are kept in refs for the stable paint callback) ---
-  const [mode, setMode] = useState('navigate') // 'navigate' | 'edit'
+  // Three hard-separated contexts so camera / terrain-sculpt / marker editing
+  // never interfere: 'navigate' (camera only) | 'edit' (Stage A terrain tools) |
+  // 'markers' (place / move / remove location markers).
+  const [mode, setModeRaw] = useState('navigate')
+  const [pendingPlaceId, setPendingPlaceId] = useState(null) // place awaiting a click-to-drop
+  const [markerMsg, setMarkerMsg] = useState(null) // marker save/error notice
   const [tool, setTool] = useState('raise') // raise | lower | flatten | brush | fill
   const [paintType, setPaintType] = useState('grass') // selected palette colour key
   const [brushSize, setBrushSize] = useState(2)
@@ -90,6 +97,76 @@ export default function MapBuilder({ terrain }) {
   // the camera is NOT yanked (reset/reopen aligns). Persistence is handled by an
   // effect below so it doesn't depend on markDirty being defined yet.
   const setNorth = useCallback((deg) => setNorthOffset(normalizeDeg(deg)), [])
+
+  // Switch top-level mode. Leaving markers mode cancels any pending placement so
+  // a stray terrain click in navigate/edit can never drop a marker.
+  const setMode = useCallback((m) => {
+    setModeRaw(m)
+    if (m !== 'markers') setPendingPlaceId(null)
+  }, [])
+
+  // --- markers ------------------------------------------------------------
+  // Markers ARE this project's place cards: a place with grid coords is on the
+  // map, one without isn't. Positions are stored on the place row's `coords`
+  // jsonb ({col,row}); the place card itself is otherwise untouched.
+  const placedMarkers = useMemo(
+    () =>
+      places
+        .filter((p) => p.coords && Number.isFinite(p.coords.col) && Number.isFinite(p.coords.row))
+        .map((p) => ({
+          placeId: p.id,
+          col: p.coords.col,
+          row: p.coords.row,
+          name: p.name,
+          name_final: p.name_final,
+        })),
+    [places],
+  )
+  const unplacedPlaces = useMemo(
+    () => places.filter((p) => !(p.coords && Number.isFinite(p.coords.col) && Number.isFinite(p.coords.row))),
+    [places],
+  )
+
+  // Drop a pending place onto a clicked cell (persists coords). Clears the
+  // pending selection so the next pick starts clean.
+  const placeMarker = useCallback(
+    async (placeId, cell) => {
+      setMarkerMsg(null)
+      try {
+        await updatePlace(placeId, { coords: { col: cell.col, row: cell.row } })
+        setPendingPlaceId((cur) => (cur === placeId ? null : cur))
+      } catch {
+        setMarkerMsg('Marker konnte nicht gespeichert werden.')
+      }
+    },
+    [updatePlace],
+  )
+  // Move an existing marker to a new cell (drag commit).
+  const moveMarker = useCallback(
+    async (placeId, cell) => {
+      setMarkerMsg(null)
+      try {
+        await updatePlace(placeId, { coords: { col: cell.col, row: cell.row } })
+      } catch {
+        setMarkerMsg('Position konnte nicht gespeichert werden.')
+      }
+    },
+    [updatePlace],
+  )
+  // Remove a marker from the map: clears coords only — the place card stays.
+  const removeMarker = useCallback(
+    async (placeId) => {
+      setMarkerMsg(null)
+      try {
+        await updatePlace(placeId, { coords: null })
+      } catch {
+        setMarkerMsg('Marker konnte nicht entfernt werden.')
+      }
+    },
+    [updatePlace],
+  )
+  // Tap a marker → open its place card (reuses the existing place card view).
+  const openMarker = useCallback((placeId) => openCard('place', placeId), [openCard])
 
   const toolRef = useRef(tool)
   const paintTypeRef = useRef(paintType)
@@ -376,6 +453,13 @@ export default function MapBuilder({ terrain }) {
           >
             <Mountain size={15} /> Bearbeiten
           </button>
+          <button
+            className={`seg-btn ${mode === 'markers' ? 'on' : ''}`}
+            onClick={() => setMode('markers')}
+            title="Marker setzen (Orte auf der Karte platzieren)"
+          >
+            <MapPin size={15} /> Marker
+          </button>
         </div>
 
         <div className={`tool-group ${mode === 'edit' ? '' : 'disabled'}`}>
@@ -517,6 +601,13 @@ export default function MapBuilder({ terrain }) {
             Kamera auf „Navigieren“ wechseln.
           </div>
         )}
+        {mode === 'markers' && (
+          <div className="map-mode-hint" role="status">
+            {pendingPlaceId
+              ? 'Klicke auf eine Zelle, um den Ort dort zu platzieren.'
+              : 'Marker — wähle links einen Ort und klicke aufs Raster. Marker ziehen = verschieben, antippen = Karte öffnen.'}
+          </div>
+        )}
         <TerrainScene
           widthN={widthN}
           heightN={heightN}
@@ -535,6 +626,11 @@ export default function MapBuilder({ terrain }) {
           onHeading={onHeading}
           northOffset={northOffset}
           northOffsetRef={northOffsetRef}
+          markers={placedMarkers}
+          pendingPlaceId={pendingPlaceId}
+          onPlaceMarker={placeMarker}
+          onMoveMarker={moveMarker}
+          onOpenMarker={openMarker}
         />
         {/* Compass: rotates with the camera heading so North is always obvious;
             click it to snap the view back to the default (looking North). */}
@@ -554,29 +650,95 @@ export default function MapBuilder({ terrain }) {
           </span>
         </button>
         {/* The legend IS the paint palette: each colour is a selectable override
-            paint; the eraser clears a cell back to its height-based auto-colour. */}
-        <div className="map-palette" role="group" aria-label="Farbpalette zum Malen">
-          {PAINT_TYPES.map((t) => (
+            paint; the eraser clears a cell back to its height-based auto-colour.
+            Hidden in markers mode, where the marker panel takes its place. */}
+        {mode !== 'markers' && (
+          <div className="map-palette" role="group" aria-label="Farbpalette zum Malen">
+            {PAINT_TYPES.map((t) => (
+              <button
+                type="button"
+                key={t.key}
+                className={`palette-item ${isPaintTool(tool) && paintType === t.key ? 'on' : ''}`}
+                onClick={() => selectPaint(t.key)}
+                title={`${t.label} ${tool === 'fill' ? 'füllen' : 'malen'}`}
+              >
+                <span className="legend-swatch" style={{ background: t.color }} />
+                {t.label}
+              </button>
+            ))}
             <button
               type="button"
-              key={t.key}
-              className={`palette-item ${isPaintTool(tool) && paintType === t.key ? 'on' : ''}`}
-              onClick={() => selectPaint(t.key)}
-              title={`${t.label} ${tool === 'fill' ? 'füllen' : 'malen'}`}
+              className={`palette-item ${isPaintTool(tool) && paintType === 'erase' ? 'on' : ''}`}
+              onClick={() => selectPaint('erase')}
+              title="Bemalung entfernen (zurück zur Höhenfarbe)"
             >
-              <span className="legend-swatch" style={{ background: t.color }} />
-              {t.label}
+              <Eraser size={13} /> Radierer
             </button>
-          ))}
-          <button
-            type="button"
-            className={`palette-item ${isPaintTool(tool) && paintType === 'erase' ? 'on' : ''}`}
-            onClick={() => selectPaint('erase')}
-            title="Bemalung entfernen (zurück zur Höhenfarbe)"
-          >
-            <Eraser size={13} /> Radierer
-          </button>
-        </div>
+          </div>
+        )}
+
+        {/* Marker panel: pick an unplaced place to drop, manage placed markers. */}
+        {mode === 'markers' && (
+          <div className="marker-panel" aria-label="Marker">
+            <div className="marker-panel-head">
+              <MapPin size={14} /> Marker
+            </div>
+            {markerMsg && <div className="marker-msg err" role="alert">{markerMsg}</div>}
+
+            <div className="marker-section-title">Nicht auf der Karte ({unplacedPlaces.length})</div>
+            {places.length === 0 ? (
+              <p className="hint marker-empty">Noch keine Orte. Lege zuerst eine Ort-Karte an.</p>
+            ) : unplacedPlaces.length === 0 ? (
+              <p className="hint marker-empty">Alle Orte sind platziert.</p>
+            ) : (
+              <ul className="marker-list">
+                {unplacedPlaces.map((p) => (
+                  <li key={p.id}>
+                    <button
+                      type="button"
+                      className={`marker-pick ${pendingPlaceId === p.id ? 'on' : ''}`}
+                      onClick={() => setPendingPlaceId((cur) => (cur === p.id ? null : p.id))}
+                      title={pendingPlaceId === p.id ? 'Klicke aufs Raster zum Platzieren' : 'Zum Platzieren wählen'}
+                    >
+                      <MapPin size={13} />
+                      <span className={p.name_final ? '' : 'prov'}>{p.name || '(ohne Namen)'}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {placedMarkers.length > 0 && (
+              <>
+                <div className="marker-section-title">Auf der Karte ({placedMarkers.length})</div>
+                <ul className="marker-list">
+                  {placedMarkers.map((m) => (
+                    <li key={m.placeId}>
+                      <button
+                        type="button"
+                        className="marker-pick placed"
+                        onClick={() => openMarker(m.placeId)}
+                        title="Ort-Karte öffnen"
+                      >
+                        <MapPin size={13} />
+                        <span className={m.name_final ? '' : 'prov'}>{m.name || '(ohne Namen)'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="marker-remove"
+                        onClick={() => removeMarker(m.placeId)}
+                        title="Vom Karte entfernen (Ort-Karte bleibt erhalten)"
+                        aria-label={`${m.name || 'Ort'} von der Karte entfernen`}
+                      >
+                        <X size={13} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
