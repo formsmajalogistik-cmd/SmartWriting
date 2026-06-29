@@ -217,6 +217,20 @@ export function clampHeight(h, maxHeight = MAX_HEIGHT) {
   return Math.max(0, Math.min(maxHeight, h))
 }
 
+// ---- mountain stamp --------------------------------------------------------
+// Radial mountain profile: the extra height to ADD at cell-distance `d` (in
+// cells) from a stamp centre, for a peak `peak` steps tall over a footprint of
+// `radius` cells. Highest at the centre (d=0 → peak), tapering to 0 at the rim,
+// with a slightly concave slope (broad base, pointier top) so a single stamp
+// reads as a mountain rather than a cone or a flat plateau. Pure/deterministic;
+// the caller adds the ground base height, clamps, and applies any look jitter.
+export function mountainDelta(d, radius, peak) {
+  const R = Math.max(1, radius)
+  if (d >= R) return 0
+  const t = 1 - d / R // 1 at the centre → 0 at the rim
+  return peak * Math.pow(t, 1.3)
+}
+
 // ---- flood fill (bucket) ---------------------------------------------------
 // Indices of the cells 4-connected to (sx,sy) that share the START cell's
 // "kind" — its painted terrain-type if painted (>0), else its height-band.

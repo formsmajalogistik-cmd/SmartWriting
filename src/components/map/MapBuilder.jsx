@@ -18,6 +18,7 @@ import {
   Navigation,
   MapPin,
   X,
+  Triangle,
 } from 'lucide-react'
 import { useStore } from '../../state/store.jsx'
 import TerrainScene from './TerrainScene.jsx'
@@ -31,6 +32,8 @@ import {
   decodeHeights,
   encodeHeights,
   floodFillRegion,
+  mountainDelta,
+  idx,
 } from '../../lib/terrain/model.js'
 
 const AUTOSAVE_MS = 1000
@@ -73,6 +76,7 @@ export default function MapBuilder({ terrain }) {
   const [paintType, setPaintType] = useState('grass') // selected palette colour key
   const [brushSize, setBrushSize] = useState(2)
   const [flattenTarget, setFlattenTarget] = useState(4)
+  const [mountainHeight, setMountainHeight] = useState(6) // peak height (steps) for the Berg tool
   const [seaLevel, setSeaLevel] = useState(terrain.sea_level ?? 2)
   const [structRev, setStructRev] = useState(0) // bump → scene full rebuild
   const [saveState, setSaveState] = useState('saved') // saved|dirty|saving|error
@@ -172,11 +176,13 @@ export default function MapBuilder({ terrain }) {
   const paintTypeRef = useRef(paintType)
   const brushRef = useRef(brushSize)
   const targetRef = useRef(flattenTarget)
+  const mountainRef = useRef(mountainHeight)
   const seaLevelRef = useRef(seaLevel)
   toolRef.current = tool
   paintTypeRef.current = paintType
   brushRef.current = brushSize
   targetRef.current = flattenTarget
+  mountainRef.current = mountainHeight
   seaLevelRef.current = seaLevel
 
   // --- history + autosave plumbing ---
@@ -254,6 +260,36 @@ export default function MapBuilder({ terrain }) {
       const stroke = strokeRef.current
       if (!stroke) return []
       const tool = toolRef.current
+
+      // Mountain: stamp a radial peak (centre-tall, tapering to the rim) in a
+      // single action. Builds UP from the existing ground via max(), so a
+      // click-drag merges overlapping stamps into a ridge instead of stair-
+      // stepping, and the whole stamp/stroke stays one undo step. A touch of
+      // slope jitter avoids a too-geometric look; the centre keeps full height.
+      if (tool === 'mountain') {
+        const heights = heightsRef.current
+        const size = brushRef.current
+        const r = Math.max(1, size - 1)
+        const peak = mountainRef.current
+        const baseH = heights[idx(cx, cy, widthN)]
+        const out = []
+        for (const i of cellsInBrush(cx, cy, size, widthN, heightN)) {
+          const x = i % widthN
+          const y = (i / widthN) | 0
+          const d = Math.hypot(x - cx, y - cy)
+          let add = mountainDelta(d, r, peak)
+          if (d > 0) add *= 0.85 + 0.3 * Math.random()
+          const target = clampHeight(baseH + Math.round(add), maxHeight)
+          if (!stroke.map.has(i)) stroke.map.set(i, heights[i])
+          const after = Math.max(heights[i], target)
+          if (after !== heights[i]) {
+            heights[i] = after
+            out.push(i)
+          }
+        }
+        return out
+      }
+
       const cells = cellsInBrush(cx, cy, brushRef.current, widthN, heightN)
       const changed = []
       if (stroke.layer === 'type') {
@@ -494,6 +530,13 @@ export default function MapBuilder({ terrain }) {
           >
             <PaintBucket size={15} /> Füllen
           </button>
+          <button
+            className={`tool-btn ${tool === 'mountain' ? 'on' : ''}`}
+            onClick={() => { setTool('mountain'); setMode('edit') }}
+            title="Berg: mit einem Klick einen Gipfel aufschütten"
+          >
+            <Triangle size={15} /> Berg
+          </button>
         </div>
 
         {/* Terrain-type paints live in the colour palette (canvas overlay). */}
@@ -523,6 +566,22 @@ export default function MapBuilder({ terrain }) {
               disabled={mode !== 'edit'}
             />
             <span className="ctrl-val">{flattenTarget}</span>
+          </label>
+        )}
+
+        {tool === 'mountain' && (
+          <label className="ctrl" title="Gipfelhöhe (Schritte über dem Boden)">
+            <Triangle size={13} />
+            <span>Gipfel</span>
+            <input
+              type="range"
+              min="1"
+              max={maxHeight}
+              value={mountainHeight}
+              onChange={(e) => setMountainHeight(Number(e.target.value))}
+              disabled={mode !== 'edit'}
+            />
+            <span className="ctrl-val">{mountainHeight}</span>
           </label>
         )}
 
