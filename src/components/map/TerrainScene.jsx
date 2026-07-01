@@ -288,11 +288,33 @@ function Markers({
   structRev,
 }) {
   const { camera, gl, raycaster, invalidate } = useThree()
+  const controls = useThree((s) => s.controls)
   const ndc = useMemo(() => new THREE.Vector2(), [])
   const [dragId, setDragId] = useState(null)
   const [dragCell, setDragCell] = useState(null) // live {col,row} during a drag
   const dragCellRef = useRef(null)
   const movedRef = useRef(false)
+
+  // --- dense-marker handling: labels appear only when zoomed in -------------
+  // With many markers close together, always-on labels become a wall of text.
+  // So a name-label shows only when the camera is close enough (past a zoom
+  // threshold), or when that marker is hovered (mouse) / revealed by a first
+  // tap (touch), or while editing markers. Below the threshold only the compact
+  // pin shows, so a cluster stays readable and each pin remains clickable.
+  const gridD = Math.max(widthN, heightN) * settings.cellSize
+  const labelDist = gridD * 0.7 // show labels once nearer than this to the target
+  const [zoomedIn, setZoomedIn] = useState(false)
+  const [hoverId, setHoverId] = useState(null) // desktop hover (mouse only)
+  const [revealId, setRevealId] = useState(null) // touch: first tap reveals
+  const pointerKindRef = useRef('mouse')
+
+  useEffect(() => {
+    if (!controls) return
+    const update = () => setZoomedIn(camera.position.distanceTo(controls.target) < labelDist)
+    update()
+    controls.addEventListener('change', update)
+    return () => controls.removeEventListener('change', update)
+  }, [controls, camera, labelDist])
 
   // Resolve the grid cell under a client point by raycasting the terrain mesh.
   const aimCell = useCallback(
@@ -369,9 +391,14 @@ function Markers({
     window.addEventListener('pointerup', onUp)
   }
 
+  // Labels are always on while editing markers (you need to see what you place);
+  // otherwise gated by zoom, with per-marker hover/tap reveal on top.
+  const labelsForced = mode === 'markers'
+
   return markers.map((m) => {
     const cell = dragId === m.placeId && dragCell ? dragCell : m
     const { x, y, z } = markerWorldPos(cell.col, cell.row, heightsRef.current, widthN, heightN, settings)
+    const showLabel = labelsForced || zoomedIn || hoverId === m.placeId || revealId === m.placeId
     return (
       <Html
         key={m.placeId}
@@ -382,15 +409,33 @@ function Markers({
       >
         <button
           type="button"
-          className={`map-marker ${dragId === m.placeId ? 'dragging' : ''}`}
+          className={`map-marker ${dragId === m.placeId ? 'dragging' : ''} ${showLabel ? '' : 'label-off'}`}
           style={{ pointerEvents: mode === 'edit' ? 'none' : 'auto' }}
-          onPointerDown={(e) => startDrag(m.placeId, e)}
+          onPointerDown={(e) => {
+            pointerKindRef.current = e.pointerType || 'mouse'
+            startDrag(m.placeId, e)
+          }}
+          onPointerEnter={(e) => {
+            if (e.pointerType === 'mouse') setHoverId(m.placeId)
+          }}
+          onPointerLeave={(e) => {
+            if (e.pointerType === 'mouse') setHoverId((h) => (h === m.placeId ? null : h))
+          }}
           onClick={(e) => {
             e.stopPropagation()
             if (movedRef.current) {
               movedRef.current = false
               return // that was a drag, not a tap
             }
+            // Touch, zoomed out, label hidden → first tap reveals the label
+            // instead of opening; a second tap (now revealed) opens the card.
+            const visible = labelsForced || zoomedIn || hoverId === m.placeId || revealId === m.placeId
+            if (pointerKindRef.current !== 'mouse' && !visible) {
+              setRevealId(m.placeId)
+              invalidate()
+              return
+            }
+            setRevealId(null)
             onOpenMarker(m.placeId)
           }}
           title={m.name || '(ohne Namen)'}
