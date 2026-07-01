@@ -1331,6 +1331,53 @@ select:focus, input:focus, textarea:focus {
   .timeline-bar { bottom: 6px; padding: 6px 8px; }
 }
 
+/* ---- Regions layer: name labels (drei <Html>) + manager panel ---- */
+.region-label {
+  display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
+  text-transform: uppercase; white-space: nowrap;
+  background: rgba(15,17,23,0.7); border: 1px solid currentColor;
+  border-radius: 5px; padding: 1px 6px; text-shadow: 0 1px 2px rgba(0,0,0,0.85);
+}
+.icon-btn.on { color: var(--accent); }
+.icon-btn.sm { padding: 3px; }
+
+.region-panel {
+  position: absolute; top: 10px; left: 10px; z-index: 3;
+  width: 250px; max-height: calc(100% - 20px); overflow-y: auto;
+  background: rgba(15,17,23,0.92); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px;
+}
+.region-panel-head {
+  display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; color: var(--text);
+}
+.region-add {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  background: var(--accent); color: #fff; border: none; border-radius: 6px;
+  padding: 6px 10px; font-size: 13px; cursor: pointer;
+}
+.region-add:hover { filter: brightness(1.08); }
+.region-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.region-list li {
+  display: flex; align-items: center; gap: 6px;
+  border: 1px solid transparent; border-radius: 6px; padding: 2px 4px;
+}
+.region-list li.active { border-color: var(--accent); background: var(--bg-3); }
+.region-swatch {
+  flex-shrink: 0; width: 20px; height: 20px; padding: 0; border: 1px solid var(--border);
+  border-radius: 4px; background: none; cursor: pointer;
+}
+.region-name {
+  flex: 1; min-width: 0; text-align: left; background: none; border: none; color: var(--text);
+  font-size: 13px; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 4px 2px;
+}
+.region-name:hover { color: var(--accent); }
+.region-hint { font-size: 11px; color: var(--text-dim); }
+.region-hint.warn { color: #fca5a5; }
+
+@media (max-width: 640px) {
+  .region-panel { width: 210px; max-height: calc(100% - 70px); }
+}
+
 /* Compass overlay (top-right). Rotates with camera heading; click = reset view. */
 .map-compass {
   position: absolute; top: 10px; right: 10px; z-index: 3;

@@ -37,6 +37,14 @@
 //     createTerrain(projectId, { width, height, sea_level, heights, settings })
 //                                          -> Terrain (one per project)
 //     saveTerrain(projectId, patch)        -> Terrain (upsert/merge, user-scoped)
+//     (Terrain carries a `regions` byte layer + settings.region_slots for the
+//      per-cell region assignment; region DEFINITIONS live in `regions` below.)
+//
+//   Regions (map areas; per-cell assignment lives on terrains.regions)
+//     listRegions(projectId)               -> Region[]
+//     createRegion(projectId, { name?, colour? }) -> Region
+//     updateRegion(id, patch)              -> Region
+//     deleteRegion(id)                     -> void
 //
 //   Characters
 //     listCharacters(projectId)            -> Character[]

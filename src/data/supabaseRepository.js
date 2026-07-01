@@ -456,6 +456,30 @@ export function createSupabaseRepository() {
       )
     },
 
+    // ---- Regions (map areas; per-cell assignment lives on the terrain) ---
+    async listRegions(projectId) {
+      return unwrap(
+        await supabase
+          .from('regions')
+          .select('*')
+          .eq('project_id', projectId)
+          .order('created_at', { ascending: true }),
+      )
+    },
+    async createRegion(projectId, { name, colour } = {}) {
+      const user_id = await currentUserId()
+      const insert = { user_id, project_id: projectId }
+      if (name?.trim()) insert.name = name.trim()
+      if (colour) insert.colour = colour
+      return unwrap(await supabase.from('regions').insert(insert).select().single())
+    },
+    async updateRegion(id, patch) {
+      return unwrap(await supabase.from('regions').update(patch).eq('id', id).select().single())
+    },
+    async deleteRegion(id) {
+      unwrap(await supabase.from('regions').delete().eq('id', id))
+    },
+
     // ---- Events ---------------------------------------------------------
     async listEvents(projectId) {
       return unwrap(

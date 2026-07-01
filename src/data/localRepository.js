@@ -11,6 +11,7 @@ import {
   makePlace,
   makeCharacterLocation,
   makeEvent,
+  makeRegion,
   nowIso,
 } from './types.js'
 
@@ -404,6 +405,30 @@ export function createLocalRepository() {
       const rows = await db.getAllFromIndex(STORES.character_locations, 'chapter_id', chapterId)
       const existing = rows.find((r) => r.character_id == null && r.place_id === placeId)
       if (existing) await db.delete(STORES.character_locations, existing.id)
+    },
+
+    // ---- Regions (map areas; per-cell assignment lives on the terrain) ---
+    async listRegions(projectId) {
+      const rows = await byProject(STORES.regions, projectId)
+      return rows.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''))
+    },
+    async createRegion(projectId, { name, colour } = {}) {
+      const db = await getDb()
+      const region = makeRegion({ project_id: projectId, name, colour })
+      await db.put(STORES.regions, region)
+      return region
+    },
+    async updateRegion(id, patch) {
+      const db = await getDb()
+      const existing = await db.get(STORES.regions, id)
+      if (!existing) throw new Error(`Region ${id} not found`)
+      const updated = { ...existing, ...patch, updated_at: nowIso() }
+      await db.put(STORES.regions, updated)
+      return updated
+    },
+    async deleteRegion(id) {
+      const db = await getDb()
+      await db.delete(STORES.regions, id)
     },
 
     // ---- Events ---------------------------------------------------------

@@ -231,6 +231,64 @@ export function mountainDelta(d, radius, peak) {
   return peak * Math.pow(t, 1.3)
 }
 
+// ---- regions (per-cell assignment layer) -----------------------------------
+// A separate Uint8 layer parallel to heights/terrain_types: each cell holds a
+// "region slot" byte (0 = unassigned). The slot → region-id map lives in the
+// terrain settings (region_slots), so ids never bloat the per-cell blob.
+export const REGION_NONE = 0
+
+// A default palette for new regions (cycled by creation order). Distinct from
+// the terrain-band colours so a region tint never reads as terrain.
+export const REGION_COLORS = [
+  '#e0b341', '#d1495b', '#3b8ea5', '#8e6db8', '#5aa469',
+  '#e07a5f', '#4062bb', '#c05299', '#6a994e', '#c98a3b',
+]
+
+// Flood the 4-connected run of cells sharing the START cell's byte value in a
+// single-byte layer (used by the region bucket). Iterative; returns cell indices.
+export function floodFillEqual(buf, width, height, sx, sy) {
+  if (sx < 0 || sy < 0 || sx >= width || sy >= height) return []
+  const n = width * height
+  const start = sy * width + sx
+  const target = buf[start]
+  const seen = new Uint8Array(n)
+  const out = []
+  const stack = [start]
+  seen[start] = 1
+  while (stack.length) {
+    const i = stack.pop()
+    out.push(i)
+    const x = i % width
+    const y = (i / width) | 0
+    if (x > 0 && !seen[i - 1] && buf[i - 1] === target) { seen[i - 1] = 1; stack.push(i - 1) }
+    if (x < width - 1 && !seen[i + 1] && buf[i + 1] === target) { seen[i + 1] = 1; stack.push(i + 1) }
+    if (y > 0 && !seen[i - width] && buf[i - width] === target) { seen[i - width] = 1; stack.push(i - width) }
+    if (y < height - 1 && !seen[i + width] && buf[i + width] === target) { seen[i + width] = 1; stack.push(i + width) }
+  }
+  return out
+}
+
+// Centroid (cell col/row) + cell count for each region slot byte (> 0) present
+// in the assignment layer — used to place a region's name label inside its area.
+// Returns Map<slotByte, { col, row, count }>.
+export function computeRegionCentroids(buf, width, height) {
+  const acc = new Map()
+  for (let i = 0; i < buf.length; i++) {
+    const s = buf[i]
+    if (!s) continue
+    const a = acc.get(s) || { sx: 0, sy: 0, count: 0 }
+    a.sx += i % width
+    a.sy += (i / width) | 0
+    a.count++
+    acc.set(s, a)
+  }
+  const out = new Map()
+  for (const [s, a] of acc) {
+    out.set(s, { col: Math.round(a.sx / a.count), row: Math.round(a.sy / a.count), count: a.count })
+  }
+  return out
+}
+
 // ---- flood fill (bucket) ---------------------------------------------------
 // Indices of the cells 4-connected to (sx,sy) that share the START cell's
 // "kind" — its painted terrain-type if painted (>0), else its height-band.

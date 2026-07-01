@@ -24,6 +24,13 @@ import {
   ChevronRight,
   CalendarClock,
   MapPinOff,
+  Map as MapIcon,
+  Brush,
+  Eye,
+  EyeOff,
+  Plus,
+  Pencil,
+  Trash2,
 } from 'lucide-react'
 import { useStore } from '../../state/store.jsx'
 import TerrainScene from './TerrainScene.jsx'
@@ -42,6 +49,8 @@ import {
   decodeHeights,
   encodeHeights,
   floodFillRegion,
+  floodFillEqual,
+  REGION_COLORS,
   mountainDelta,
   idx,
 } from '../../lib/terrain/model.js'
@@ -68,8 +77,12 @@ export default function MapBuilder({ terrain }) {
     characters,
     locations,
     events,
+    regions,
     activeProject,
     getPortraitUrl,
+    createRegion,
+    updateRegion,
+    deleteRegion,
   } = useStore()
   const widthN = terrain.width
   const heightN = terrain.height
@@ -85,6 +98,16 @@ export default function MapBuilder({ terrain }) {
       ? decodeHeights(terrain.terrain_types, widthN * heightN)
       : null // clean seam: no manual terrain-type data yet → auto-colour only
   }
+  // Per-cell region-slot layer (0 = unassigned) + the slot→region-id map. Both
+  // decoded once; the slot map lives in the terrain settings jsonb.
+  const regionsRef = useRef(undefined)
+  if (regionsRef.current === undefined) {
+    regionsRef.current = terrain.regions ? decodeHeights(terrain.regions, widthN * heightN) : null
+  }
+  const slotsRef = useRef(null)
+  if (slotsRef.current === null) {
+    slotsRef.current = Array.isArray(settings.region_slots) ? [...settings.region_slots] : []
+  }
 
   // --- UI state (mirrors are kept in refs for the stable paint callback) ---
   // Three hard-separated contexts so camera / terrain-sculpt / marker editing
@@ -94,6 +117,11 @@ export default function MapBuilder({ terrain }) {
   const [pendingPlaceId, setPendingPlaceId] = useState(null) // place awaiting a click-to-drop
   const [markerMsg, setMarkerMsg] = useState(null) // marker save/error notice
   const [chapterIndex, setChapterIndex] = useState(0) // timeline scrubber position
+  const [regionTool, setRegionTool] = useState('paint') // 'paint' | 'fill' | 'erase'
+  const [activeRegionId, setActiveRegionId] = useState(null) // region being painted
+  const [regionRev, setRegionRev] = useState(0) // bump → borders/labels rebuild
+  const [showRegions, setShowRegions] = useState(true) // regions layer visibility
+  const [regionMsg, setRegionMsg] = useState(null) // region save/error notice
   const [tool, setTool] = useState('raise') // raise | lower | flatten | brush | fill
   const [paintType, setPaintType] = useState('grass') // selected palette colour key
   const [brushSize, setBrushSize] = useState(2)
@@ -274,12 +302,18 @@ export default function MapBuilder({ terrain }) {
   const targetRef = useRef(flattenTarget)
   const mountainRef = useRef(mountainHeight)
   const seaLevelRef = useRef(seaLevel)
+  const modeRef = useRef(mode)
+  const regionToolRef = useRef(regionTool)
+  const activeRegionRef = useRef(activeRegionId)
   toolRef.current = tool
   paintTypeRef.current = paintType
   brushRef.current = brushSize
   targetRef.current = flattenTarget
   mountainRef.current = mountainHeight
   seaLevelRef.current = seaLevel
+  modeRef.current = mode
+  regionToolRef.current = regionTool
+  activeRegionRef.current = activeRegionId
 
   // --- history + autosave plumbing ---
   const undoRef = useRef([])
@@ -296,8 +330,14 @@ export default function MapBuilder({ terrain }) {
       sea_level: seaLevelRef.current,
       heights: encodeHeights(heightsRef.current),
       terrain_types: typesRef.current ? encodeHeights(typesRef.current) : null,
-      // Persist the chosen North into the settings jsonb (no new column needed).
-      settings: { ...settings, north_offset: northOffsetRef.current },
+      // Per-cell region assignment (byte layer), or null until anything is painted.
+      regions: regionsRef.current ? encodeHeights(regionsRef.current) : null,
+      // Persist the chosen North + the region slot→id map into the settings jsonb.
+      settings: {
+        ...settings,
+        north_offset: northOffsetRef.current,
+        region_slots: slotsRef.current,
+      },
     }),
     [widthN, heightN, settings],
   )
@@ -343,11 +383,31 @@ export default function MapBuilder({ terrain }) {
     return typesRef.current
   }, [widthN, heightN])
 
+  // Region layer buffer (lazy) + slot allocation. Each region gets a stable
+  // 1-based byte slot the first time it's painted; the slot→id map is persisted
+  // in the terrain settings, so per-cell bytes stay compact and never reference
+  // a UUID directly. Returns null if the slot space (255) is exhausted.
+  const ensureRegions = useCallback(() => {
+    if (!regionsRef.current) regionsRef.current = new Uint8Array(widthN * heightN)
+    return regionsRef.current
+  }, [widthN, heightN])
+  const slotForRegion = useCallback((regionId) => {
+    const slots = slotsRef.current
+    let i = slots.indexOf(regionId)
+    if (i < 0) {
+      if (slots.length >= 255) return null
+      slots.push(regionId)
+      i = slots.length - 1
+    }
+    return i + 1
+  }, [])
+
   // --- brush ops (stable identity; read live settings from refs) ---
   // A stroke targets ONE layer (heights or terrain-types), fixed at pointer-down
   // from the active tool, so undo can restore the right buffer.
   const beginStroke = useCallback(() => {
-    const layer = toolRef.current === 'brush' ? 'type' : 'height'
+    const layer =
+      modeRef.current === 'regions' ? 'region' : toolRef.current === 'brush' ? 'type' : 'height'
     strokeRef.current = { layer, map: new Map() }
   }, [])
 
@@ -356,6 +416,30 @@ export default function MapBuilder({ terrain }) {
       const stroke = strokeRef.current
       if (!stroke) return []
       const tool = toolRef.current
+
+      // Region paint: assign cells to the active region's slot (or clear with the
+      // eraser), one step per cell per stroke. Bumps regionRev so the borders and
+      // name labels rebuild live. Returns [] so the terrain instances aren't
+      // needlessly rewritten (regions don't tint the cells).
+      if (stroke.layer === 'region') {
+        const buf = ensureRegions()
+        let value
+        if (regionToolRef.current === 'erase') value = 0
+        else {
+          if (!activeRegionRef.current) return []
+          value = slotForRegion(activeRegionRef.current)
+          if (value == null) return []
+        }
+        let touched = false
+        for (const i of cellsInBrush(cx, cy, brushRef.current, widthN, heightN)) {
+          if (stroke.map.has(i)) continue
+          const before = buf[i]
+          stroke.map.set(i, before)
+          if (value !== before) { buf[i] = value; touched = true }
+        }
+        if (touched) setRegionRev((r) => r + 1)
+        return []
+      }
 
       // Mountain: stamp a radial peak (centre-tall, tapering to the rim) in a
       // single action. Builds UP from the existing ground via max(), so a
@@ -421,14 +505,15 @@ export default function MapBuilder({ terrain }) {
       }
       return changed
     },
-    [widthN, heightN, maxHeight, ensureTypes],
+    [widthN, heightN, maxHeight, ensureTypes, ensureRegions, slotForRegion],
   )
 
   const endStroke = useCallback(() => {
     const stroke = strokeRef.current
     strokeRef.current = null
     if (!stroke || !stroke.map.size) return
-    const buf = stroke.layer === 'type' ? ensureTypes() : heightsRef.current
+    const buf =
+      stroke.layer === 'type' ? ensureTypes() : stroke.layer === 'region' ? ensureRegions() : heightsRef.current
     const entries = []
     for (const [i, before] of stroke.map) {
       const after = buf[i]
@@ -440,7 +525,7 @@ export default function MapBuilder({ terrain }) {
     setCanUndo(true)
     setCanRedo(false)
     markDirty()
-  }, [markDirty, ensureTypes])
+  }, [markDirty, ensureTypes, ensureRegions])
 
   // Bucket fill: flood the contiguous region matching the clicked cell's kind
   // (its painted type, or its height-band if unpainted) and set it ALL to the
@@ -448,6 +533,35 @@ export default function MapBuilder({ terrain }) {
   // indices that actually changed (for the scene to recolour).
   const fillCell = useCallback(
     (cx, cy) => {
+      // Region bucket: flood the contiguous run of cells sharing the clicked
+      // cell's current region assignment and set them all to the active region
+      // (or clear with the eraser), as ONE undo step. Returns [] (regions don't
+      // recolour cells); regionRev bump rebuilds the borders/labels.
+      if (modeRef.current === 'regions') {
+        const buf = ensureRegions()
+        let value
+        if (regionToolRef.current === 'erase') value = 0
+        else {
+          if (!activeRegionRef.current) return []
+          value = slotForRegion(activeRegionRef.current)
+          if (value == null) return []
+        }
+        const cells = floodFillEqual(buf, widthN, heightN, cx, cy)
+        const entries = []
+        for (const i of cells) {
+          const before = buf[i]
+          if (before !== value) { entries.push({ i, before, after: value }); buf[i] = value }
+        }
+        if (!entries.length) return []
+        undoRef.current.push({ layer: 'region', entries })
+        redoRef.current = []
+        setCanUndo(true)
+        setCanRedo(false)
+        markDirty()
+        setRegionRev((r) => r + 1)
+        return []
+      }
+
       const types = ensureTypes()
       const region = floodFillRegion({
         heights: heightsRef.current,
@@ -476,32 +590,38 @@ export default function MapBuilder({ terrain }) {
       markDirty()
       return entries.map((e) => e.i)
     },
-    [widthN, heightN, maxHeight, ensureTypes, markDirty],
+    [widthN, heightN, maxHeight, ensureTypes, ensureRegions, slotForRegion, markDirty],
   )
 
   const undo = useCallback(() => {
     const item = undoRef.current.pop()
     if (!item) return
-    const buf = item.layer === 'type' ? ensureTypes() : heightsRef.current
+    const buf =
+      item.layer === 'type' ? ensureTypes() : item.layer === 'region' ? ensureRegions() : heightsRef.current
     for (const { i, before } of item.entries) buf[i] = before
     redoRef.current.push(item)
     setCanUndo(undoRef.current.length > 0)
     setCanRedo(true)
-    setStructRev((r) => r + 1) // full rebuild recolours from heights + types
+    // Region edits rebuild only the overlay (borders/labels); terrain edits do a
+    // full instance rebuild from heights + types.
+    if (item.layer === 'region') setRegionRev((r) => r + 1)
+    else setStructRev((r) => r + 1)
     markDirty()
-  }, [markDirty, ensureTypes])
+  }, [markDirty, ensureTypes, ensureRegions])
 
   const redo = useCallback(() => {
     const item = redoRef.current.pop()
     if (!item) return
-    const buf = item.layer === 'type' ? ensureTypes() : heightsRef.current
+    const buf =
+      item.layer === 'type' ? ensureTypes() : item.layer === 'region' ? ensureRegions() : heightsRef.current
     for (const { i, after } of item.entries) buf[i] = after
     undoRef.current.push(item)
     setCanRedo(redoRef.current.length > 0)
     setCanUndo(true)
-    setStructRev((r) => r + 1)
+    if (item.layer === 'region') setRegionRev((r) => r + 1)
+    else setStructRev((r) => r + 1)
     markDirty()
-  }, [markDirty, ensureTypes])
+  }, [markDirty, ensureTypes, ensureRegions])
 
   function changeSeaLevel(v) {
     setSeaLevel(v)
@@ -519,6 +639,89 @@ export default function MapBuilder({ terrain }) {
     setTool((cur) => (cur === 'fill' ? 'fill' : 'brush'))
     setMode('edit')
   }
+
+  // --- regions manager -----------------------------------------------------
+  const activeRegion = useMemo(
+    () => regions.find((r) => r.id === activeRegionId) || null,
+    [regions, activeRegionId],
+  )
+  const addRegion = useCallback(async () => {
+    setRegionMsg(null)
+    try {
+      const colour = REGION_COLORS[regions.length % REGION_COLORS.length]
+      const r = await createRegion({ name: `Region ${regions.length + 1}`, colour })
+      setActiveRegionId(r.id)
+    } catch {
+      setRegionMsg('Region konnte nicht erstellt werden.')
+    }
+  }, [regions.length, createRegion])
+  const recolourRegion = useCallback(
+    async (id, colour) => {
+      setRegionMsg(null)
+      try {
+        await updateRegion(id, { colour })
+        setRegionRev((r) => r + 1) // relabel in the new colour
+      } catch {
+        setRegionMsg('Farbe konnte nicht gespeichert werden.')
+      }
+    },
+    [updateRegion],
+  )
+  const renameRegion = useCallback(
+    async (region) => {
+      const name = window.prompt('Name der Region:', region.name)
+      if (!name || !name.trim()) return
+      setRegionMsg(null)
+      try {
+        await updateRegion(region.id, { name: name.trim() })
+        setRegionRev((r) => r + 1)
+      } catch {
+        setRegionMsg('Umbenennen fehlgeschlagen.')
+      }
+    },
+    [updateRegion],
+  )
+  const removeRegion = useCallback(
+    async (region) => {
+      if (!window.confirm(`Region „${region.name}“ löschen? Die Zuordnung der Zellen wird entfernt.`)) return
+      setRegionMsg(null)
+      // Clear the region's cells from the assignment layer (as one undo step) so
+      // its borders disappear; the dead slot in region_slots is harmless.
+      const slot = slotsRef.current.indexOf(region.id) + 1
+      if (regionsRef.current && slot > 0) {
+        const buf = regionsRef.current
+        const entries = []
+        for (let i = 0; i < buf.length; i++) {
+          if (buf[i] === slot) { entries.push({ i, before: slot, after: 0 }); buf[i] = 0 }
+        }
+        if (entries.length) {
+          undoRef.current.push({ layer: 'region', entries })
+          redoRef.current = []
+          setCanUndo(true)
+          setCanRedo(false)
+        }
+        setRegionRev((r) => r + 1)
+        markDirty()
+      }
+      try {
+        await deleteRegion(region.id)
+      } catch {
+        setRegionMsg('Löschen fehlgeschlagen.')
+        return
+      }
+      setActiveRegionId((cur) => (cur === region.id ? null : cur))
+    },
+    [deleteRegion, markDirty],
+  )
+
+  // Region-tool selection also enters regions mode.
+  const selectRegionTool = useCallback((t) => {
+    setRegionTool(t)
+    setMode('regions')
+  }, [setMode])
+
+  // Whether the current action is a single-click fill (terrain or region bucket).
+  const isFill = (mode === 'edit' && tool === 'fill') || (mode === 'regions' && regionTool === 'fill')
 
   // Autosave a North change (skip the initial mount so just opening the map
   // doesn't mark it dirty).
@@ -599,8 +802,16 @@ export default function MapBuilder({ terrain }) {
           >
             <History size={15} /> Zeitleiste
           </button>
+          <button
+            className={`seg-btn ${mode === 'regions' ? 'on' : ''}`}
+            onClick={() => setMode('regions')}
+            title="Regionen: Gebiete mit Grenzen und Namen bemalen"
+          >
+            <MapIcon size={15} /> Regionen
+          </button>
         </div>
 
+        {mode !== 'regions' && (
         <div className={`tool-group ${mode === 'edit' ? '' : 'disabled'}`}>
           <button
             className={`tool-btn ${tool === 'raise' ? 'on' : ''}`}
@@ -641,8 +852,35 @@ export default function MapBuilder({ terrain }) {
             <Triangle size={15} /> Berg
           </button>
         </div>
+        )}
 
         {/* Terrain-type paints live in the colour palette (canvas overlay). */}
+
+        {mode === 'regions' && (
+          <div className="tool-group">
+            <button
+              className={`tool-btn ${regionTool === 'paint' ? 'on' : ''}`}
+              onClick={() => selectRegionTool('paint')}
+              title="Region malen"
+            >
+              <Brush size={15} /> Malen
+            </button>
+            <button
+              className={`tool-btn ${regionTool === 'fill' ? 'on' : ''}`}
+              onClick={() => selectRegionTool('fill')}
+              title="Region füllen (Eimer)"
+            >
+              <PaintBucket size={15} /> Füllen
+            </button>
+            <button
+              className={`tool-btn ${regionTool === 'erase' ? 'on' : ''}`}
+              onClick={() => selectRegionTool('erase')}
+              title="Zuordnung entfernen"
+            >
+              <Eraser size={15} /> Radierer
+            </button>
+          </div>
+        )}
 
         <label className="ctrl" title="Pinselgröße">
           <span>Pinsel</span>
@@ -652,7 +890,7 @@ export default function MapBuilder({ terrain }) {
             max="8"
             value={brushSize}
             onChange={(e) => setBrushSize(Number(e.target.value))}
-            disabled={mode !== 'edit'}
+            disabled={mode !== 'edit' && mode !== 'regions'}
           />
           <span className="ctrl-val">{brushSize}</span>
         </label>
@@ -730,6 +968,14 @@ export default function MapBuilder({ terrain }) {
 
         <div className="map-toolbar-spacer" />
 
+        <button
+          className={`icon-btn ${showRegions ? 'on' : ''}`}
+          onClick={() => setShowRegions((v) => !v)}
+          title={showRegions ? 'Regionen ausblenden (Grenzen + Namen)' : 'Regionen einblenden'}
+          aria-pressed={showRegions}
+        >
+          {showRegions ? <Eye size={16} /> : <EyeOff size={16} />}
+        </button>
         <button className="icon-btn" onClick={resetView} title="Ansicht zurücksetzen (Blick nach Norden)">
           <Compass size={16} />
         </button>
@@ -770,6 +1016,13 @@ export default function MapBuilder({ terrain }) {
               : 'Marker — wähle links einen Ort und klicke aufs Raster. Marker ziehen = verschieben, antippen = Karte öffnen.'}
           </div>
         )}
+        {mode === 'regions' && (
+          <div className="map-mode-hint" role="status">
+            {activeRegion
+              ? `Region „${activeRegion.name}“ — male oder fülle Zellen. Grenzen entstehen automatisch.`
+              : 'Regionen — lege links eine Region an und wähle sie, dann male Zellen auf.'}
+          </div>
+        )}
         <TerrainScene
           widthN={widthN}
           heightN={heightN}
@@ -797,6 +1050,12 @@ export default function MapBuilder({ terrain }) {
           eventPlaces={mode === 'timeline' ? timeline.eventPlaces : []}
           getPortraitUrl={getPortraitUrl}
           onOpenCharacter={openCharacter}
+          isFill={isFill}
+          regionsRef={regionsRef}
+          regionSlotsRef={slotsRef}
+          regions={regions}
+          regionRev={regionRev}
+          regionsVisible={showRegions}
         />
         {/* Compass: rotates with the camera heading so North is always obvious;
             click it to snap the view back to the default (looking North). */}
@@ -818,7 +1077,7 @@ export default function MapBuilder({ terrain }) {
         {/* The legend IS the paint palette: each colour is a selectable override
             paint; the eraser clears a cell back to its height-based auto-colour.
             Hidden in marker / timeline modes, where their own panels take over. */}
-        {mode !== 'markers' && mode !== 'timeline' && (
+        {mode !== 'markers' && mode !== 'timeline' && mode !== 'regions' && (
           <div className="map-palette" role="group" aria-label="Farbpalette zum Malen">
             {PAINT_TYPES.map((t) => (
               <button
@@ -1005,6 +1264,55 @@ export default function MapBuilder({ terrain }) {
               </div>
             )}
           </>
+        )}
+
+        {/* Regions manager: create / select / rename / recolour / delete. The
+            active region is what the paint/fill/erase tools assign cells to. */}
+        {mode === 'regions' && (
+          <div className="region-panel" aria-label="Regionen">
+            <div className="region-panel-head">
+              <MapIcon size={14} /> Regionen
+            </div>
+            {regionMsg && <div className="marker-msg err" role="alert">{regionMsg}</div>}
+            <button type="button" className="region-add" onClick={addRegion}>
+              <Plus size={14} /> Neue Region
+            </button>
+            {regions.length === 0 ? (
+              <p className="hint marker-empty">Noch keine Regionen. Lege eine an und male Zellen auf.</p>
+            ) : (
+              <ul className="region-list">
+                {regions.map((r) => (
+                  <li key={r.id} className={activeRegionId === r.id ? 'active' : ''}>
+                    <input
+                      type="color"
+                      className="region-swatch"
+                      value={r.colour}
+                      onChange={(e) => recolourRegion(r.id, e.target.value)}
+                      title="Farbe ändern"
+                      aria-label={`Farbe von ${r.name}`}
+                    />
+                    <button
+                      type="button"
+                      className="region-name"
+                      onClick={() => setActiveRegionId(r.id)}
+                      title="Als aktive Region wählen"
+                    >
+                      {r.name}
+                    </button>
+                    <button type="button" className="icon-btn sm" onClick={() => renameRegion(r)} title="Umbenennen">
+                      <Pencil size={13} />
+                    </button>
+                    <button type="button" className="icon-btn sm" onClick={() => removeRegion(r)} title="Region löschen">
+                      <Trash2 size={13} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {!showRegions && (
+              <div className="region-hint warn">Ebene ausgeblendet — mit dem Auge-Symbol wieder einblenden.</div>
+            )}
+          </div>
         )}
       </div>
     </div>

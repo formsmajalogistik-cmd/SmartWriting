@@ -52,6 +52,7 @@ export function StoreProvider({ children }) {
   const [places, setPlaces] = useState([])
   const [locations, setLocations] = useState([])
   const [events, setEvents] = useState([])
+  const [regions, setRegions] = useState([])
   // Versions of the currently open chapter (PROSE only; metadata stays on the chapter).
   const [chapterVersions, setChapterVersions] = useState([])
   const [activeChapterId, setActiveChapterId] = useState(
@@ -87,6 +88,9 @@ export function StoreProvider({ children }) {
   const refreshEvents = useCallback(async (pid) => {
     setEvents(pid ? await repo.listEvents(pid) : [])
   }, [])
+  const refreshRegions = useCallback(async (pid) => {
+    setRegions(pid ? await repo.listRegions(pid) : [])
+  }, [])
   const refreshChapterVersions = useCallback(async (pid, chapterId) => {
     setChapterVersions(pid && chapterId ? await repo.listChapterVersions(pid, { chapterId }) : [])
   }, [])
@@ -119,13 +123,14 @@ export function StoreProvider({ children }) {
           refreshPlaces(activeProjectId),
           refreshLocations(activeProjectId),
           refreshEvents(activeProjectId),
+          refreshRegions(activeProjectId),
         ])
         setActiveChapterId((cur) => (chs.some((c) => c.id === cur) ? cur : null))
       } catch {
         /* error already surfaced via the guarded repo */
       }
     })()
-  }, [activeProjectId, refreshChapters, refreshCharacters, refreshPlaces, refreshLocations, refreshEvents])
+  }, [activeProjectId, refreshChapters, refreshCharacters, refreshPlaces, refreshLocations, refreshEvents, refreshRegions])
 
   // Persist the active chapter so a reload reopens it.
   useEffect(() => {
@@ -288,6 +293,28 @@ export function StoreProvider({ children }) {
     [activeProjectId],
   )
 
+  // --- region actions (map areas) -------------------------------------
+  const createRegion = useCallback(
+    async (opts) => {
+      const r = await repo.createRegion(activeProjectId, opts || {})
+      await refreshRegions(activeProjectId)
+      return r
+    },
+    [activeProjectId, refreshRegions],
+  )
+  const updateRegion = useCallback(async (id, patch) => {
+    const updated = await repo.updateRegion(id, patch)
+    setRegions((prev) => prev.map((r) => (r.id === id ? updated : r)))
+    return updated
+  }, [])
+  const deleteRegion = useCallback(
+    async (id) => {
+      await repo.deleteRegion(id)
+      await refreshRegions(activeProjectId)
+    },
+    [activeProjectId, refreshRegions],
+  )
+
   // --- character / place actions --------------------------------------
   const createCharacter = useCallback(
     async (name) => {
@@ -394,9 +421,10 @@ export function StoreProvider({ children }) {
       places,
       events,
       locations,
+      regions,
       lexicon,
     }
-  }, [activeProjectId, activeProject, chapters, characters, places, events, locations])
+  }, [activeProjectId, activeProject, chapters, characters, places, events, locations, regions])
 
   // --- Drive backup linkage (read/write; Drive logic lives in DriveProvider) -
   const getDriveLink = useCallback(() => repo.getDriveLink(), [])
@@ -483,6 +511,7 @@ export function StoreProvider({ children }) {
     places,
     locations,
     events,
+    regions,
     chapterVersions,
     activeChapter,
     activeChapterId,
@@ -512,6 +541,9 @@ export function StoreProvider({ children }) {
     loadTerrain,
     createTerrain,
     saveTerrain,
+    createRegion,
+    updateRegion,
+    deleteRegion,
     createCharacter,
     updateCharacter,
     deleteCharacter,

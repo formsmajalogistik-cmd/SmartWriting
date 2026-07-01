@@ -10,6 +10,7 @@ import {
   colorForCell,
   markerWorldPos,
   MARKER_FLOAT,
+  computeRegionCentroids,
   CARDINALS,
 } from '../../lib/terrain/model.js'
 
@@ -30,6 +31,7 @@ function Cells({
   paintCell,
   endStroke,
   fillCell,
+  isFill,
   structRev,
   meshRef,
 }) {
@@ -111,7 +113,7 @@ function Cells({
   // Latest mode + edit callbacks, read by the (stable) DOM pointer handlers so
   // the listeners attach once and never go stale.
   const live = useRef(null)
-  live.current = { mode, tool, beginStroke, paintCell, endStroke, fillCell, applyChanged }
+  live.current = { mode, tool, isFill, beginStroke, paintCell, endStroke, fillCell, applyChanged }
 
   // --- editing input -------------------------------------------------------
   // We drive editing from RAW pointer events on the canvas (not R3F's
@@ -148,13 +150,15 @@ function Cells({
     }
 
     const onDown = (e) => {
-      if (live.current.mode !== 'edit' || e.button !== 0) return
+      // Painting is active in terrain-edit mode AND region-paint mode; both drive
+      // the same stroke machinery (MapBuilder decides which layer is written).
+      if ((live.current.mode !== 'edit' && live.current.mode !== 'regions') || e.button !== 0) return
       e.preventDefault()
       aim(e)
       const start = cellOnMesh()
       if (!start) return
       // Fill is a single click — flood the region, no drag/capture.
-      if (live.current.tool === 'fill') {
+      if (live.current.isFill) {
         live.current.applyChanged(live.current.fillCell(start.x, start.y))
         return
       }
@@ -410,7 +414,7 @@ function Markers({
         <button
           type="button"
           className={`map-marker ${dragId === m.placeId ? 'dragging' : ''} ${showLabel ? '' : 'label-off'}`}
-          style={{ pointerEvents: mode === 'edit' ? 'none' : 'auto' }}
+          style={{ pointerEvents: mode === 'edit' || mode === 'regions' ? 'none' : 'auto' }}
           onPointerDown={(e) => {
             pointerKindRef.current = e.pointerType || 'mouse'
             startDrag(m.placeId, e)
@@ -575,6 +579,93 @@ function Tokens({
   )
 }
 
+// Regions layer: auto-drawn borders + name labels from the per-cell assignment.
+// A border line is drawn on every edge between two cells of DIFFERENT regions
+// (region-vs-region or region-vs-none, incl. the grid rim), so outlines appear
+// automatically. Each region's name is labelled at the centroid of its cells,
+// tinted with the region colour. Borders are one LineSegments draw call; the
+// whole layer toggles off via `visible` so it never gets in the way of sculpting.
+function RegionsLayer({
+  widthN,
+  heightN,
+  settings,
+  heightsRef,
+  regionsRef,
+  regionSlotsRef,
+  regions,
+  regionRev,
+  structRev,
+  visible,
+}) {
+  const invalidate = useThree((s) => s.invalidate)
+  const { cellSize, step } = settings
+  const regionsById = useMemo(() => new Map((regions || []).map((r) => [r.id, r])), [regions])
+
+  const { positions, labels } = useMemo(() => {
+    const buf = regionsRef.current
+    if (!buf || !visible) return { positions: new Float32Array(0), labels: [] }
+    const slots = regionSlotsRef.current || []
+    const heights = heightsRef.current
+    const yTop = (i) => heights[i] * step
+    const pos = []
+    for (let y = 0; y < heightN; y++) {
+      for (let x = 0; x < widthN; x++) {
+        const i = y * widthN + x
+        const a = buf[i]
+        const rb = x + 1 < widthN ? buf[i + 1] : 0
+        if (a !== rb) {
+          const { x: px, z: pz } = cellToWorld(x, y, widthN, heightN, cellSize)
+          const ex = px + cellSize / 2
+          const yy = Math.max(yTop(i), x + 1 < widthN ? yTop(i + 1) : yTop(i)) + step * 0.25
+          pos.push(ex, yy, pz - cellSize / 2, ex, yy, pz + cellSize / 2)
+        }
+        const bb = y + 1 < heightN ? buf[i + widthN] : 0
+        if (a !== bb) {
+          const { x: px, z: pz } = cellToWorld(x, y, widthN, heightN, cellSize)
+          const ez = pz + cellSize / 2
+          const yy = Math.max(yTop(i), y + 1 < heightN ? yTop(i + widthN) : yTop(i)) + step * 0.25
+          pos.push(px - cellSize / 2, yy, ez, px + cellSize / 2, yy, ez)
+        }
+      }
+    }
+    const centroids = computeRegionCentroids(buf, widthN, heightN)
+    const labels = []
+    for (const [slot, c] of centroids) {
+      const region = regionsById.get(slots[slot - 1])
+      if (!region) continue // slot maps to a deleted region → treat as none
+      const p = markerWorldPos(c.col, c.row, heights, widthN, heightN, settings, MARKER_FLOAT + 0.5)
+      labels.push({ id: region.id, name: region.name, colour: region.colour, pos: [p.x, p.y, p.z] })
+    }
+    return { positions: new Float32Array(pos), labels }
+  }, [regionRev, structRev, visible, widthN, heightN, cellSize, step, settings, regionsById, regionsRef, regionSlotsRef, heightsRef])
+
+  // Expose a summary for e2e/debug; nudge a frame so on-demand rendering updates.
+  useEffect(() => {
+    window.__mapRegions = { borderSegments: positions.length / 6, labels: labels.map((l) => l.name) }
+    invalidate()
+    return () => { if (window.__mapRegions) delete window.__mapRegions }
+  }, [positions, labels, invalidate])
+
+  if (!visible) return null
+  return (
+    <>
+      {positions.length > 0 && (
+        <lineSegments key={`${regionRev}-${structRev}`} renderOrder={4} frustumCulled={false}>
+          <bufferGeometry>
+            <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+          </bufferGeometry>
+          <lineBasicMaterial color="#f2f5f8" transparent opacity={0.95} depthTest={false} />
+        </lineSegments>
+      )}
+      {labels.map((l) => (
+        <Html key={l.id} position={l.pos} center zIndexRange={[15, 0]} className="token-html">
+          <span className="region-label" style={{ color: l.colour, borderColor: l.colour }}>{l.name}</span>
+        </Html>
+      ))}
+    </>
+  )
+}
+
 // Deterministic camera: on mount AND on every reset, snap to a canonical view —
 // due SOUTH of centre, ~45° up, looking due NORTH (-Z) at the origin — so the
 // map ALWAYS opens correctly oriented. Also reports the camera heading (azimuth)
@@ -660,6 +751,18 @@ export default function TerrainScene(props) {
       <directionalLight position={[gridD, gridD * 1.6, gridD * 0.6]} intensity={1.15} />
       <Cells {...props} meshRef={terrainMeshRef} />
       <WaterPlane widthN={widthN} heightN={heightN} settings={settings} seaLevel={props.seaLevel} />
+      <RegionsLayer
+        widthN={widthN}
+        heightN={heightN}
+        settings={settings}
+        heightsRef={props.heightsRef}
+        regionsRef={props.regionsRef}
+        regionSlotsRef={props.regionSlotsRef}
+        regions={props.regions}
+        regionRev={props.regionRev}
+        structRev={props.structRev}
+        visible={props.regionsVisible}
+      />
       <Cardinals widthN={widthN} heightN={heightN} settings={settings} northRad={northRad} />
       <Markers
         meshRef={terrainMeshRef}

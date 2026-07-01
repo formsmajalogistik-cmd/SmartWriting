@@ -82,7 +82,7 @@ export function makeChapterVersion({ project_id, chapter_id, version_number, lab
 // One terrain per project (Phase 3, Stage A). Only the PROSE… no — only the
 // per-cell heights are versioned data here; markers/timeline/routes (later
 // stages) read places/character_locations and sit on top of this grid.
-export function makeTerrain({ project_id, width, height, sea_level, heights, terrain_types, settings }) {
+export function makeTerrain({ project_id, width, height, sea_level, heights, terrain_types, regions, settings }) {
   return {
     id: newId(),
     user_id: LOCAL_USER_ID,
@@ -92,7 +92,24 @@ export function makeTerrain({ project_id, width, height, sea_level, heights, ter
     sea_level: sea_level ?? 2,
     heights: heights ?? '',
     terrain_types: terrain_types ?? null,
+    // Per-cell region-slot assignment (base64 Uint8Array), or null = unassigned.
+    regions: regions ?? null,
     settings: settings ?? {},
+    created_at: nowIso(),
+    updated_at: nowIso(),
+  }
+}
+
+// regions — id, project_id, user_id, name, colour, created_at, updated_at.
+// Map areas: a definition row per region; the per-cell assignment lives on the
+// terrain (terrains.regions byte layer + settings.region_slots).
+export function makeRegion({ project_id, name, colour }) {
+  return {
+    id: newId(),
+    user_id: LOCAL_USER_ID,
+    project_id,
+    name: name?.trim() || 'Region',
+    colour: colour || '#e0b341',
     created_at: nowIso(),
     updated_at: nowIso(),
   }
