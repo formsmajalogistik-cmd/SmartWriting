@@ -3,6 +3,7 @@
 // they call these actions, which mutate via the repo and refresh local state.
 import { createContext, useContext, useCallback, useEffect, useMemo, useState } from 'react'
 import { getRepository } from '../data/repository.js'
+import { hydrateProject } from '../data/syncEngine.js'
 import { findNameOccurrences, replaceNameReferences } from '../lib/hashlinks.js'
 
 const ACTIVE_PROJECT_KEY = 'smartwriting.activeProjectId'
@@ -124,6 +125,10 @@ export function StoreProvider({ children }) {
     else localStorage.removeItem(ACTIVE_PROJECT_KEY)
     ;(async () => {
       try {
+        // Local-first: seed the local cache from the remote on open (best-effort;
+        // no-op offline or when local changes are still queued). Reads below then
+        // come from the local store, so the app works with or without a network.
+        if (activeProjectId) await hydrateProject(activeProjectId).catch(() => {})
         const [chs] = await Promise.all([
           refreshChapters(activeProjectId),
           refreshCharacters(activeProjectId),

@@ -5,7 +5,7 @@ import { StoreProvider } from './state/store.jsx'
 import { AuthProvider, useAuth } from './auth/AuthProvider.jsx'
 import { DriveProvider } from './drive/DriveProvider.jsx'
 import AuthScreen from './components/AuthScreen.jsx'
-import { DATA_BACKEND } from './data/repository.js'
+import { AUTH_GATED } from './data/repository.js'
 import './styles.css'
 
 // The app shell: store + (per-user, opt-in) Drive backup orchestrator.
@@ -19,12 +19,14 @@ function Shell() {
   )
 }
 
-// Auth gates the whole app: with the Supabase backend, the store (and thus any
-// project data) only mounts once a session exists. The `local` backend is a
-// no-network, single-user dev mode and skips the gate.
+// Auth gates the whole app only for Supabase-backed modes (supabase / local-
+// first): the store mounts once a session exists. OFFLINE this uses the CACHED
+// session (getSession reads localStorage, no network), so a reload works and
+// never forces re-login. The `local` / `localfirst-test` backends are
+// no-network dev/test modes and skip the gate.
 function Root() {
   const { loading, session } = useAuth()
-  if (DATA_BACKEND === 'local') return <Shell />
+  if (!AUTH_GATED) return <Shell />
   if (loading) return <div className="app-loading">Lädt …</div>
   if (!session) return <AuthScreen />
   return <Shell />

@@ -90,19 +90,47 @@
 
 import { createSupabaseRepository } from './supabaseRepository.js'
 import { createLocalRepository } from './localRepository.js'
+import { createSupabaseRemote } from './remoteSupabase.js'
+import { createFakeRemote } from './remoteFake.js'
+import { initSync } from './syncEngine.js'
+import { isSupabaseConfigured, currentUserId } from './supabaseClient.js'
 
-// Backend selection. Default is Supabase (online-first, per Phase 1b).
-// Set VITE_DATA_BACKEND=local to run entirely against IndexedDB with no
-// network/auth — handy for offline dev and UI testing. Both implement the
-// identical interface, so nothing else in the app changes.
-export const DATA_BACKEND = import.meta.env.VITE_DATA_BACKEND === 'local' ? 'local' : 'supabase'
+// Backend selection.
+//   'local'          — IndexedDB only, no network/auth (offline dev / e2e).
+//   'supabase'       — online-only Supabase (legacy / opt-out).
+//   'localfirst'     — DEFAULT when Supabase is configured: reads/writes go to
+//                      the LOCAL IndexedDB store (never blocking on the network)
+//                      while a background engine hydrates from and pushes to
+//                      Supabase. The repository INTERFACE is identical to the
+//                      local backend — only the sync engine is added behind it.
+//   'localfirst-test'— local-first with an in-memory fake remote (e2e only).
+function resolveBackend() {
+  const raw = import.meta.env.VITE_DATA_BACKEND
+  if (raw === 'local' || raw === 'supabase' || raw === 'localfirst' || raw === 'localfirst-test') return raw
+  return isSupabaseConfigured ? 'localfirst' : 'local'
+}
+export const DATA_BACKEND = resolveBackend()
+// Which backends need a Supabase auth session (and so gate the app on login).
+export const AUTH_GATED = DATA_BACKEND === 'supabase' || DATA_BACKEND === 'localfirst'
+// Which backends run the local-first sync engine (and so show a sync status).
+export const SYNC_ENABLED = DATA_BACKEND === 'localfirst' || DATA_BACKEND === 'localfirst-test'
 
 let _repo = null
 
 export function getRepository() {
-  if (!_repo) {
-    // Single swap point.
-    _repo = DATA_BACKEND === 'local' ? createLocalRepository() : createSupabaseRepository()
+  if (_repo) return _repo
+  if (DATA_BACKEND === 'local') {
+    _repo = createLocalRepository()
+  } else if (DATA_BACKEND === 'supabase') {
+    _repo = createSupabaseRepository()
+  } else {
+    // Local-first: the primary store is the LOCAL repository (its writes are
+    // recorded for sync by db.js); a background engine drains the queue to the
+    // chosen remote. UI/store use the same interface as the local backend.
+    const remote = DATA_BACKEND === 'localfirst-test' ? createFakeRemote() : createSupabaseRemote()
+    const getUserId = DATA_BACKEND === 'localfirst-test' ? async () => 'test-user' : currentUserId
+    initSync({ remote, getUserId })
+    _repo = createLocalRepository()
   }
   return _repo
 }

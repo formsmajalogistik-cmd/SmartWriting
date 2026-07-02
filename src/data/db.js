@@ -4,7 +4,7 @@
 import { openDB } from 'idb'
 
 const DB_NAME = 'smartwriting'
-const DB_VERSION = 8
+const DB_VERSION = 9
 
 export const STORES = {
   projects: 'projects',
@@ -26,6 +26,46 @@ export const STORES = {
   portraits: 'portraits',
   // Local-backend Drive linkage (the Supabase backend uses the drive_backup table).
   drive: 'drive',
+  // Local-first outgoing sync: a coalescing queue of pending row mutations
+  // (keyPath 'key' = "table:id") and small key/value sync bookkeeping.
+  sync_queue: 'sync_queue',
+  sync_meta: 'sync_meta',
+}
+
+// Stores whose row mutations are recorded for outgoing sync (they map 1:1 to a
+// Supabase table). Portraits (binary blobs) and Drive linkage are device-local
+// and deliberately NOT synced yet; the queue/meta stores are infra.
+export const SYNCED_STORES = new Set([
+  STORES.projects,
+  STORES.chapters,
+  STORES.chapter_versions,
+  STORES.characters,
+  STORES.places,
+  STORES.character_locations,
+  STORES.events,
+  STORES.regions,
+  STORES.routes,
+  STORES.terrains,
+])
+
+// --- outgoing-mutation recorder --------------------------------------------
+// A registered sink is called after every successful db.put / db.delete on a
+// SYNCED store, so the local-first layer can queue the change for Supabase.
+// Null by default → the pure `local` / `supabase` backends record nothing and
+// behave exactly as before. Recording is suspended while hydrating (writing
+// server rows into the cache must not re-queue them for push).
+let mutationSink = null
+let recordingSuspended = false
+export function setSyncSink(fn) { mutationSink = fn || null }
+export function suspendSync(v) { recordingSuspended = !!v }
+function record(store, id, op, row) {
+  if (!mutationSink || recordingSuspended) return
+  if (!SYNCED_STORES.has(store) || id == null) return
+  try {
+    mutationSink({ table: store, id, op, updated_at: row?.updated_at })
+  } catch {
+    /* never let sync bookkeeping break a local write */
+  }
 }
 
 let _dbPromise = null
@@ -83,6 +123,14 @@ export function getDb() {
           const s = db.createObjectStore(STORES.routes, { keyPath: 'id' })
           s.createIndex('project_id', 'project_id')
         }
+        if (!db.objectStoreNames.contains(STORES.sync_queue)) {
+          // keyPath 'key' = "table:id" so repeated edits to a row COALESCE into
+          // one pending entry (we push the row's latest local state).
+          db.createObjectStore(STORES.sync_queue, { keyPath: 'key' })
+        }
+        if (!db.objectStoreNames.contains(STORES.sync_meta)) {
+          db.createObjectStore(STORES.sync_meta, { keyPath: 'key' })
+        }
         // Backfill (lose no text): every existing chapter gets a "Version 1"
         // copying its current body, set as the active version.
         if (oldVersion > 0 && oldVersion < 5) {
@@ -112,7 +160,35 @@ export function getDb() {
           })
         }
       },
-    })
+    }).then(instrument)
   }
   return _dbPromise
+}
+
+// Wrap the idb database so every db.put / db.delete on a SYNCED store is
+// recorded for outgoing sync AFTER it commits. Transaction-based writes
+// (tx.store.put/delete, used only for cascade child deletes) are intentionally
+// NOT recorded — the server's ON DELETE CASCADE removes those children when the
+// recorded parent delete is pushed. All other db methods pass straight through.
+function instrument(db) {
+  return new Proxy(db, {
+    get(target, prop) {
+      if (prop === 'put') {
+        return async (store, val, key) => {
+          const res = await target.put(store, val, key)
+          record(store, val?.id ?? key ?? res, 'upsert', val)
+          return res
+        }
+      }
+      if (prop === 'delete') {
+        return async (store, key) => {
+          const res = await target.delete(store, key)
+          record(store, key, 'delete')
+          return res
+        }
+      }
+      const v = Reflect.get(target, prop)
+      return typeof v === 'function' ? v.bind(target) : v
+    },
+  })
 }

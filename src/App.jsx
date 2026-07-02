@@ -16,6 +16,7 @@ import CompileView from './components/CompileView.jsx'
 import MapView from './components/MapView.jsx'
 import SearchView from './components/SearchView.jsx'
 import ProgressView from './components/ProgressView.jsx'
+import SyncStatus from './components/SyncStatus.jsx'
 
 const VIEWS = [
   { key: 'write', label: 'Schreiben' },
@@ -118,6 +119,7 @@ export default function App() {
             <Loader2 size={13} className="spin" /> speichert …
           </span>
         )}
+        <SyncStatus />
         <ProjectSwitcher />
         <div className="account">
           <span className="account-email" title={user?.email}>

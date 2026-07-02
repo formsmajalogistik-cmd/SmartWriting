@@ -1546,3 +1546,22 @@ select:focus, input:focus, textarea:focus {
   font-size: 13px; color: var(--text-dim); margin-bottom: 10px;
 }
 .meta-wordcount b { color: var(--text); font-size: 15px; font-variant-numeric: tabular-nums; }
+
+/* ---- Local-first sync status (header) ---- */
+.sync-status {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; border-radius: 12px; padding: 3px 10px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--bg-3); color: var(--text-dim);
+  white-space: nowrap;
+}
+.sync-status .sync-status-text { line-height: 1; }
+.sync-status.ok { color: #5fbf7f; border-color: rgba(76,175,106,0.4); }
+.sync-status.pending { color: #e0b341; border-color: rgba(224,179,65,0.5); }
+.sync-status.syncing { color: #4c9be8; border-color: rgba(76,155,232,0.5); }
+.sync-status.offline { color: #c9a24b; border-color: rgba(201,162,75,0.5); background: rgba(120,90,20,0.18); }
+.sync-status.err { color: #fca5a5; border-color: rgba(220,60,60,0.55); background: rgba(220,60,60,0.12); }
+.sync-status:hover { filter: brightness(1.1); }
+@media (max-width: 720px) {
+  .sync-status-text { display: none; }
+  .sync-status { padding: 4px 7px; }
+}
