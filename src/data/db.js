@@ -4,7 +4,7 @@
 import { openDB } from 'idb'
 
 const DB_NAME = 'smartwriting'
-const DB_VERSION = 7
+const DB_VERSION = 8
 
 export const STORES = {
   projects: 'projects',
@@ -16,6 +16,8 @@ export const STORES = {
   // Per-project map regions (Phase 3): named, coloured areas. The per-cell
   // assignment lives on the terrain row (terrains.regions byte layer).
   regions: 'regions',
+  // Per-project authored routes (Phase 3, Stage C): named ordered place paths.
+  routes: 'routes',
   // Per-version chapter prose (the chapter row mirrors its active version's body).
   chapter_versions: 'chapter_versions',
   // Per-project 3D terrain (Phase 3, Stage A). One row per project.
@@ -75,6 +77,10 @@ export function getDb() {
         }
         if (!db.objectStoreNames.contains(STORES.regions)) {
           const s = db.createObjectStore(STORES.regions, { keyPath: 'id' })
+          s.createIndex('project_id', 'project_id')
+        }
+        if (!db.objectStoreNames.contains(STORES.routes)) {
+          const s = db.createObjectStore(STORES.routes, { keyPath: 'id' })
           s.createIndex('project_id', 'project_id')
         }
         // Backfill (lose no text): every existing chapter gets a "Version 1"

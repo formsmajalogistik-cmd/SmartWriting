@@ -46,6 +46,12 @@
 //     updateRegion(id, patch)              -> Region
 //     deleteRegion(id)                     -> void
 //
+//   Routes (authored ordered place paths drawn on the map)
+//     listRoutes(projectId)                -> Route[]
+//     createRoute(projectId, { label?, colour?, place_ids?, book? }) -> Route
+//     updateRoute(id, patch)               -> Route
+//     deleteRoute(id)                      -> void
+//
 //   Characters
 //     listCharacters(projectId)            -> Character[]
 //     createCharacter(projectId, { name }) -> Character

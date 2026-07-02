@@ -1378,6 +1378,43 @@ select:focus, input:focus, textarea:focus {
   .region-panel { width: 210px; max-height: calc(100% - 70px); }
 }
 
+/* ---- Routes / journeys: timeline selector + routes manager ---- */
+.journey-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.journey-item {
+  display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text);
+  cursor: pointer; padding: 2px 0; min-width: 0;
+}
+.journey-item input[type="checkbox"] { accent-color: var(--accent); }
+.journey-item .prov { font-style: italic; color: #fbbf24; }
+.journey-item > span:not(.journey-dot):not(.journey-gap) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.journey-dot { flex-shrink: 0; width: 11px; height: 11px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.35); }
+.journey-gap {
+  flex-shrink: 0; margin-left: auto; font-size: 10px; color: #fca5a5;
+  border: 1px solid rgba(220,60,60,0.5); border-radius: 4px; padding: 0 4px;
+}
+.routes-toggle { margin-top: 6px; border-top: 1px solid var(--border); padding-top: 6px; }
+
+.route-panel .route-count { color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.route-editor {
+  display: flex; flex-direction: column; gap: 6px;
+  border-top: 1px solid var(--border); padding-top: 8px; margin-top: 2px;
+}
+.route-place-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; counter-reset: rp; }
+.route-place-list li {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--bg-3); border-radius: 6px; padding: 3px 6px;
+}
+.route-place-list li::before {
+  counter-increment: rp; content: counter(rp); flex-shrink: 0;
+  font-size: 11px; color: var(--text-dim); font-variant-numeric: tabular-nums; min-width: 12px;
+}
+.route-place-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.route-place-actions { display: inline-flex; gap: 1px; flex-shrink: 0; }
+.route-add-place {
+  background: var(--bg-3); border: 1px solid var(--border); color: var(--text);
+  border-radius: 6px; padding: 5px 8px; font-size: 13px; width: 100%;
+}
+
 /* Compass overlay (top-right). Rotates with camera heading; click = reset view. */
 .map-compass {
   position: absolute; top: 10px; right: 10px; z-index: 3;

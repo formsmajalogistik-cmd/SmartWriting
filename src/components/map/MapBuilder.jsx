@@ -31,6 +31,9 @@ import {
   Plus,
   Pencil,
   Trash2,
+  Route as RouteIcon,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react'
 import { useStore } from '../../state/store.jsx'
 import TerrainScene from './TerrainScene.jsx'
@@ -38,6 +41,8 @@ import {
   orderedChapters,
   placementsForChapterIndex,
   eventsForChapter,
+  journeyWaypoints,
+  JOURNEY_COLORS,
 } from '../../lib/timeline/timeline.js'
 import {
   DEFAULT_SETTINGS,
@@ -78,11 +83,15 @@ export default function MapBuilder({ terrain }) {
     locations,
     events,
     regions,
+    routes,
     activeProject,
     getPortraitUrl,
     createRegion,
     updateRegion,
     deleteRegion,
+    createRoute,
+    updateRoute,
+    deleteRoute,
   } = useStore()
   const widthN = terrain.width
   const heightN = terrain.height
@@ -122,6 +131,20 @@ export default function MapBuilder({ terrain }) {
   const [regionRev, setRegionRev] = useState(0) // bump → borders/labels rebuild
   const [showRegions, setShowRegions] = useState(true) // regions layer visibility
   const [regionMsg, setRegionMsg] = useState(null) // region save/error notice
+  const [activeRouteId, setActiveRouteId] = useState(null) // route being edited
+  const [routeMsg, setRouteMsg] = useState(null) // route save/error notice
+  // View prefs persisted per project: which character journeys are shown, and
+  // whether authored routes are drawn in the timeline.
+  const prefsKey = `smartwriting.mapprefs.${terrain.project_id}`
+  const [journeyIds, setJourneyIds] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem(prefsKey))?.journeyIds || []) } catch { return new Set() }
+  })
+  const [showRoutes, setShowRoutes] = useState(() => {
+    try { return !!JSON.parse(localStorage.getItem(prefsKey))?.showRoutes } catch { return false }
+  })
+  useEffect(() => {
+    try { localStorage.setItem(prefsKey, JSON.stringify({ journeyIds: [...journeyIds], showRoutes })) } catch { /* ignore */ }
+  }, [prefsKey, journeyIds, showRoutes])
   const [tool, setTool] = useState('raise') // raise | lower | flatten | brush | fill
   const [paintType, setPaintType] = useState('grass') // selected palette colour key
   const [brushSize, setBrushSize] = useState(2)
@@ -295,6 +318,140 @@ export default function MapBuilder({ terrain }) {
     (delta) => setChapterIndex((i) => Math.max(0, Math.min(chapterCount - 1, i + delta))),
     [chapterCount],
   )
+
+  // --- routes / journeys ---------------------------------------------------
+  // Coordinates for placed places (shared by journeys + authored routes).
+  const placeCoords = useMemo(() => {
+    const m = new Map()
+    for (const p of places) {
+      if (p.coords && Number.isFinite(p.coords.col) && Number.isFinite(p.coords.row)) {
+        m.set(p.id, { col: p.coords.col, row: p.coords.row })
+      }
+    }
+    return m
+  }, [places])
+
+  // Characters that have at least one location row → journey candidates (keeps
+  // the selector uncluttered). Each gets a stable colour by character order.
+  const journeyCandidates = useMemo(() => {
+    const withLoc = new Set(locations.filter((l) => l.place_id).map((l) => l.character_id))
+    return characters.filter((c) => withLoc.has(c.id))
+  }, [characters, locations])
+  const journeyColour = useCallback(
+    (charId) => JOURNEY_COLORS[Math.max(0, characters.findIndex((c) => c.id === charId)) % JOURNEY_COLORS.length],
+    [characters],
+  )
+
+  // Per-selected-character journey (waypoints up to the scrubber) + gap notes.
+  const journeyInfo = useMemo(() => {
+    if (mode !== 'timeline' || !selectedChapter) return []
+    const ids = orderedChs.map((c) => c.id)
+    const out = []
+    for (const c of journeyCandidates) {
+      if (!journeyIds.has(c.id)) continue
+      const wps = journeyWaypoints(locations, ids, chIdx, c.id)
+      const gaps = wps.filter((w) => !placeCoords.has(w.placeId)).length
+      out.push({ characterId: c.id, name: c.name, name_final: c.name_final, colour: journeyColour(c.id), waypoints: wps.map((w) => w.placeId), gaps })
+    }
+    return out
+  }, [mode, selectedChapter, orderedChs, chIdx, journeyCandidates, journeyIds, locations, placeCoords, journeyColour])
+
+  // Line specs handed to the scene: authored routes (dashed) where visible +
+  // character journeys (solid, emphasised at the current position).
+  const routeLines = useMemo(() => {
+    const out = []
+    if (mode === 'routes' || (mode === 'timeline' && showRoutes)) {
+      for (const r of routes) {
+        const ids = Array.isArray(r.place_ids) ? r.place_ids : []
+        if (ids.length >= 2) out.push({ key: `route-${r.id}`, colour: r.colour, placeIds: ids, dashed: true, emphasize: false })
+      }
+    }
+    if (mode === 'timeline') {
+      for (const j of journeyInfo) {
+        out.push({ key: `journey-${j.characterId}`, colour: j.colour, placeIds: j.waypoints, dashed: false, emphasize: true })
+      }
+    }
+    return out
+  }, [mode, showRoutes, routes, journeyInfo])
+
+  const toggleJourney = useCallback((charId) => {
+    setJourneyIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(charId)) next.delete(charId)
+      else next.add(charId)
+      return next
+    })
+  }, [])
+
+  // Routes manager.
+  const activeRoute = useMemo(() => routes.find((r) => r.id === activeRouteId) || null, [routes, activeRouteId])
+  const addRoute = useCallback(async () => {
+    setRouteMsg(null)
+    try {
+      const colour = JOURNEY_COLORS[routes.length % JOURNEY_COLORS.length]
+      const r = await createRoute({ label: `Route ${routes.length + 1}`, colour })
+      setActiveRouteId(r.id)
+    } catch {
+      setRouteMsg('Route konnte nicht erstellt werden.')
+    }
+  }, [routes.length, createRoute])
+  const patchRoute = useCallback(
+    async (id, patch) => {
+      setRouteMsg(null)
+      try {
+        await updateRoute(id, patch)
+      } catch {
+        setRouteMsg('Route konnte nicht gespeichert werden.')
+      }
+    },
+    [updateRoute],
+  )
+  const renameRoute = useCallback(
+    async (route) => {
+      const label = window.prompt('Name der Route:', route.label)
+      if (label && label.trim()) patchRoute(route.id, { label: label.trim() })
+    },
+    [patchRoute],
+  )
+  const removeRoute = useCallback(
+    async (route) => {
+      if (!window.confirm(`Route „${route.label}“ löschen?`)) return
+      setRouteMsg(null)
+      try {
+        await deleteRoute(route.id)
+        setActiveRouteId((cur) => (cur === route.id ? null : cur))
+      } catch {
+        setRouteMsg('Löschen fehlgeschlagen.')
+      }
+    },
+    [deleteRoute],
+  )
+  const addPlaceToRoute = useCallback(
+    (route, placeId) => {
+      if (!placeId) return
+      patchRoute(route.id, { place_ids: [...(route.place_ids || []), placeId] })
+    },
+    [patchRoute],
+  )
+  const removePlaceAt = useCallback(
+    (route, i) => {
+      const next = (route.place_ids || []).slice()
+      next.splice(i, 1)
+      patchRoute(route.id, { place_ids: next })
+    },
+    [patchRoute],
+  )
+  const movePlace = useCallback(
+    (route, i, dir) => {
+      const next = (route.place_ids || []).slice()
+      const j = i + dir
+      if (j < 0 || j >= next.length) return
+      ;[next[i], next[j]] = [next[j], next[i]]
+      patchRoute(route.id, { place_ids: next })
+    },
+    [patchRoute],
+  )
+  const placeName = useCallback((id) => places.find((p) => p.id === id)?.name || '(gelöschter Ort)', [places])
 
   const toolRef = useRef(tool)
   const paintTypeRef = useRef(paintType)
@@ -809,6 +966,13 @@ export default function MapBuilder({ terrain }) {
           >
             <MapIcon size={15} /> Regionen
           </button>
+          <button
+            className={`seg-btn ${mode === 'routes' ? 'on' : ''}`}
+            onClick={() => setMode('routes')}
+            title="Routen: benannte Wege als Linien anlegen"
+          >
+            <RouteIcon size={15} /> Routen
+          </button>
         </div>
 
         {mode !== 'regions' && (
@@ -1023,6 +1187,12 @@ export default function MapBuilder({ terrain }) {
               : 'Regionen — lege links eine Region an und wähle sie, dann male Zellen auf.'}
           </div>
         )}
+        {mode === 'routes' && (
+          <div className="map-mode-hint" role="status">
+            Routen — lege eine Route an und füge Orte in Reihenfolge hinzu. Die Linie wird auf der
+            Karte gezeichnet. Figuren-Reiserouten erscheinen in der Zeitleiste.
+          </div>
+        )}
         <TerrainScene
           widthN={widthN}
           heightN={heightN}
@@ -1056,6 +1226,9 @@ export default function MapBuilder({ terrain }) {
           regions={regions}
           regionRev={regionRev}
           regionsVisible={showRegions}
+          routeLines={routeLines}
+          placeCoords={placeCoords}
+          routesRev={structRev}
         />
         {/* Compass: rotates with the camera heading so North is always obvious;
             click it to snap the view back to the default (looking North). */}
@@ -1213,6 +1386,43 @@ export default function MapBuilder({ terrain }) {
 
             {chapterCount > 0 && (
               <div className="timeline-panel" aria-label="Kapitel-Details">
+                {/* Journey layer: pick which characters' paths to draw. */}
+                <div className="timeline-section">
+                  <div className="timeline-section-title">
+                    <RouteIcon size={13} /> Reiserouten
+                  </div>
+                  {journeyCandidates.length === 0 ? (
+                    <p className="timeline-empty">Noch keine Figuren mit Orten.</p>
+                  ) : (
+                    <ul className="journey-list">
+                      {journeyCandidates.map((c) => {
+                        const on = journeyIds.has(c.id)
+                        const info = journeyInfo.find((j) => j.characterId === c.id)
+                        return (
+                          <li key={c.id}>
+                            <label className="journey-item">
+                              <input type="checkbox" checked={on} onChange={() => toggleJourney(c.id)} />
+                              <span className="journey-dot" style={{ background: journeyColour(c.id) }} />
+                              <span className={c.name_final ? '' : 'prov'}>{c.name || '(ohne Namen)'}</span>
+                              {on && info?.gaps > 0 && (
+                                <span className="journey-gap" title="Orte ohne Koordinaten übersprungen">
+                                  {info.gaps} Lücke{info.gaps > 1 ? 'n' : ''}
+                                </span>
+                              )}
+                            </label>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
+                  {routes.length > 0 && (
+                    <label className="journey-item routes-toggle">
+                      <input type="checkbox" checked={showRoutes} onChange={(e) => setShowRoutes(e.target.checked)} />
+                      <span>Autoren-Routen anzeigen</span>
+                    </label>
+                  )}
+                </div>
+
                 {timeline.chapterEvents.length > 0 && (
                   <div className="timeline-section">
                     <div className="timeline-section-title">
@@ -1311,6 +1521,85 @@ export default function MapBuilder({ terrain }) {
             )}
             {!showRegions && (
               <div className="region-hint warn">Ebene ausgeblendet — mit dem Auge-Symbol wieder einblenden.</div>
+            )}
+          </div>
+        )}
+
+        {/* Routes manager: create / edit (ordered places + colour) / delete. */}
+        {mode === 'routes' && (
+          <div className="region-panel route-panel" aria-label="Routen">
+            <div className="region-panel-head">
+              <RouteIcon size={14} /> Routen
+            </div>
+            {routeMsg && <div className="marker-msg err" role="alert">{routeMsg}</div>}
+            <button type="button" className="region-add" onClick={addRoute}>
+              <Plus size={14} /> Neue Route
+            </button>
+            {routes.length === 0 ? (
+              <p className="hint marker-empty">Noch keine Routen. Lege eine an und füge Orte hinzu.</p>
+            ) : (
+              <ul className="region-list">
+                {routes.map((r) => (
+                  <li key={r.id} className={activeRouteId === r.id ? 'active' : ''}>
+                    <input
+                      type="color"
+                      className="region-swatch"
+                      value={r.colour}
+                      onChange={(e) => patchRoute(r.id, { colour: e.target.value })}
+                      title="Farbe ändern"
+                      aria-label={`Farbe von ${r.label}`}
+                    />
+                    <button type="button" className="region-name" onClick={() => setActiveRouteId(r.id)} title="Route bearbeiten">
+                      {r.label} <span className="route-count">({(r.place_ids || []).length})</span>
+                    </button>
+                    <button type="button" className="icon-btn sm" onClick={() => renameRoute(r)} title="Umbenennen">
+                      <Pencil size={13} />
+                    </button>
+                    <button type="button" className="icon-btn sm" onClick={() => removeRoute(r)} title="Route löschen">
+                      <Trash2 size={13} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {activeRoute && (
+              <div className="route-editor">
+                <div className="timeline-section-title">Orte in „{activeRoute.label}“</div>
+                {(activeRoute.place_ids || []).length === 0 ? (
+                  <p className="timeline-empty">Noch keine Orte. Unten hinzufügen (mind. 2 für eine Linie).</p>
+                ) : (
+                  <ol className="route-place-list">
+                    {(activeRoute.place_ids || []).map((pid, i) => (
+                      <li key={`${pid}-${i}`}>
+                        <span className="route-place-name">{placeName(pid)}</span>
+                        <span className="route-place-actions">
+                          <button type="button" className="icon-btn sm" onClick={() => movePlace(activeRoute, i, -1)} disabled={i === 0} title="Nach oben">
+                            <ChevronUp size={13} />
+                          </button>
+                          <button type="button" className="icon-btn sm" onClick={() => movePlace(activeRoute, i, 1)} disabled={i === (activeRoute.place_ids.length - 1)} title="Nach unten">
+                            <ChevronDown size={13} />
+                          </button>
+                          <button type="button" className="icon-btn sm" onClick={() => removePlaceAt(activeRoute, i)} title="Entfernen">
+                            <X size={13} />
+                          </button>
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+                <select
+                  className="route-add-place"
+                  value=""
+                  onChange={(e) => { addPlaceToRoute(activeRoute, e.target.value); e.target.value = '' }}
+                  aria-label="Ort zur Route hinzufügen"
+                >
+                  <option value="">+ Ort hinzufügen …</option>
+                  {places.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name || '(ohne Namen)'}</option>
+                  ))}
+                </select>
+              </div>
             )}
           </div>
         )}

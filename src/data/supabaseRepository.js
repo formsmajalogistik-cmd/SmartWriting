@@ -480,6 +480,32 @@ export function createSupabaseRepository() {
       unwrap(await supabase.from('regions').delete().eq('id', id))
     },
 
+    // ---- Routes (authored ordered place paths) --------------------------
+    async listRoutes(projectId) {
+      return unwrap(
+        await supabase
+          .from('routes')
+          .select('*')
+          .eq('project_id', projectId)
+          .order('created_at', { ascending: true }),
+      )
+    },
+    async createRoute(projectId, opts = {}) {
+      const user_id = await currentUserId()
+      const insert = { user_id, project_id: projectId }
+      if (opts.label?.trim()) insert.label = opts.label.trim()
+      if (opts.colour) insert.colour = opts.colour
+      if (Array.isArray(opts.place_ids)) insert.place_ids = opts.place_ids
+      if (opts.book != null) insert.book = opts.book
+      return unwrap(await supabase.from('routes').insert(insert).select().single())
+    },
+    async updateRoute(id, patch) {
+      return unwrap(await supabase.from('routes').update(patch).eq('id', id).select().single())
+    },
+    async deleteRoute(id) {
+      unwrap(await supabase.from('routes').delete().eq('id', id))
+    },
+
     // ---- Events ---------------------------------------------------------
     async listEvents(projectId) {
       return unwrap(

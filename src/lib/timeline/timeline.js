@@ -51,3 +51,35 @@ export function eventsForChapter(events, chapterId) {
     (e) => Array.isArray(e.card?.chapter_ids) && e.card.chapter_ids.includes(chapterId),
   )
 }
+
+// Distinct colours for character journey lines (cycled by character order).
+export const JOURNEY_COLORS = [
+  '#4cc9f0', '#f72585', '#ffd166', '#06d6a0', '#b5179e',
+  '#ff9f1c', '#8338ec', '#3a86ff', '#fb5607', '#2ec4b6',
+]
+
+// A character's JOURNEY up to the chapter at orderedChapterIds[upToIndex]:
+// the ordered sequence of DISTINCT places they occupy (their path through the
+// world), collapsing consecutive stays in the same place. Only rows with a
+// place_id define a waypoint; carry-forward means staying put adds no waypoint,
+// so the LAST waypoint is exactly the scrubber's carried-forward current place.
+// Returns [{ placeId, index }] in travel order (index = chapter position).
+export function journeyWaypoints(locations, orderedChapterIds, upToIndex, characterId) {
+  if (upToIndex < 0) return []
+  const pos = new Map(orderedChapterIds.map((id, i) => [id, i]))
+  const rows = []
+  for (const loc of locations) {
+    if (loc.character_id !== characterId || !loc.place_id) continue
+    const p = pos.get(loc.chapter_id)
+    if (p === undefined || p > upToIndex) continue
+    rows.push({ p, placeId: loc.place_id })
+  }
+  rows.sort((a, b) => a.p - b.p)
+  const out = []
+  for (const r of rows) {
+    if (!out.length || out[out.length - 1].placeId !== r.placeId) {
+      out.push({ placeId: r.placeId, index: r.p })
+    }
+  }
+  return out
+}

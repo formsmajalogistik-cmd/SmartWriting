@@ -115,6 +115,22 @@ export function makeRegion({ project_id, name, colour }) {
   }
 }
 
+// routes — id, project_id, user_id, label, place_ids (ordered array),
+//          colour, book, created_at, updated_at. Authored journey lines.
+export function makeRoute({ project_id, label, colour, place_ids, book }) {
+  return {
+    id: newId(),
+    user_id: LOCAL_USER_ID,
+    project_id,
+    label: label?.trim() || 'Route',
+    place_ids: Array.isArray(place_ids) ? place_ids : [],
+    colour: colour || '#e0b341',
+    book: book ?? null,
+    created_at: nowIso(),
+    updated_at: nowIso(),
+  }
+}
+
 // characters — id, project_id, name, name_final, role, origin,
 //              language_name, status, card, updated_at
 export function makeCharacter({ project_id, name }) {

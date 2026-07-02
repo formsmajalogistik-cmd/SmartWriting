@@ -12,6 +12,7 @@ import {
   makeCharacterLocation,
   makeEvent,
   makeRegion,
+  makeRoute,
   nowIso,
 } from './types.js'
 
@@ -429,6 +430,30 @@ export function createLocalRepository() {
     async deleteRegion(id) {
       const db = await getDb()
       await db.delete(STORES.regions, id)
+    },
+
+    // ---- Routes (authored ordered place paths) --------------------------
+    async listRoutes(projectId) {
+      const rows = await byProject(STORES.routes, projectId)
+      return rows.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''))
+    },
+    async createRoute(projectId, opts = {}) {
+      const db = await getDb()
+      const route = makeRoute({ project_id: projectId, ...opts })
+      await db.put(STORES.routes, route)
+      return route
+    },
+    async updateRoute(id, patch) {
+      const db = await getDb()
+      const existing = await db.get(STORES.routes, id)
+      if (!existing) throw new Error(`Route ${id} not found`)
+      const updated = { ...existing, ...patch, updated_at: nowIso() }
+      await db.put(STORES.routes, updated)
+      return updated
+    },
+    async deleteRoute(id) {
+      const db = await getDb()
+      await db.delete(STORES.routes, id)
     },
 
     // ---- Events ---------------------------------------------------------

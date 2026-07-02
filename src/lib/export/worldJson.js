@@ -50,6 +50,7 @@ export function buildWorldJson(snapshot, exportedAt = new Date().toISOString()) 
     events: snapshot.events ?? [],
     character_locations: snapshot.locations ?? [],
     regions: snapshot.regions ?? [],
+    routes: snapshot.routes ?? [],
     lexicon: snapshot.lexicon ?? [],
   }
 }

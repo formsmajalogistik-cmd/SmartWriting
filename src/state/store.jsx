@@ -53,6 +53,7 @@ export function StoreProvider({ children }) {
   const [locations, setLocations] = useState([])
   const [events, setEvents] = useState([])
   const [regions, setRegions] = useState([])
+  const [routes, setRoutes] = useState([])
   // Versions of the currently open chapter (PROSE only; metadata stays on the chapter).
   const [chapterVersions, setChapterVersions] = useState([])
   const [activeChapterId, setActiveChapterId] = useState(
@@ -91,6 +92,9 @@ export function StoreProvider({ children }) {
   const refreshRegions = useCallback(async (pid) => {
     setRegions(pid ? await repo.listRegions(pid) : [])
   }, [])
+  const refreshRoutes = useCallback(async (pid) => {
+    setRoutes(pid ? await repo.listRoutes(pid) : [])
+  }, [])
   const refreshChapterVersions = useCallback(async (pid, chapterId) => {
     setChapterVersions(pid && chapterId ? await repo.listChapterVersions(pid, { chapterId }) : [])
   }, [])
@@ -124,13 +128,14 @@ export function StoreProvider({ children }) {
           refreshLocations(activeProjectId),
           refreshEvents(activeProjectId),
           refreshRegions(activeProjectId),
+          refreshRoutes(activeProjectId),
         ])
         setActiveChapterId((cur) => (chs.some((c) => c.id === cur) ? cur : null))
       } catch {
         /* error already surfaced via the guarded repo */
       }
     })()
-  }, [activeProjectId, refreshChapters, refreshCharacters, refreshPlaces, refreshLocations, refreshEvents, refreshRegions])
+  }, [activeProjectId, refreshChapters, refreshCharacters, refreshPlaces, refreshLocations, refreshEvents, refreshRegions, refreshRoutes])
 
   // Persist the active chapter so a reload reopens it.
   useEffect(() => {
@@ -315,6 +320,28 @@ export function StoreProvider({ children }) {
     [activeProjectId, refreshRegions],
   )
 
+  // --- route actions (authored journey lines) -------------------------
+  const createRoute = useCallback(
+    async (opts) => {
+      const r = await repo.createRoute(activeProjectId, opts || {})
+      await refreshRoutes(activeProjectId)
+      return r
+    },
+    [activeProjectId, refreshRoutes],
+  )
+  const updateRoute = useCallback(async (id, patch) => {
+    const updated = await repo.updateRoute(id, patch)
+    setRoutes((prev) => prev.map((r) => (r.id === id ? updated : r)))
+    return updated
+  }, [])
+  const deleteRoute = useCallback(
+    async (id) => {
+      await repo.deleteRoute(id)
+      await refreshRoutes(activeProjectId)
+    },
+    [activeProjectId, refreshRoutes],
+  )
+
   // --- character / place actions --------------------------------------
   const createCharacter = useCallback(
     async (name) => {
@@ -422,9 +449,10 @@ export function StoreProvider({ children }) {
       events,
       locations,
       regions,
+      routes,
       lexicon,
     }
-  }, [activeProjectId, activeProject, chapters, characters, places, events, locations, regions])
+  }, [activeProjectId, activeProject, chapters, characters, places, events, locations, regions, routes])
 
   // --- Drive backup linkage (read/write; Drive logic lives in DriveProvider) -
   const getDriveLink = useCallback(() => repo.getDriveLink(), [])
@@ -512,6 +540,7 @@ export function StoreProvider({ children }) {
     locations,
     events,
     regions,
+    routes,
     chapterVersions,
     activeChapter,
     activeChapterId,
@@ -544,6 +573,9 @@ export function StoreProvider({ children }) {
     createRegion,
     updateRegion,
     deleteRegion,
+    createRoute,
+    updateRoute,
+    deleteRoute,
     createCharacter,
     updateCharacter,
     deleteCharacter,

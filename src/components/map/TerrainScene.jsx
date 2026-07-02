@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
-import { OrbitControls, Html } from '@react-three/drei'
+import { OrbitControls, Html, Line } from '@react-three/drei'
 import * as THREE from 'three'
 import { MapPin, CalendarClock } from 'lucide-react'
 import {
@@ -666,6 +666,86 @@ function RegionsLayer({
   )
 }
 
+// Route / journey layer: polylines through ordered places, floating above the
+// terrain. `lines` are pre-resolved to place-id lists by MapBuilder; here we map
+// each place id to its cell's world position (live with the terrain height) and
+// draw a line. A place without coords breaks the line into sub-segments (the
+// visible gap = the indicated missing coordinate). Character journeys are solid
+// with an emphasised dot at the current (carried-forward) position; authored
+// routes are dashed, so the two never read as the same thing.
+const JOURNEY_FLOAT = 1.0
+const ROUTE_FLOAT = 1.7
+function RoutesLayer({ widthN, heightN, settings, heightsRef, placeCoords, lines, rev, structRev }) {
+  const invalidate = useThree((s) => s.invalidate)
+
+  const built = useMemo(() => {
+    const pointFor = (placeId, floatU) => {
+      const c = placeCoords.get(placeId)
+      if (!c) return null
+      const p = markerWorldPos(c.col, c.row, heightsRef.current, widthN, heightN, settings, floatU)
+      return [p.x, p.y, p.z]
+    }
+    return (lines || []).map((line) => {
+      const floatU = line.dashed ? ROUTE_FLOAT : JOURNEY_FLOAT
+      const segments = []
+      let cur = []
+      let last = null
+      for (const pid of line.placeIds) {
+        const pt = pointFor(pid, floatU)
+        if (!pt) {
+          if (cur.length >= 2) segments.push(cur)
+          cur = []
+          continue
+        }
+        cur.push(pt)
+        last = pt
+      }
+      if (cur.length >= 2) segments.push(cur)
+      return {
+        key: line.key,
+        colour: line.colour,
+        dashed: !!line.dashed,
+        segments,
+        current: line.emphasize ? last : null,
+        points: segments.reduce((n, s) => n + s.length, 0),
+      }
+    })
+  }, [lines, rev, structRev, placeCoords, widthN, heightN, settings, heightsRef])
+
+  useEffect(() => {
+    window.__mapRoutes = {
+      lines: built.map((b) => ({ key: b.key, colour: b.colour, dashed: b.dashed, points: b.points, segs: b.segments.length, hasCurrent: !!b.current })),
+    }
+    invalidate()
+    return () => { if (window.__mapRoutes) delete window.__mapRoutes }
+  }, [built, invalidate])
+
+  return built.map((b) => (
+    <group key={b.key}>
+      {b.segments.map((seg, i) => (
+        <Line
+          key={i}
+          points={seg}
+          color={b.colour}
+          lineWidth={b.dashed ? 2.5 : 3.5}
+          dashed={b.dashed}
+          dashSize={0.7}
+          gapSize={0.4}
+          transparent
+          opacity={0.95}
+          renderOrder={5}
+        />
+      ))}
+      {b.current && (
+        <mesh position={b.current} renderOrder={6}>
+          <sphereGeometry args={[settings.cellSize * 0.35, 14, 14]} />
+          <meshBasicMaterial color={b.colour} />
+        </mesh>
+      )}
+    </group>
+  ))
+}
+
 // Deterministic camera: on mount AND on every reset, snap to a canonical view —
 // due SOUTH of centre, ~45° up, looking due NORTH (-Z) at the origin — so the
 // map ALWAYS opens correctly oriented. Also reports the camera heading (azimuth)
@@ -778,6 +858,16 @@ export default function TerrainScene(props) {
         onOpenMarker={props.onOpenMarker}
         structRev={props.structRev}
       />
+      <RoutesLayer
+        widthN={widthN}
+        heightN={heightN}
+        settings={settings}
+        heightsRef={props.heightsRef}
+        placeCoords={props.placeCoords || new Map()}
+        lines={props.routeLines || []}
+        rev={props.routesRev}
+        structRev={props.structRev}
+      />
       <Tokens
         widthN={widthN}
         heightN={heightN}
@@ -799,7 +889,7 @@ export default function TerrainScene(props) {
       <DebugHook />
       <OrbitControls
         makeDefault
-        enabled={mode === 'navigate' || mode === 'timeline'}
+        enabled={mode === 'navigate' || mode === 'timeline' || mode === 'routes'}
         enablePan
         enableZoom
         enableRotate
