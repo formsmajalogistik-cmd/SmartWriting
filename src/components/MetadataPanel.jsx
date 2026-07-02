@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { X } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 import { CHAPTER_STATUSES } from '../data/types.js'
+import { countWords } from '../lib/progress.js'
 import AddCombo from './AddCombo.jsx'
 
 // Per-chapter metadata. Characters and places present are now SELECTED from the
@@ -105,6 +106,11 @@ export default function MetadataPanel({ chapter }) {
   return (
     <div className="meta-panel">
       <h3>Kapitel-Metadaten</h3>
+
+      <div className="meta-wordcount">
+        <span>Wörter</span>
+        <b>{countWords(chapter.body).toLocaleString('de-DE')}</b>
+      </div>
 
       <label className="field">
         <span>Status</span>

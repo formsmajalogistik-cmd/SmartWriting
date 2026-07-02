@@ -64,6 +64,9 @@ export function StoreProvider({ children }) {
   // view opens (e.g. clicking a #link in the editor jumps to that card).
   const [view, setView] = useState('write')
   const [focusCard, setFocusCard] = useState(null) // { kind, id } | null
+  // A manuscript-search hit to jump to: opens the chapter and selects the match
+  // range in the editor. { chapterId, start, end } | null.
+  const [focusMatch, setFocusMatch] = useState(null)
 
   // --- loaders ---------------------------------------------------------
   const refreshProjects = useCallback(async () => {
@@ -465,6 +468,15 @@ export function StoreProvider({ children }) {
   }, [])
   const consumeFocusCard = useCallback(() => setFocusCard(null), [])
 
+  // Open a chapter in the writing view and (optionally) jump the editor to a
+  // character range — used by manuscript search to land on the match.
+  const openChapterAt = useCallback((chapterId, start = null, end = null) => {
+    setActiveChapterId(chapterId)
+    setView('write')
+    setFocusMatch(start != null ? { chapterId, start, end } : null)
+  }, [])
+  const consumeFocusMatch = useCallback(() => setFocusMatch(null), [])
+
   // --- #reference rename helpers --------------------------------------
   // Find chapters whose body contains "#oldName" references.
   const findReferences = useCallback(
@@ -551,6 +563,9 @@ export function StoreProvider({ children }) {
     focusCard,
     openCard,
     consumeFocusCard,
+    focusMatch,
+    openChapterAt,
+    consumeFocusMatch,
     // actions
     createProject,
     renameProject,

@@ -14,10 +14,14 @@ import ProfileView from './components/ProfileView.jsx'
 import ExportView from './components/ExportView.jsx'
 import CompileView from './components/CompileView.jsx'
 import MapView from './components/MapView.jsx'
+import SearchView from './components/SearchView.jsx'
+import ProgressView from './components/ProgressView.jsx'
 
 const VIEWS = [
   { key: 'write', label: 'Schreiben' },
   { key: 'compile', label: 'Manuskript' },
+  { key: 'search', label: 'Suche' },
+  { key: 'progress', label: 'Fortschritt' },
   { key: 'characters', label: 'Figuren' },
   { key: 'places', label: 'Orte' },
   { key: 'events', label: 'Ereignisse' },
@@ -55,6 +59,8 @@ export default function App() {
       )
     }
     if (view === 'compile') return <main className="content"><CompileView /></main>
+    if (view === 'search') return <main className="content"><SearchView /></main>
+    if (view === 'progress') return <main className="content"><ProgressView /></main>
     if (view === 'characters') return <main className="content"><CharactersView /></main>
     if (view === 'places') return <main className="content"><PlacesView /></main>
     if (view === 'events') return <main className="content"><EventsView /></main>

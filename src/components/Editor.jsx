@@ -14,10 +14,27 @@ import CardPreview from './CardPreview.jsx'
 const PARTIAL_RE = /#([\p{L}\p{N}_'’\-]*)$/u
 const NAME_CHAR = /[\p{L}\p{N}]/u
 
-export default function Editor({ value, onChange, preview }) {
+export default function Editor({ value, onChange, preview, focusSelection, onFocusApplied }) {
   const { characters, places, openCard } = useStore()
   const taRef = useRef(null)
   const popRef = useRef(null)
+
+  // Jump-to-match from manuscript search: focus the textarea and select the
+  // match range (which scrolls it into view), then clear the pending request.
+  useEffect(() => {
+    if (!focusSelection) return
+    const ta = taRef.current
+    if (!ta) return
+    const len = ta.value.length
+    const start = Math.min(focusSelection.start ?? 0, len)
+    const end = Math.min(focusSelection.end ?? start, len)
+    const id = requestAnimationFrame(() => {
+      ta.focus()
+      try { ta.setSelectionRange(start, end) } catch { /* ignore */ }
+      onFocusApplied?.()
+    })
+    return () => cancelAnimationFrame(id)
+  }, [focusSelection, onFocusApplied])
 
   const resolver = useMemo(() => makeResolver(characters, places), [characters, places])
 

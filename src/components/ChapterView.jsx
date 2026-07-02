@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../state/store.jsx'
+import { countWords } from '../lib/progress.js'
 import Editor from './Editor.jsx'
 import MetadataPanel from './MetadataPanel.jsx'
 import VersionBar from './VersionBar.jsx'
@@ -18,6 +19,8 @@ export default function ChapterView() {
     renameVersion,
     deleteVersion,
     setActiveVersion,
+    focusMatch,
+    consumeFocusMatch,
   } = useStore()
   const [body, setBody] = useState(activeChapter?.body ?? '')
   const [preview, setPreview] = useState(false)
@@ -31,6 +34,9 @@ export default function ChapterView() {
 
   const chapterId = activeChapter?.id
   const activeVersionId = activeChapter?.active_version_id
+  const wordCount = useMemo(() => countWords(body), [body])
+  // A pending search jump for THIS chapter, handed to the editor to select.
+  const focusSelection = focusMatch && focusMatch.chapterId === chapterId ? focusMatch : null
 
   // Reset the editor when the chapter OR its active version changes (e.g. after
   // "Set as active" / "New version"): the prose differs, the metadata does not.
@@ -116,6 +122,9 @@ export default function ChapterView() {
           <span className={`save-state ${saved ? 'ok' : 'pending'}`}>
             {saved ? 'gespeichert' : 'speichert …'}
           </span>
+          <span className="chapter-words" title="Wörter (aktive Version)">
+            {wordCount.toLocaleString('de-DE')} Wörter
+          </span>
         </div>
         <div className="toolbar-actions">
           <button
@@ -146,7 +155,13 @@ export default function ChapterView() {
       />
 
       <div className="chapter-main">
-        <Editor value={body} onChange={onBodyChange} preview={preview} />
+        <Editor
+          value={body}
+          onChange={onBodyChange}
+          preview={preview}
+          focusSelection={focusSelection}
+          onFocusApplied={consumeFocusMatch}
+        />
         {showMeta && (
           <aside className="meta-aside">
             <MetadataPanel chapter={activeChapter} />
