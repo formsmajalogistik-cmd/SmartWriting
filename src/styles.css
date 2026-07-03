@@ -1565,3 +1565,20 @@ select:focus, input:focus, textarea:focus {
   .sync-status-text { display: none; }
   .sync-status { padding: 4px 7px; }
 }
+
+/* Conflict state + popover for the sync status */
+.sync-wrap { position: relative; display: inline-flex; }
+.sync-status.conflict { color: #f0a35e; border-color: rgba(240,163,94,0.55); background: rgba(160,90,20,0.16); }
+.sync-pop {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 60;
+  width: 320px; max-height: 60vh; overflow-y: auto;
+  background: var(--bg-2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px; box-shadow: 0 8px 26px rgba(0,0,0,0.45);
+}
+.sync-pop-head { font-weight: 700; font-size: 13px; margin-bottom: 8px; color: var(--text); }
+.sync-pop-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.sync-pop-item { border: 1px solid var(--border); border-radius: 8px; padding: 8px; background: var(--bg-3); }
+.sync-pop-label { font-size: 13px; font-weight: 600; color: var(--text); }
+.sync-pop-version { display: block; font-weight: 400; font-size: 11px; color: #f0a35e; margin-top: 2px; }
+.sync-pop-msg { font-size: 12px; color: var(--text-dim); margin: 5px 0; line-height: 1.45; }
+.sync-pop-actions { display: flex; align-items: center; justify-content: space-between; gap: 6px; }

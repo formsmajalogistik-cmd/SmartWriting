@@ -62,7 +62,16 @@ function record(store, id, op, row) {
   if (!mutationSink || recordingSuspended) return
   if (!SYNCED_STORES.has(store) || id == null) return
   try {
-    mutationSink({ table: store, id, op, updated_at: row?.updated_at })
+    mutationSink({
+      table: store,
+      id,
+      op,
+      updated_at: row?.updated_at,
+      // Which project the row belongs to (a project row IS its own project) —
+      // needed so a delete can write a project-scoped tombstone after the row
+      // itself is gone.
+      project_id: store === STORES.projects ? id : (row?.project_id ?? null),
+    })
   } catch {
     /* never let sync bookkeeping break a local write */
   }
@@ -182,8 +191,14 @@ function instrument(db) {
       }
       if (prop === 'delete') {
         return async (store, key) => {
+          // Read the row BEFORE deleting so the sync record still knows its
+          // project (for the server-side tombstone).
+          let row = null
+          if (SYNCED_STORES.has(store) && mutationSink && !recordingSuspended) {
+            row = await target.get(store, key).catch(() => null)
+          }
           const res = await target.delete(store, key)
-          record(store, key, 'delete')
+          record(store, key, 'delete', row)
           return res
         }
       }

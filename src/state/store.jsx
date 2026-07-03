@@ -3,7 +3,12 @@
 // they call these actions, which mutate via the repo and refresh local state.
 import { createContext, useContext, useCallback, useEffect, useMemo, useState } from 'react'
 import { getRepository } from '../data/repository.js'
-import { hydrateProject } from '../data/syncEngine.js'
+import {
+  hydrateProject,
+  bootstrapProjects,
+  setSyncProject,
+  onPullApplied,
+} from '../data/syncEngine.js'
 import { findNameOccurrences, replaceNameReferences } from '../lib/hashlinks.js'
 
 const ACTIVE_PROJECT_KEY = 'smartwriting.activeProjectId'
@@ -108,6 +113,9 @@ export function StoreProvider({ children }) {
   useEffect(() => {
     ;(async () => {
       try {
+        // Local-first: a fresh device knows no projects until the list is
+        // pulled from the remote (best-effort; no-op offline / non-sync modes).
+        await bootstrapProjects().catch(() => {})
         const list = await refreshProjects()
         setActiveProjectId((cur) => (list.some((p) => p.id === cur) ? cur : list[0]?.id || null))
       } catch {
@@ -128,6 +136,8 @@ export function StoreProvider({ children }) {
         // Local-first: seed the local cache from the remote on open (best-effort;
         // no-op offline or when local changes are still queued). Reads below then
         // come from the local store, so the app works with or without a network.
+        // Registering the project also starts the periodic incoming pull.
+        setSyncProject(activeProjectId)
         if (activeProjectId) await hydrateProject(activeProjectId).catch(() => {})
         const [chs] = await Promise.all([
           refreshChapters(activeProjectId),
@@ -150,6 +160,41 @@ export function StoreProvider({ children }) {
     if (activeChapterId) localStorage.setItem(ACTIVE_CHAPTER_KEY, activeChapterId)
     else localStorage.removeItem(ACTIVE_CHAPTER_KEY)
   }, [activeChapterId])
+
+  // Incoming sync: when a pull merged remote changes into the local store,
+  // re-read the affected collections so the UI reflects them live.
+  useEffect(() => {
+    return onPullApplied(async (tables) => {
+      const t = new Set(tables)
+      try {
+        if (t.has('projects')) await refreshProjects()
+        if (t.has('chapters')) await refreshChapters(activeProjectId)
+        if (t.has('characters')) await refreshCharacters(activeProjectId)
+        if (t.has('places')) await refreshPlaces(activeProjectId)
+        if (t.has('character_locations')) await refreshLocations(activeProjectId)
+        if (t.has('events')) await refreshEvents(activeProjectId)
+        if (t.has('regions')) await refreshRegions(activeProjectId)
+        if (t.has('routes')) await refreshRoutes(activeProjectId)
+        if (t.has('chapter_versions') && activeChapterId) {
+          await refreshChapterVersions(activeProjectId, activeChapterId)
+        }
+      } catch {
+        /* surfaced via the guarded repo / sync status */
+      }
+    })
+  }, [
+    activeProjectId,
+    activeChapterId,
+    refreshProjects,
+    refreshChapters,
+    refreshCharacters,
+    refreshPlaces,
+    refreshLocations,
+    refreshEvents,
+    refreshRegions,
+    refreshRoutes,
+    refreshChapterVersions,
+  ])
 
   // Load the open chapter's versions (for the version selector / compare).
   useEffect(() => {

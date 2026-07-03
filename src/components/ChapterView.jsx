@@ -50,6 +50,17 @@ export default function ChapterView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chapterId, activeVersionId])
 
+  // Incoming sync: when a pull updated this chapter's prose while nothing is
+  // being typed here (saved === true), show the pulled body. This never fires
+  // mid-typing — a locally-pending edit is routed through the conflict logic
+  // instead of being overwritten.
+  useEffect(() => {
+    if (saved && activeChapter && (activeChapter.body ?? '') !== bodyRef.current) {
+      setBody(activeChapter.body ?? '')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeChapter?.body])
+
   function onBodyChange(next) {
     setBody(next)
     setSaved(false)
