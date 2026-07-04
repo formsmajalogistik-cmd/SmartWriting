@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Copy,
   Check,
@@ -25,6 +25,7 @@ import {
   DIVINE_REGISTERS,
 } from '../lib/praemali/engine.js'
 import { canonicalPhrases } from '../lib/praemali/phrases.js'
+import { buildKnownForms, validatePhrase, parseImportSnippet } from '../lib/praemali/validate.js'
 
 // The Praemali translator: dictionary lookup, guided sentence builder, phrase
 // library and custom-word editor. Data-driven — every word comes from the
@@ -509,25 +510,318 @@ function BuilderView({ lexicon }) {
 }
 
 // ---- Phrases --------------------------------------------------------------------
-function PhrasesView() {
-  const { savedPhrases, deleteSavedPhrase } = useStore()
+// The library carries manual/imported phrases alongside Builder-saved ones —
+// same rows, same shape. Unknown tokens are FLAGGED (never blocked: proper
+// names are legitimate) and the flag list persists on the phrase row until
+// re-validation clears it after the word is added.
+
+function TagChips({ tags }) {
+  if (!tags?.length) return null
+  return (
+    <span className="pr-tagrow">
+      {tags.map((t) => <span key={t} className="pr-tag">{t}</span>)}
+    </span>
+  )
+}
+
+function TagInput({ tags, onChange }) {
+  const [draft, setDraft] = useState('')
+  const commit = () => {
+    const t = draft.trim()
+    if (t && !tags.includes(t)) onChange([...tags, t])
+    setDraft('')
+  }
+  return (
+    <div className="pr-tags-input">
+      {tags.map((t) => (
+        <span key={t} className="pr-tag">
+          {t}
+          <button type="button" aria-label={`Remove tag ${t}`} onClick={() => onChange(tags.filter((x) => x !== t))}>
+            <X size={10} />
+          </button>
+        </span>
+      ))}
+      <input
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); commit() } }}
+        onBlur={commit}
+        placeholder={tags.length ? '' : 'tag + Enter …'}
+        aria-label="Add tag"
+      />
+    </div>
+  )
+}
+
+function UnresolvedChips({ unresolved, onAddToken, note }) {
+  if (!unresolved?.length) return null
+  return (
+    <div className="pr-unres">
+      <AlertTriangle size={12} />
+      <span>Unknown:</span>
+      {unresolved.map((t) => (
+        <span key={t} className="pr-unres-chip">
+          {t}
+          {onAddToken && (
+            <button type="button" title={`Add “${t}” to the lexicon`} onClick={() => onAddToken(t)}>
+              + add
+            </button>
+          )}
+        </span>
+      ))}
+      {note && <em className="pr-unres-note">{note}</em>}
+    </div>
+  )
+}
+
+// Manual phrase entry — saves into the same saved_phrases rows as the Builder.
+function AddPhraseForm({ lexicon, known, onAddToken, onSaved, onClose }) {
+  const { createSavedPhrase } = useStore()
+  const [praemali, setPraemali] = useState('')
+  const [en, setEn] = useState('')
+  const [de, setDe] = useState('')
+  const [register, setRegister] = useState('common')
+  const [gloss, setGloss] = useState('')
+  const [tags, setTags] = useState([])
+  const [busy, setBusy] = useState(false)
+  const validation = useMemo(
+    () => (praemali.trim() ? validatePhrase(lexicon, praemali, known) : null),
+    [lexicon, praemali, known],
+  )
+
+  async function save() {
+    if (!praemali.trim() || busy) return
+    setBusy(true)
+    try {
+      await createSavedPhrase({
+        register,
+        praemali: praemali.trim(),
+        translation: en.trim(),
+        translation_de: de.trim(),
+        gloss: gloss.trim(),
+        tags,
+        unresolved: validation?.unresolved || [],
+      })
+      onSaved(validation?.unresolved.length
+        ? 'Phrase saved — its unknown tokens stay flagged until the words are added.'
+        : 'Phrase saved.')
+      onClose()
+    } catch {
+      onSaved('Save failed — see the error banner.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="pr-phrase-form">
+      <div className="pr-add-grid">
+        <label className="field"><span>Praemali *</span>
+          <input autoFocus value={praemali} onChange={(e) => setPraemali(e.target.value)} placeholder="e.g. Toran sa valkian." /></label>
+        <label className="field"><span>Register *</span>
+          <select value={register} onChange={(e) => setRegister(e.target.value)}>
+            {REGISTERS.map((r) => <option key={r} value={r}>{r}</option>)}
+          </select></label>
+        <label className="field"><span>German meaning</span>
+          <input value={de} onChange={(e) => setDe(e.target.value)} placeholder="z. B. Der Krieger ist stark." /></label>
+        <label className="field"><span>English meaning</span>
+          <input value={en} onChange={(e) => setEn(e.target.value)} placeholder="e.g. The warrior is strong." /></label>
+        <label className="field"><span>Gloss (optional)</span>
+          <input value={gloss} onChange={(e) => setGloss(e.target.value)} placeholder="e.g. warrior COP strong-AGR" /></label>
+        <div className="field"><span>Tags (optional)</span>
+          <TagInput tags={tags} onChange={setTags} /></div>
+      </div>
+      {validation && (
+        <div className="pr-tokencheck" aria-label="Token validation">
+          {validation.tokens.map((t, i) => (
+            <span key={`${t.token}-${i}`} className={`pr-token ${t.ok ? 'ok' : 'bad'}`}>{t.token}</span>
+          ))}
+        </div>
+      )}
+      {validation && (
+        <UnresolvedChips unresolved={validation.unresolved} onAddToken={onAddToken}
+          note="Unknown words never block saving — proper names are legitimate." />
+      )}
+      <div className="pr-add-actions">
+        <button type="button" className="toggle primary" disabled={!praemali.trim() || busy} onClick={save}>
+          <Plus size={14} /> Save phrase
+        </button>
+        <button type="button" className="toggle" onClick={onClose}>Cancel</button>
+      </div>
+    </div>
+  )
+}
+
+// Paste-import: a JSON snippet (single object or array) → preview with
+// validation results → confirm. Malformed JSON is rejected outright; items
+// missing required fields are shown but skipped; unknown tokens only flag.
+function ImportPanel({ lexicon, known, onAddToken, onSaved, onClose }) {
+  const { createSavedPhrase } = useStore()
+  const [text, setText] = useState('')
+  const [parsed, setParsed] = useState(null)
+  const [busy, setBusy] = useState(false)
+
+  const items = useMemo(() => {
+    if (!parsed?.items) return null
+    return parsed.items.map((it) => ({
+      ...it,
+      validation: it.valid ? validatePhrase(lexicon, it.praemali, known) : null,
+    }))
+  }, [parsed, lexicon, known])
+  const validCount = items ? items.filter((i) => i.valid).length : 0
+
+  async function confirm() {
+    if (!items || busy) return
+    setBusy(true)
+    try {
+      let n = 0
+      for (const it of items) {
+        if (!it.valid) continue
+        await createSavedPhrase({
+          register: it.register,
+          praemali: it.praemali,
+          translation: it.translation,
+          translation_de: it.translation_de,
+          gloss: it.gloss,
+          tags: it.tags,
+          unresolved: it.validation?.unresolved || [],
+        })
+        n++
+      }
+      onSaved(`Imported ${n} phrase${n === 1 ? '' : 's'}.`)
+      onClose()
+    } catch {
+      onSaved('Import failed part-way — see the error banner.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="pr-phrase-form pr-import">
+      <p className="hint">
+        Paste one phrase object or an array of them —{' '}
+        <code>{'{"praemali":"…","de":"…","en":"…","register":"common","gloss":"…","tags":[…]}'}</code>{' '}
+        (praemali + register required).
+      </p>
+      <textarea
+        className="pr-import-text"
+        rows={6}
+        value={text}
+        onChange={(e) => { setText(e.target.value); setParsed(null) }}
+        placeholder='[{"praemali":"Toran sa valkian.","register":"common"}]'
+        aria-label="Import JSON"
+      />
+      {parsed?.error && (
+        <div className="pr-errors" role="alert">
+          <div className="pr-error"><AlertTriangle size={14} /> {parsed.error} Nothing was saved.</div>
+        </div>
+      )}
+      {items && (
+        <ul className="pr-preview">
+          {items.map((it) => (
+            <li key={it.index} className={`pr-preview-item ${it.valid ? '' : 'invalid'}`}>
+              <div className="pr-phrase-main">
+                <span className="pr-form">{it.praemali || '—'}</span>
+                {it.register ? <RegisterBadge register={it.register} /> : null}
+                <TagChips tags={it.tags} />
+                {it.valid
+                  ? <span className="pr-ok-badge"><Check size={12} /> will import</span>
+                  : <span className="pr-bad-badge"><X size={12} /> skipped</span>}
+              </div>
+              {(it.translation_de || it.translation) && (
+                <div className="pr-phrase-tr">{[it.translation_de, it.translation].filter(Boolean).join(' · ')}</div>
+              )}
+              {(it.problems || []).map((p, i) => <div key={i} className="pr-problem">{p}</div>)}
+              {it.validation && (
+                <UnresolvedChips unresolved={it.validation.unresolved} onAddToken={onAddToken}
+                  note="imported anyway — flagged until the word is added" />
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="pr-add-actions">
+        {!items ? (
+          <button type="button" className="toggle primary" disabled={!text.trim()}
+            onClick={() => setParsed(parseImportSnippet(text))}>
+            Preview
+          </button>
+        ) : (
+          <button type="button" className="toggle primary" disabled={!validCount || busy} onClick={confirm}>
+            <Upload size={14} /> Import {validCount} phrase{validCount === 1 ? '' : 's'}
+          </button>
+        )}
+        <button type="button" className="toggle" onClick={onClose}>Cancel</button>
+      </div>
+    </div>
+  )
+}
+
+function PhrasesView({ lexicon, onAddToken }) {
+  const { savedPhrases, deleteSavedPhrase, updateSavedPhrase } = useStore()
   const [q, setQ] = useState('')
+  const [panel, setPanel] = useState(null) // null | 'add' | 'import'
+  const [msg, setMsg] = useState(null)
+  const known = useMemo(() => buildKnownForms(lexicon), [lexicon])
   const canon = useMemo(() => canonicalPhrases(baseLexicon), [])
+
+  // Live re-validation: when the lexicon changes (e.g. a flagged word was just
+  // added), recompute the unknown-token list of every flagged phrase and
+  // PERSIST the cleared flags. The stored≠computed guard makes this converge —
+  // after one update the values match and the effect is a no-op.
+  useEffect(() => {
+    for (const p of savedPhrases) {
+      if (!Array.isArray(p.unresolved) || p.unresolved.length === 0) continue
+      const v = validatePhrase(lexicon, p.praemali, known)
+      if (JSON.stringify(v.unresolved) !== JSON.stringify(p.unresolved)) {
+        updateSavedPhrase(p.id, { unresolved: v.unresolved })
+      }
+    }
+  }, [known, lexicon, savedPhrases, updateSavedPhrase])
+
   const all = useMemo(() => {
     const mine = savedPhrases.map((p) => ({ ...p, canon: false, category: 'Saved' }))
     const list = [...canon, ...mine]
     const needle = q.toLowerCase().trim()
     return needle
-      ? list.filter((p) => `${p.praemali} ${p.translation} ${p.category}`.toLowerCase().includes(needle))
+      ? list.filter((p) =>
+          `${p.praemali} ${p.translation} ${p.translation_de || ''} ${(p.tags || []).join(' ')} ${p.category}`
+            .toLowerCase()
+            .includes(needle))
       : list
   }, [savedPhrases, canon, q])
 
+  const showMsg = (m) => {
+    setMsg(m)
+    setTimeout(() => setMsg(null), 3500)
+  }
+
   return (
     <div className="pr-pane">
-      <div className="search-box pr-search">
-        <Search size={15} />
-        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search phrases …" />
+      <div className="pr-search-row">
+        <div className="search-box pr-search">
+          <Search size={15} />
+          <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search phrases …" />
+        </div>
+        <button type="button" className={`toggle ${panel === 'add' ? 'primary' : ''}`}
+          onClick={() => setPanel(panel === 'add' ? null : 'add')}>
+          <Plus size={14} /> Add phrase
+        </button>
+        <button type="button" className={`toggle ${panel === 'import' ? 'primary' : ''}`}
+          onClick={() => setPanel(panel === 'import' ? null : 'import')}>
+          <Upload size={14} /> Import
+        </button>
       </div>
+      {msg && <p className="pr-savemsg">{msg}</p>}
+      {panel === 'add' && (
+        <AddPhraseForm lexicon={lexicon} known={known} onAddToken={onAddToken}
+          onSaved={showMsg} onClose={() => setPanel(null)} />
+      )}
+      {panel === 'import' && (
+        <ImportPanel lexicon={lexicon} known={known} onAddToken={onAddToken}
+          onSaved={showMsg} onClose={() => setPanel(null)} />
+      )}
       <ul className="pr-phrases">
         {all.map((p) => (
           <li key={p.id} className="pr-phrase">
@@ -535,6 +829,7 @@ function PhrasesView() {
               <span className="pr-form big">{p.praemali}</span>
               <CopyBtn text={p.praemali} small />
               <RegisterBadge register={p.register} />
+              <TagChips tags={p.tags} />
               <span className="pr-kind">{p.category}{p.canon ? ' · canon' : ''}</span>
               {!p.canon && (
                 <button type="button" className="icon-btn sm" title="Delete phrase" onClick={() => deleteSavedPhrase(p.id)}>
@@ -543,7 +838,9 @@ function PhrasesView() {
               )}
             </div>
             {p.translation && <div className="pr-phrase-tr">{p.translation}</div>}
+            {p.translation_de && <div className="pr-phrase-tr pr-de">{p.translation_de}</div>}
             {p.gloss && <div className="pr-phrase-gloss">{p.gloss}</div>}
+            {!p.canon && <UnresolvedChips unresolved={p.unresolved} onAddToken={onAddToken} />}
           </li>
         ))}
         {!all.length && <p className="hint">No phrases yet — build one and save it.</p>}
@@ -555,8 +852,9 @@ function PhrasesView() {
 // ---- Add Word ---------------------------------------------------------------------
 const DEFAULT_TEMPLATES = ['simple_noun', 'agent', 'adjective', 'perfective', 'imperfective', 'plural']
 
-function AddWordView({ lexicon }) {
+function AddWordView({ lexicon, prefill }) {
   const { createCustomLexicon, deleteCustomLexicon, customLexicon } = useStore()
+  const [kind, setKind] = useState(prefill ? 'entity' : 'root') // 'root' | 'entity'
   const [en, setEn] = useState('')
   const [de, setDe] = useState('')
   const [cons, setCons] = useState(['', '', ''])
@@ -566,6 +864,35 @@ function AddWordView({ lexicon }) {
   const [global, setGlobal] = useState(true)
   const [msg, setMsg] = useState(null)
   const fileRef = useRef(null)
+  // Name/entity mode — proper names (people, places, things) flagged in a
+  // phrase land here via the “+ add” shortcut, token pre-filled.
+  const [entityName, setEntityName] = useState(prefill || '')
+  const [entityMeaning, setEntityMeaning] = useState('')
+  const [entityType, setEntityType] = useState('person')
+
+  useEffect(() => {
+    if (prefill) {
+      setKind('entity')
+      setEntityName(prefill)
+    }
+  }, [prefill])
+
+  async function saveEntity() {
+    if (!entityName.trim()) return
+    try {
+      await createCustomLexicon({
+        entry_type: 'named_entity',
+        global,
+        payload: { name: entityName.trim(), meaning: entityMeaning.trim(), type: entityType },
+      })
+      setMsg(`“${entityName.trim()}” saved — flagged phrases re-validate automatically.`)
+      setEntityName('')
+      setEntityMeaning('')
+      setTimeout(() => setMsg(null), 3500)
+    } catch {
+      setMsg('Save failed — see the error banner.')
+    }
+  }
 
   const collision = useMemo(
     () => (cons.every((c) => c.trim()) ? findRootCollision(lexicon, cons) : null),
@@ -635,6 +962,41 @@ function AddWordView({ lexicon }) {
 
   return (
     <div className="pr-pane pr-addword">
+      <div className="pr-builder-bar">
+        <div className="seg" role="group" aria-label="Entry kind">
+          <button type="button" className={`seg-btn ${kind === 'root' ? 'on' : ''}`} onClick={() => setKind('root')}>
+            Root word
+          </button>
+          <button type="button" className={`seg-btn ${kind === 'entity' ? 'on' : ''}`} onClick={() => setKind('entity')}>
+            Name / entity
+          </button>
+        </div>
+      </div>
+
+      {kind === 'entity' ? (
+        <>
+          <div className="pr-add-grid">
+            <label className="field"><span>Name (Praemali)</span>
+              <input value={entityName} onChange={(e) => setEntityName(e.target.value)} placeholder="e.g. Amrex" /></label>
+            <label className="field"><span>Meaning / who or what</span>
+              <input value={entityMeaning} onChange={(e) => setEntityMeaning(e.target.value)} placeholder="e.g. a border captain" /></label>
+            <label className="field"><span>Type</span>
+              <select value={entityType} onChange={(e) => setEntityType(e.target.value)}>
+                {['person', 'place', 'thing', 'other'].map((t) => <option key={t} value={t}>{t}</option>)}
+              </select></label>
+          </div>
+          <div className="pr-add-actions">
+            <label className="checkbox">
+              <input type="checkbox" checked={global} onChange={(e) => setGlobal(e.target.checked)} />
+              <span>Available in all projects</span>
+            </label>
+            <button type="button" className="toggle primary" disabled={!entityName.trim()} onClick={saveEntity}>
+              <Plus size={14} /> Save name
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
       <div className="pr-add-grid">
         <label className="field"><span>English meaning</span>
           <input value={en} onChange={(e) => setEn(e.target.value)} placeholder="e.g. bridge" /></label>
@@ -707,6 +1069,8 @@ function AddWordView({ lexicon }) {
         <input ref={fileRef} type="file" accept="application/json" hidden
           onChange={(e) => { const f = e.target.files?.[0]; if (f) importCustom(f); e.target.value = '' }} />
       </div>
+        </>
+      )}
       {msg && <p className="pr-savemsg">{msg}</p>}
 
       {customLexicon.length > 0 && (
@@ -735,6 +1099,12 @@ function AddWordView({ lexicon }) {
 export default function PraemaliView() {
   const lexicon = useLexicon()
   const [tab, setTab] = useState('lookup')
+  // “+ add” shortcut on a flagged token: jump to Add word, token pre-filled.
+  const [prefill, setPrefill] = useState(null)
+  const addToken = (token) => {
+    setPrefill(token)
+    setTab('add')
+  }
   const TABS = [
     ['lookup', 'Lookup', Search],
     ['builder', 'Builder', Hammer],
@@ -759,8 +1129,8 @@ export default function PraemaliView() {
       </div>
       {tab === 'lookup' && <LookupView lexicon={lexicon} />}
       {tab === 'builder' && <BuilderView lexicon={lexicon} />}
-      {tab === 'phrases' && <PhrasesView />}
-      {tab === 'add' && <AddWordView lexicon={lexicon} />}
+      {tab === 'phrases' && <PhrasesView lexicon={lexicon} onAddToken={addToken} />}
+      {tab === 'add' && <AddWordView lexicon={lexicon} prefill={prefill} />}
     </div>
   )
 }

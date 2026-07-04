@@ -441,6 +441,14 @@ export function StoreProvider({ children }) {
     },
     [activeProjectId, refreshSavedPhrases],
   )
+  const updateSavedPhrase = useCallback(
+    async (id, patch) => {
+      const updated = await repo.updateSavedPhrase(id, patch)
+      setSavedPhrases((prev) => prev.map((p) => (p.id === id ? updated : p)))
+      return updated
+    },
+    [],
+  )
   const deleteSavedPhrase = useCallback(
     async (id) => {
       await repo.deleteSavedPhrase(id)
@@ -701,6 +709,7 @@ export function StoreProvider({ children }) {
     updateCustomLexicon,
     deleteCustomLexicon,
     createSavedPhrase,
+    updateSavedPhrase,
     deleteSavedPhrase,
     createCharacter,
     updateCharacter,

@@ -555,10 +555,13 @@ export function createSupabaseRepository() {
     async createSavedPhrase(projectId, opts = {}) {
       const user_id = await currentUserId()
       const insert = { user_id, project_id: projectId }
-      for (const k of ['register', 'praemali', 'gloss', 'translation']) {
+      for (const k of ['register', 'praemali', 'gloss', 'translation', 'translation_de', 'tags', 'unresolved']) {
         if (opts[k] != null) insert[k] = opts[k]
       }
       return unwrap(await supabase.from('saved_phrases').insert(insert).select().single())
+    },
+    async updateSavedPhrase(id, patch) {
+      return unwrap(await supabase.from('saved_phrases').update(patch).eq('id', id).select().single())
     },
     async deleteSavedPhrase(id) {
       unwrap(

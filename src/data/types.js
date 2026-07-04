@@ -147,8 +147,20 @@ export function makeCustomLexiconEntry({ project_id = null, entry_type, payload 
   }
 }
 
-// saved_phrases — sentences saved from the Praemali builder (per project).
-export function makeSavedPhrase({ project_id = null, register, praemali, gloss, translation }) {
+// saved_phrases — sentences saved from the Praemali builder, entered manually,
+// or paste-imported. `translation` = EN meaning, `translation_de` = DE meaning;
+// `unresolved` stores the validation pass's unknown tokens (flags persist until
+// re-validation clears them).
+export function makeSavedPhrase({
+  project_id = null,
+  register,
+  praemali,
+  gloss,
+  translation,
+  translation_de,
+  tags,
+  unresolved,
+}) {
   return {
     id: newId(),
     user_id: LOCAL_USER_ID,
@@ -157,6 +169,9 @@ export function makeSavedPhrase({ project_id = null, register, praemali, gloss, 
     praemali: praemali || '',
     gloss: gloss || '',
     translation: translation || '',
+    translation_de: translation_de || '',
+    tags: Array.isArray(tags) ? tags : [],
+    unresolved: Array.isArray(unresolved) ? unresolved : [],
     created_at: nowIso(),
     updated_at: nowIso(),
     deleted_at: null,

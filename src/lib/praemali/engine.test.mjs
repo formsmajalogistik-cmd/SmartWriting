@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import assert from 'node:assert/strict'
 import { mergeLexicon, searchLexicon, disambiguationFor, findRootCollision, levenshtein } from './lexicon.js'
+import { tokenizePraemali, buildKnownForms, validatePhrase, parseImportSnippet } from './validate.js'
 import {
   assembleSentence,
   buildVerbPhrase,
@@ -238,6 +239,78 @@ test('disambiguation: "know" and German "wissen" both surface all options', () =
   assert.ok(disambiguationFor(lex, 'know').options.facts_learning.includes('kanil'))
   assert.equal(disambiguationFor(lex, 'wissen').term, 'know')
   assert.ok(disambiguationFor(lex, 'dark').options.preferred.includes('narti'))
+})
+
+console.log('\n# Phrase validation (paste-import addendum)')
+
+test('tokenizer strips punctuation and splits on whitespace + hyphens', () => {
+  assert.deepEqual(tokenizePraemali('Naa-nakitan, sarin! „Toran" — sa?'), ['Naa', 'nakitan', 'sarin', 'Toran', 'sa'])
+  assert.deepEqual(tokenizePraemali('  '), [])
+})
+
+test('"Naanakitan sarin." → all tokens resolve (naa- stripped, nakit + -an)', () => {
+  const r = validatePhrase(lex, 'Naanakitan sarin.')
+  assert.deepEqual(r.unresolved, [])
+  assert.ok(r.tokens.every((t) => t.ok))
+})
+
+test('"Amrex vol tarin." → Amrex flagged; vol and tarin resolve', () => {
+  const r = validatePhrase(lex, 'Amrex vol tarin.')
+  assert.deepEqual(r.unresolved, ['Amrex'])
+  assert.deepEqual(r.tokens.map((t) => t.ok), [false, true, true])
+})
+
+test('stacked prefixes: naafanakital resolves (naa- + fa- + nakit + -al)', () => {
+  const known = buildKnownForms(lex)
+  const r = validatePhrase(lex, 'naafanakital', known)
+  assert.deepEqual(r.unresolved, [])
+})
+
+test('possessive + case with elision: noktaanen resolves (nokt + -taan + -en)', () => {
+  const r = validatePhrase(lex, 'noktaanen')
+  assert.deepEqual(r.unresolved, [])
+})
+
+test('named entities resolve: Porsiran, Santal, Valkorin; case-insensitive', () => {
+  const r = validatePhrase(lex, 'Porsiran santal VALKORIN')
+  assert.deepEqual(r.unresolved, [])
+})
+
+test('adding a custom named entity clears the flag on re-validation', () => {
+  assert.deepEqual(validatePhrase(lex, 'Amrex sa toran.').unresolved, ['Amrex'])
+  const withAmrex = mergeLexicon(base, [
+    { id: 'ne1', entry_type: 'named_entity', payload: { name: 'Amrex', meaning: 'a person', type: 'person' } },
+  ])
+  assert.deepEqual(validatePhrase(withAmrex, 'Amrex sa toran.').unresolved, [])
+})
+
+test('import: single object parses; en/de/gloss/tags mapped', () => {
+  const r = parseImportSnippet('{"praemali":"Toran sa valkian.","de":"Der Krieger ist stark.","en":"The warrior is strong.","register":"common","gloss":"warrior COP strong-AGR","tags":["canon"]}')
+  assert.equal(r.error, undefined)
+  assert.equal(r.items.length, 1)
+  const it = r.items[0]
+  assert.equal(it.valid, true)
+  assert.equal(it.praemali, 'Toran sa valkian.')
+  assert.equal(it.translation, 'The warrior is strong.')
+  assert.equal(it.translation_de, 'Der Krieger ist stark.')
+  assert.equal(it.gloss, 'warrior COP strong-AGR')
+  assert.deepEqual(it.tags, ['canon'])
+})
+
+test('import: array parses; invalid items flagged, valid ones kept', () => {
+  const r = parseImportSnippet('[{"praemali":"Tal kafiran nokten.","register":"common"},{"praemali":"","register":"common"},{"praemali":"x","register":"weird"},{"praemali":"y"}]')
+  assert.equal(r.items.length, 4)
+  assert.deepEqual(r.items.map((i) => i.valid), [true, false, false, false])
+  assert.ok(r.items[1].problems[0].includes('praemali'))
+  assert.ok(r.items[2].problems[0].includes('register'))
+  assert.ok(r.items[3].problems[0].includes('register'))
+})
+
+test('import: malformed JSON rejected with a clear error, nothing parsed', () => {
+  const r = parseImportSnippet('{praemali: nope}')
+  assert.ok(r.error && r.error.startsWith('Invalid JSON'))
+  assert.equal(r.items, undefined)
+  assert.ok(parseImportSnippet('[]').error)
 })
 
 console.log(`\n${failed === 0 ? 'PASS ✅' : 'FAIL ❌'} (${passed} passed, ${failed} failed)`)

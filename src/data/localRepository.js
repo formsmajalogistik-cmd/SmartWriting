@@ -511,6 +511,14 @@ export function createLocalRepository() {
       await db.put(STORES.saved_phrases, phrase)
       return phrase
     },
+    async updateSavedPhrase(id, patch) {
+      const db = await getDb()
+      const existing = await db.get(STORES.saved_phrases, id)
+      if (!existing) throw new Error(`Phrase ${id} not found`)
+      const updated = { ...existing, ...patch, updated_at: nowIso() }
+      await db.put(STORES.saved_phrases, updated)
+      return updated
+    },
     async deleteSavedPhrase(id) {
       const db = await getDb()
       const existing = await db.get(STORES.saved_phrases, id)

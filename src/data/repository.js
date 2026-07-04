@@ -59,7 +59,9 @@
 //     updateCustomLexicon(id, patch)       -> Entry
 //     deleteCustomLexicon(id)              -> void (SOFT delete via deleted_at)
 //     listSavedPhrases(projectId)          -> Phrase[]
-//     createSavedPhrase(projectId, { register, praemali, gloss, translation }) -> Phrase
+//     createSavedPhrase(projectId, { register, praemali, gloss, translation,
+//                                    translation_de?, tags?, unresolved? }) -> Phrase
+//     updateSavedPhrase(id, patch)         -> Phrase (e.g. re-validation flags)
 //     deleteSavedPhrase(id)                -> void (SOFT delete)
 //
 //   Characters
