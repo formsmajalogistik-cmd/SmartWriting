@@ -4,7 +4,7 @@
 import { openDB } from 'idb'
 
 const DB_NAME = 'smartwriting'
-const DB_VERSION = 9
+const DB_VERSION = 10
 
 export const STORES = {
   projects: 'projects',
@@ -18,6 +18,10 @@ export const STORES = {
   regions: 'regions',
   // Per-project authored routes (Phase 3, Stage C): named ordered place paths.
   routes: 'routes',
+  // Praemali translator: user lexicon additions (project_id NULLABLE — null =
+  // global) and the saved-phrase library. Soft-deleted via deleted_at.
+  custom_lexicon_entries: 'custom_lexicon_entries',
+  saved_phrases: 'saved_phrases',
   // Per-version chapter prose (the chapter row mirrors its active version's body).
   chapter_versions: 'chapter_versions',
   // Per-project 3D terrain (Phase 3, Stage A). One row per project.
@@ -46,6 +50,8 @@ export const SYNCED_STORES = new Set([
   STORES.regions,
   STORES.routes,
   STORES.terrains,
+  STORES.custom_lexicon_entries,
+  STORES.saved_phrases,
 ])
 
 // --- outgoing-mutation recorder --------------------------------------------
@@ -130,6 +136,16 @@ export function getDb() {
         }
         if (!db.objectStoreNames.contains(STORES.routes)) {
           const s = db.createObjectStore(STORES.routes, { keyPath: 'id' })
+          s.createIndex('project_id', 'project_id')
+        }
+        if (!db.objectStoreNames.contains(STORES.custom_lexicon_entries)) {
+          // NOTE: project_id may be null (global entries) — nulls aren't
+          // indexed, so list queries use getAll + filter, not this index.
+          const s = db.createObjectStore(STORES.custom_lexicon_entries, { keyPath: 'id' })
+          s.createIndex('project_id', 'project_id')
+        }
+        if (!db.objectStoreNames.contains(STORES.saved_phrases)) {
+          const s = db.createObjectStore(STORES.saved_phrases, { keyPath: 'id' })
           s.createIndex('project_id', 'project_id')
         }
         if (!db.objectStoreNames.contains(STORES.sync_queue)) {

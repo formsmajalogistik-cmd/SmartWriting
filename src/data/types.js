@@ -131,6 +131,38 @@ export function makeRoute({ project_id, label, colour, place_ids, book }) {
   }
 }
 
+// custom_lexicon_entries — user additions to the Praemali base lexicon.
+// payload mirrors the base lexicon entry shape for its entry_type; `override`
+// entries shadow a base root by payload.root. project_id null = all projects.
+export function makeCustomLexiconEntry({ project_id = null, entry_type, payload }) {
+  return {
+    id: newId(),
+    user_id: LOCAL_USER_ID,
+    project_id,
+    entry_type,
+    payload: payload ?? {},
+    created_at: nowIso(),
+    updated_at: nowIso(),
+    deleted_at: null,
+  }
+}
+
+// saved_phrases — sentences saved from the Praemali builder (per project).
+export function makeSavedPhrase({ project_id = null, register, praemali, gloss, translation }) {
+  return {
+    id: newId(),
+    user_id: LOCAL_USER_ID,
+    project_id,
+    register: register || 'common',
+    praemali: praemali || '',
+    gloss: gloss || '',
+    translation: translation || '',
+    created_at: nowIso(),
+    updated_at: nowIso(),
+    deleted_at: null,
+  }
+}
+
 // characters — id, project_id, name, name_final, role, origin,
 //              language_name, status, card, updated_at
 export function makeCharacter({ project_id, name }) {

@@ -377,6 +377,43 @@ Books live in `projects.settings.books` (jsonb); chapters reference a book id.
 - RLS is the enforced boundary (see above).
 - `.env.local` is gitignored; only `.env.example` (placeholders) is committed.
 
+## Praemali translator — lexicon merge architecture
+
+The Praemali dictionary/builder is **data-driven**: the base lexicon
+(`src/data/praemali_lexicon_v2.json`, 124 roots + grammar rules) is bundled as
+a static asset and is the single source of truth. No Praemali word is
+hardcoded in components; the assembly engine (`src/lib/praemali/engine.js`)
+derives word order, copula, negation scope, register restrictions, plurals,
+comparison and the construct state from the JSON's `grammar_rules`.
+
+User additions live in a **separate layer**: `custom_lexicon_entries` rows
+(Supabase table, RLS user-scoped, mirrored in IndexedDB through the standard
+offline sync queue). `payload` has the same shape as the matching base entry.
+At runtime `mergeLexicon(base, customEntries)` combines the two:
+
+- `override` entries **replace** a base root by its `payload.root` key
+  (`payload.kind: 'root'`), or remember a per-word noun-class choice
+  (`payload.kind: 'noun_class'`).
+- `root` / `function_word` / `named_entity` entries **append**.
+- Soft-deleted entries (`deleted_at`) are excluded; deletes sync as plain row
+  updates.
+
+Search indexes (EN → forms, DE → forms, Praemali form → root/meanings) are
+rebuilt at merge time and memoized (`useLexicon()`); the merge re-runs only
+when custom entries change.
+
+**Shipping a new base lexicon version safely:** replace
+`src/data/praemali_lexicon_v2.json` with the new file and deploy — nothing
+else. User additions are never stored inside the base asset, so a base update
+cannot overwrite or lose them; the next merge simply layers the same custom
+entries over the new base (overrides keep shadowing their root key; appended
+roots keep appending). If a new base version adopts a word the author had
+added as a custom root, the entry becomes redundant and can be deleted in the
+"Add word" view (custom entries are also exportable there as JSON, to feed
+additions back into the master lexicon file maintained outside the app).
+Before shipping, run `npm run test:praemali` — it verifies the canonical
+reference sentences against the new JSON and the merge-layer guarantees.
+
 ## Not yet built (later phases, per SPEC)
 
 Offline/local-first reconciliation, 3D map, the translator, chapter versioning,

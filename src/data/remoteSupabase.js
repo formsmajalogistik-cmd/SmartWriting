@@ -26,11 +26,23 @@ const UPSERT_ORDER = [
   'regions',
   'routes',
   'terrains',
+  'custom_lexicon_entries',
+  'saved_phrases',
   'chapters',
   'chapter_versions',
   'character_locations',
 ]
 const CHILD_TABLES = UPSERT_ORDER.slice(1)
+
+// custom_lexicon_entries rows may have project_id NULL (= all projects), so
+// project scoping for that table must include the null rows.
+function scopeByProject(query, table, projectId) {
+  if (table === 'projects') return query.eq('id', projectId)
+  if (table === 'custom_lexicon_entries') {
+    return query.or(`project_id.eq.${projectId},project_id.is.null`)
+  }
+  return query.eq('project_id', projectId)
+}
 
 export function createSupabaseRemote() {
   return {
@@ -46,7 +58,7 @@ export function createSupabaseRemote() {
       if (proj.error) throw new Error(proj.error.message)
       out.projects = proj.data || []
       for (const t of CHILD_TABLES) {
-        const { data, error } = await supabase.from(t).select('*').eq('project_id', projectId)
+        const { data, error } = await scopeByProject(supabase.from(t).select('*'), t, projectId)
         if (error) throw new Error(error.message)
         out[t] = data || []
       }
@@ -58,8 +70,7 @@ export function createSupabaseRemote() {
       const tables = {}
       for (const t of UPSERT_ORDER) {
         const cursor = cursors[t] || '1970-01-01T00:00:00.000Z'
-        let q = supabase.from(t).select('*').gt('updated_at', cursor)
-        q = t === 'projects' ? q.eq('id', projectId) : q.eq('project_id', projectId)
+        const q = scopeByProject(supabase.from(t).select('*').gt('updated_at', cursor), t, projectId)
         const { data, error } = await q.order('updated_at', { ascending: true })
         if (error) throw new Error(error.message)
         tables[t] = data || []

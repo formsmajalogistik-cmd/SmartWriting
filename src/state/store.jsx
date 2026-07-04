@@ -60,6 +60,8 @@ export function StoreProvider({ children }) {
   const [events, setEvents] = useState([])
   const [regions, setRegions] = useState([])
   const [routes, setRoutes] = useState([])
+  const [customLexicon, setCustomLexicon] = useState([])
+  const [savedPhrases, setSavedPhrases] = useState([])
   // Versions of the currently open chapter (PROSE only; metadata stays on the chapter).
   const [chapterVersions, setChapterVersions] = useState([])
   const [activeChapterId, setActiveChapterId] = useState(
@@ -104,6 +106,12 @@ export function StoreProvider({ children }) {
   const refreshRoutes = useCallback(async (pid) => {
     setRoutes(pid ? await repo.listRoutes(pid) : [])
   }, [])
+  const refreshCustomLexicon = useCallback(async (pid) => {
+    setCustomLexicon(pid ? await repo.listCustomLexicon(pid) : [])
+  }, [])
+  const refreshSavedPhrases = useCallback(async (pid) => {
+    setSavedPhrases(pid ? await repo.listSavedPhrases(pid) : [])
+  }, [])
   const refreshChapterVersions = useCallback(async (pid, chapterId) => {
     setChapterVersions(pid && chapterId ? await repo.listChapterVersions(pid, { chapterId }) : [])
   }, [])
@@ -147,13 +155,15 @@ export function StoreProvider({ children }) {
           refreshEvents(activeProjectId),
           refreshRegions(activeProjectId),
           refreshRoutes(activeProjectId),
+          refreshCustomLexicon(activeProjectId),
+          refreshSavedPhrases(activeProjectId),
         ])
         setActiveChapterId((cur) => (chs.some((c) => c.id === cur) ? cur : null))
       } catch {
         /* error already surfaced via the guarded repo */
       }
     })()
-  }, [activeProjectId, refreshChapters, refreshCharacters, refreshPlaces, refreshLocations, refreshEvents, refreshRegions, refreshRoutes])
+  }, [activeProjectId, refreshChapters, refreshCharacters, refreshPlaces, refreshLocations, refreshEvents, refreshRegions, refreshRoutes, refreshCustomLexicon, refreshSavedPhrases])
 
   // Persist the active chapter so a reload reopens it.
   useEffect(() => {
@@ -175,6 +185,8 @@ export function StoreProvider({ children }) {
         if (t.has('events')) await refreshEvents(activeProjectId)
         if (t.has('regions')) await refreshRegions(activeProjectId)
         if (t.has('routes')) await refreshRoutes(activeProjectId)
+        if (t.has('custom_lexicon_entries')) await refreshCustomLexicon(activeProjectId)
+        if (t.has('saved_phrases')) await refreshSavedPhrases(activeProjectId)
         if (t.has('chapter_versions') && activeChapterId) {
           await refreshChapterVersions(activeProjectId, activeChapterId)
         }
@@ -193,6 +205,8 @@ export function StoreProvider({ children }) {
     refreshEvents,
     refreshRegions,
     refreshRoutes,
+    refreshCustomLexicon,
+    refreshSavedPhrases,
     refreshChapterVersions,
   ])
 
@@ -393,6 +407,46 @@ export function StoreProvider({ children }) {
       await refreshRoutes(activeProjectId)
     },
     [activeProjectId, refreshRoutes],
+  )
+
+  // --- Praemali actions (custom lexicon + saved phrases) ----------------
+  const createCustomLexicon = useCallback(
+    async (opts) => {
+      const e = await repo.createCustomLexicon(activeProjectId, opts || {})
+      await refreshCustomLexicon(activeProjectId)
+      return e
+    },
+    [activeProjectId, refreshCustomLexicon],
+  )
+  const updateCustomLexicon = useCallback(
+    async (id, patch) => {
+      const updated = await repo.updateCustomLexicon(id, patch)
+      await refreshCustomLexicon(activeProjectId)
+      return updated
+    },
+    [activeProjectId, refreshCustomLexicon],
+  )
+  const deleteCustomLexicon = useCallback(
+    async (id) => {
+      await repo.deleteCustomLexicon(id)
+      await refreshCustomLexicon(activeProjectId)
+    },
+    [activeProjectId, refreshCustomLexicon],
+  )
+  const createSavedPhrase = useCallback(
+    async (opts) => {
+      const p = await repo.createSavedPhrase(activeProjectId, opts || {})
+      await refreshSavedPhrases(activeProjectId)
+      return p
+    },
+    [activeProjectId, refreshSavedPhrases],
+  )
+  const deleteSavedPhrase = useCallback(
+    async (id) => {
+      await repo.deleteSavedPhrase(id)
+      await refreshSavedPhrases(activeProjectId)
+    },
+    [activeProjectId, refreshSavedPhrases],
   )
 
   // --- character / place actions --------------------------------------
@@ -603,6 +657,8 @@ export function StoreProvider({ children }) {
     events,
     regions,
     routes,
+    customLexicon,
+    savedPhrases,
     chapterVersions,
     activeChapter,
     activeChapterId,
@@ -641,6 +697,11 @@ export function StoreProvider({ children }) {
     createRoute,
     updateRoute,
     deleteRoute,
+    createCustomLexicon,
+    updateCustomLexicon,
+    deleteCustomLexicon,
+    createSavedPhrase,
+    deleteSavedPhrase,
     createCharacter,
     updateCharacter,
     deleteCharacter,

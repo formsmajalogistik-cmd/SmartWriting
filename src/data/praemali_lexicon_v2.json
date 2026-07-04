@@ -1,0 +1,5139 @@
+{
+  "meta": {
+    "language": "Praemali",
+    "version": "2.0",
+    "total_roots": 124,
+    "description": "Complete bilingual (EN/DE -> Praemali) lexicon with grammar rules for Die Lichter von Ilema translator",
+    "registers": [
+      "proto-divine",
+      "sacred",
+      "common"
+    ],
+    "noun_classes": [
+      "sentient",
+      "animal",
+      "object"
+    ],
+    "cases": [
+      "nominative",
+      "accusative",
+      "locative"
+    ],
+    "aspects": [
+      "perfective",
+      "imperfective"
+    ],
+    "moods": [
+      "indicative",
+      "imperative",
+      "optative"
+    ],
+    "languages": [
+      "English",
+      "German"
+    ]
+  },
+  "copula": {
+    "common": {
+      "form": "sa",
+      "usage": "Common register only. Connects subject to predicate.",
+      "examples": {
+        "statement": "Toran sa valkian. — The warrior is strong.",
+        "negative": "Toran sa favalkian. — The warrior is not strong.",
+        "question": "Ar toran sa valkian? — Is the warrior strong?"
+      }
+    },
+    "sacred": {
+      "form": null,
+      "usage": "Zero-copula. Subject and predicate are juxtaposed directly.",
+      "examples": {
+        "statement": "Toran valkian. — The warrior [is] strong."
+      }
+    },
+    "proto_divine": {
+      "form": null,
+      "usage": "Zero-copula. Reality is stated, not connected.",
+      "examples": {
+        "statement": "Toran valkian. — The warrior [is] strong."
+      }
+    }
+  },
+  "templates": {
+    "simple_noun": {
+      "pattern": "C1oC2C3",
+      "function": "Basic thing/concept",
+      "note": "Some roots use diversified base forms — see individual entries"
+    },
+    "simple_noun_open": {
+      "pattern": "C1aC2C3a",
+      "function": "Basic thing/concept (emotional/abstract — open ending)",
+      "note": "Used for emotions, abstracts, states"
+    },
+    "agent": {
+      "pattern": "C1aC2C3un",
+      "function": "Person who does/is"
+    },
+    "abstract_sacred": {
+      "pattern": "C1uC2aaC3",
+      "function": "State, quality (sacred register)"
+    },
+    "abstract_common": {
+      "pattern": "C1uC2aC3",
+      "function": "State, quality (common register)"
+    },
+    "place": {
+      "pattern": "C1aC2C3al",
+      "function": "Location or instrument"
+    },
+    "adjective": {
+      "pattern": "C1aC2C3i",
+      "function": "Descriptive quality"
+    },
+    "perfective": {
+      "pattern": "C1aC2aC3",
+      "function": "Completed action"
+    },
+    "imperfective": {
+      "pattern": "C1aC2iC3",
+      "function": "Ongoing action"
+    },
+    "causative": {
+      "pattern": "taC1aC2aC3",
+      "function": "To cause the action"
+    },
+    "intensive": {
+      "pattern": "C1aC2C2aC3",
+      "function": "Intensified form"
+    },
+    "reciprocal": {
+      "pattern": "C1iC2aC3an",
+      "function": "Mutual action"
+    },
+    "plural": {
+      "pattern": "C1iC2aC3",
+      "function": "Multiple of base noun"
+    }
+  },
+  "roots": [
+    {
+      "root": "M-R-T",
+      "consonants": [
+        "m",
+        "r",
+        "t"
+      ],
+      "meaning": "evil, malice, corruption",
+      "domain": "evil",
+      "register": "all",
+      "god_connection": "Mortius",
+      "forms": {
+        "noun": "mort",
+        "agent": "martun",
+        "abstract_sacred": "muraat",
+        "abstract_common": "murat",
+        "place": "martal",
+        "adjective": "marti",
+        "perfective": "marat",
+        "imperfective": "marit",
+        "causative": "tamarat",
+        "intensive": "marrat",
+        "reciprocal": "miratan",
+        "plural": "mirat"
+      },
+      "translations": {
+        "evil": "mort",
+        "malice": "muraat",
+        "malicious": "marti",
+        "evil one": "martun",
+        "corrupt": "tamarat",
+        "corrupted": "marti",
+        "atrocity": "marrat",
+        "evils": "mirat",
+        "cursed ground": "martal"
+      },
+      "translations_de": {
+        "Böse": "mort",
+        "Bosheit": "muraat",
+        "boshaft": "marti",
+        "der Böse": "martun",
+        "verderben": "tamarat",
+        "verdorben": "marti",
+        "Gräueltat": "marrat",
+        "Übel": "mirat",
+        "verfluchter Boden": "martal"
+      }
+    },
+    {
+      "root": "M-R-K",
+      "consonants": [
+        "m",
+        "r",
+        "k"
+      ],
+      "meaning": "death, dying, cessation",
+      "domain": "death",
+      "register": "all",
+      "god_connection": "Mierkus",
+      "forms": {
+        "noun": "mork",
+        "agent": "markun",
+        "abstract_sacred": "mukaak",
+        "abstract_common": "murak",
+        "place": "markal",
+        "adjective": "marki",
+        "perfective": "marak",
+        "imperfective": "marik",
+        "causative": "tamarak",
+        "intensive": "marrak",
+        "reciprocal": "mirakan",
+        "plural": "mirak"
+      },
+      "translations": {
+        "death": "mork",
+        "mortality": "mukaak",
+        "dead": "marki",
+        "mortal": "markun",
+        "die": "marak",
+        "dying": "marik",
+        "kill": "tamarak",
+        "slaughter": "marrak",
+        "deaths": "mirak",
+        "death-ground": "markal",
+        "graveyard": "markal",
+        "battlefield": "markal"
+      },
+      "translations_de": {
+        "Tod": "mork",
+        "Sterblichkeit": "mukaak",
+        "tot": "marki",
+        "Sterblicher": "markun",
+        "sterben": "marak",
+        "sterbend": "marik",
+        "töten": "tamarak",
+        "schlachten": "marrak",
+        "Tode": "mirak",
+        "Totengrund": "markal",
+        "Friedhof": "markal",
+        "Schlachtfeld": "markal"
+      }
+    },
+    {
+      "root": "N-R-T",
+      "consonants": [
+        "n",
+        "r",
+        "t"
+      ],
+      "meaning": "shadow, darkness, concealment",
+      "domain": "darkness",
+      "register": "all",
+      "god_connection": "Naritus",
+      "forms": {
+        "noun": "nort",
+        "agent": "nartun",
+        "abstract_sacred": "nuraat",
+        "abstract_common": "nurat",
+        "place": "nartal",
+        "adjective": "narti",
+        "perfective": "narat",
+        "imperfective": "narit",
+        "causative": "tanarat",
+        "intensive": "narrat",
+        "plural": "nirat"
+      },
+      "translations": {
+        "shadow": "nort",
+        "darkness": "nort",
+        "dark": "narti",
+        "shadowed": "narti",
+        "hidden": "narti",
+        "conceal": "tanarat",
+        "shadows": "nirat"
+      },
+      "translations_de": {
+        "Schatten": "nirat",
+        "Dunkelheit": "nort",
+        "dunkel": "narti",
+        "beschattet": "narti",
+        "verborgen": "narti",
+        "verbergen": "tanarat"
+      }
+    },
+    {
+      "root": "N-K-T",
+      "consonants": [
+        "n",
+        "k",
+        "t"
+      ],
+      "meaning": "light, illumination, guidance",
+      "domain": "divine",
+      "register": "all",
+      "god_connection": "Nektus",
+      "forms": {
+        "noun": "nokt",
+        "agent": "naktun",
+        "abstract_sacred": "nukaat",
+        "abstract_common": "nukat",
+        "place": "naktal",
+        "adjective": "nakti",
+        "perfective": "nakat",
+        "imperfective": "nakit",
+        "causative": "tanakat",
+        "intensive": "nakkat",
+        "plural": "nikat"
+      },
+      "translations": {
+        "light": "nokt",
+        "bright": "nakti",
+        "illumination": "nukaat",
+        "beacon": "naktal",
+        "guide": "naktun",
+        "shine": "nakit",
+        "shone": "nakat",
+        "illuminate": "tanakat",
+        "blaze": "nakkat",
+        "lights": "nikat"
+      },
+      "translations_de": {
+        "Licht": "nokt",
+        "hell": "nakti",
+        "Erleuchtung": "nukaat",
+        "Leuchtfeuer": "naktal",
+        "Führer": "naktun",
+        "leuchten": "nakit",
+        "leuchtete": "nakat",
+        "erleuchten": "tanakat",
+        "lodern": "nakkat",
+        "Lichter": "nikat"
+      }
+    },
+    {
+      "root": "V-L-K",
+      "consonants": [
+        "v",
+        "l",
+        "k"
+      ],
+      "meaning": "worth, strength, balance",
+      "domain": "divine",
+      "register": "all",
+      "god_connection": "Valkorin",
+      "forms": {
+        "noun": "volk",
+        "agent": "valkun",
+        "abstract_sacred": "vulaak",
+        "abstract_common": "vulak",
+        "place": "valkal",
+        "adjective": "valki",
+        "perfective": "valak",
+        "imperfective": "valik",
+        "causative": "tavalak",
+        "intensive": "vallak",
+        "plural": "vilak"
+      },
+      "translations": {
+        "worth": "volk",
+        "strength": "volk",
+        "strong": "valki",
+        "worthy": "valki",
+        "balanced": "valki",
+        "sovereignty": "vulaak",
+        "throne room": "valkal",
+        "crown": "tavalak",
+        "overpower": "vallak"
+      },
+      "translations_de": {
+        "Wert": "volk",
+        "Stärke": "volk",
+        "stark": "valki",
+        "würdig": "valki",
+        "ausgeglichen": "valki",
+        "Herrschaft": "vulaak",
+        "Thronsaal": "valkal",
+        "krönen": "tavalak",
+        "überwältigen": "vallak"
+      }
+    },
+    {
+      "root": "S-N-T",
+      "consonants": [
+        "s",
+        "n",
+        "t"
+      ],
+      "meaning": "balance, wholeness, sacred unity",
+      "domain": "divine",
+      "register": "sacred",
+      "god_connection": "Santulan",
+      "forms": {
+        "noun": "sont",
+        "agent": "santun",
+        "abstract_sacred": "sunaat",
+        "abstract_common": "sunat",
+        "place": "santal",
+        "adjective": "santi",
+        "perfective": "sanat",
+        "imperfective": "sanit",
+        "causative": "tasanat",
+        "intensive": "sannat",
+        "plural": "sinat"
+      },
+      "translations": {
+        "balance": "sont",
+        "wholeness": "sont",
+        "balanced": "santi",
+        "sanctuary": "santal",
+        "harmonious": "santi",
+        "restore balance": "tasanat"
+      },
+      "translations_de": {
+        "Gleichgewicht": "sont",
+        "Ganzheit": "sont",
+        "ausgeglichen": "santi",
+        "Heiligtum": "santal",
+        "harmonisch": "santi",
+        "Gleichgewicht wiederherstellen": "tasanat"
+      }
+    },
+    {
+      "root": "S-R-N",
+      "consonants": [
+        "s",
+        "r",
+        "n"
+      ],
+      "meaning": "star, celestial body, soul-vessel",
+      "domain": "divine",
+      "register": "all",
+      "forms": {
+        "noun": "sorn",
+        "agent": "sarnun",
+        "abstract_sacred": "suraan",
+        "abstract_common": "suran",
+        "place": "sarnal",
+        "adjective": "sarni",
+        "perfective": "saran",
+        "imperfective": "sarin",
+        "causative": "tasaran",
+        "intensive": "sarran",
+        "plural": "siran"
+      },
+      "translations": {
+        "star": "sorn",
+        "stars": "siran",
+        "starry": "sarni",
+        "celestial": "sarni",
+        "astronomer": "sarnun",
+        "observatory": "sarnal",
+        "ascend to stars": "tasaran",
+        "became a star": "saran"
+      },
+      "translations_de": {
+        "Stern": "sorn",
+        "Sterne": "siran",
+        "sternenklar": "sarni",
+        "himmlisch": "sarni",
+        "Sternkundiger": "sarnun",
+        "Sternwarte": "sarnal",
+        "zu den Sternen aufsteigen": "tasaran",
+        "wurde ein Stern": "saran"
+      }
+    },
+    {
+      "root": "L-K-F",
+      "consonants": [
+        "l",
+        "k",
+        "f"
+      ],
+      "meaning": "light-bearing, ending light",
+      "domain": "divine",
+      "register": "sacred",
+      "god_connection": "Lukafir",
+      "forms": {
+        "noun": "lokf",
+        "agent": "lakfun",
+        "abstract_sacred": "lukaaf",
+        "abstract_common": "lukaf",
+        "adjective": "lakfi",
+        "perfective": "lakaf",
+        "imperfective": "lakif",
+        "causative": "talakaf"
+      },
+      "translations": {
+        "light-bearer": "lukaf",
+        "light's end": "lukaf",
+        "luminous": "lakfi",
+        "consuming": "lakfi"
+      },
+      "translations_de": {
+        "Lichtträger": "lukaf",
+        "Ende des Lichts": "lukaf",
+        "leuchtend": "lakfi",
+        "verzehrend": "lakfi"
+      }
+    },
+    {
+      "root": "P-R-M",
+      "consonants": [
+        "p",
+        "r",
+        "m"
+      ],
+      "meaning": "origin, beginning, primordial",
+      "domain": "movement",
+      "register": "all",
+      "god_connection": "Praema",
+      "forms": {
+        "noun": "porm",
+        "agent": "parmun",
+        "abstract_sacred": "puraam",
+        "abstract_common": "puram",
+        "place": "parmal",
+        "adjective": "parmi",
+        "perfective": "param",
+        "imperfective": "parim",
+        "plural": "piram"
+      },
+      "translations": {
+        "origin": "porm",
+        "beginning": "porm",
+        "ancestor": "parmun",
+        "primordial": "parmi",
+        "ancient": "parmi",
+        "began": "param",
+        "begins": "parim",
+        "origins": "piram",
+        "ancestral ground": "parmal",
+        "long ago": "parmal"
+      },
+      "translations_de": {
+        "Ursprung": "porm",
+        "Anfang": "porm",
+        "Ahne": "parmun",
+        "urzeitlich": "parmi",
+        "uralt": "parmi",
+        "begann": "param",
+        "beginnt": "parim",
+        "Ursprünge": "piram",
+        "Ahnenboden": "parmal",
+        "vor langer Zeit": "parmal"
+      }
+    },
+    {
+      "root": "S-R-V",
+      "consonants": [
+        "s",
+        "r",
+        "v"
+      ],
+      "meaning": "perception, seeing, reality-shaping",
+      "domain": "perception",
+      "register": "all",
+      "forms": {
+        "noun": "sorv",
+        "agent": "sarvun",
+        "abstract_sacred": "suraav",
+        "abstract_common": "surav",
+        "place": "sarval",
+        "adjective": "sarvi",
+        "perfective": "sarav",
+        "imperfective": "sariv",
+        "causative": "tasarav",
+        "intensive": "sarrav",
+        "negated": "fasorv",
+        "plural": "sirav"
+      },
+      "translations": {
+        "perception": "sorv",
+        "sight": "sorv",
+        "perceiver": "sarvun",
+        "seer": "sarvun",
+        "mage": "sarvun",
+        "perceptive": "sarvi",
+        "aware": "sarvi",
+        "real": "sarvi",
+        "perceived": "sarav",
+        "perceives": "sariv",
+        "blindness": "fasorv",
+        "unreality": "fasorv",
+        "visions": "sirav"
+      },
+      "translations_de": {
+        "Wahrnehmung": "sorv",
+        "Sicht": "sorv",
+        "Wahrnehmender": "sarvun",
+        "Seher": "sarvun",
+        "Magier": "sarvun",
+        "wahrnehmend": "sarvi",
+        "bewusst": "sarvi",
+        "wirklich": "sarvi",
+        "nahm wahr": "sarav",
+        "nimmt wahr": "sariv",
+        "Blindheit": "fasorv",
+        "Unwirklichkeit": "fasorv",
+        "Visionen": "sirav"
+      }
+    },
+    {
+      "root": "V-K-H",
+      "consonants": [
+        "v",
+        "k",
+        "h"
+      ],
+      "meaning": "soul, spirit, inner essence",
+      "domain": "soul",
+      "register": "all",
+      "forms": {
+        "noun": "vokh",
+        "agent": "vakhun",
+        "abstract_sacred": "vukaah",
+        "abstract_common": "vukah",
+        "place": "vakhal",
+        "adjective": "vakhi",
+        "perfective": "vakah",
+        "imperfective": "vakih",
+        "causative": "tavakah",
+        "plural": "vikah"
+      },
+      "translations": {
+        "soul": "vokh",
+        "spirit": "vokh",
+        "souls": "vikah",
+        "ensouled": "vakhun",
+        "soulful": "vakhi",
+        "afterlife": "vakhal",
+        "ensoul": "tavakah",
+        "soulless": "favokh"
+      },
+      "translations_de": {
+        "Seele": "vokh",
+        "Geist": "vokh",
+        "Seelen": "vikah",
+        "beseelt": "vakhun",
+        "seelenvoll": "vakhi",
+        "Jenseits": "vakhal",
+        "beseelen": "tavakah",
+        "seelenlos": "favokh"
+      }
+    },
+    {
+      "root": "T-R-M",
+      "consonants": [
+        "t",
+        "r",
+        "m"
+      ],
+      "meaning": "endurance, persistence, holding fast",
+      "domain": "soul",
+      "register": "all",
+      "note": "NOT hope. Praemali has no word for hope until after Amrex's death.",
+      "forms": {
+        "noun": "torm",
+        "agent": "tarmun",
+        "abstract_sacred": "turaam",
+        "abstract_common": "turam",
+        "adjective": "tarmi",
+        "perfective": "taram",
+        "imperfective": "tarim",
+        "causative": "tataram",
+        "negated": "fatorm",
+        "plural": "tiram"
+      },
+      "translations": {
+        "endurance": "torm",
+        "persistence": "torm",
+        "enduring": "tarmi",
+        "endured": "taram",
+        "endures": "tarim",
+        "surrender": "fatorm",
+        "giving up": "fatorm"
+      },
+      "translations_de": {
+        "Ausdauer": "torm",
+        "Beharrlichkeit": "torm",
+        "ausdauernd": "tarmi",
+        "ertrug": "taram",
+        "erträgt": "tarim",
+        "Aufgabe": "fatorm",
+        "Aufgeben": "fatorm"
+      }
+    },
+    {
+      "root": "G-R-V",
+      "consonants": [
+        "g",
+        "r",
+        "v"
+      ],
+      "meaning": "fear, dread, awe",
+      "domain": "soul",
+      "register": "all",
+      "forms": {
+        "noun": "gorv",
+        "agent": "garvun",
+        "abstract_sacred": "guraav",
+        "abstract_common": "gurav",
+        "adjective": "garvi",
+        "perfective": "garav",
+        "imperfective": "gariv",
+        "causative": "tagarav",
+        "intensive": "garrav",
+        "negated_adj": "fagarvi",
+        "plural": "girav"
+      },
+      "translations": {
+        "fear": "gorv",
+        "dread": "guraav",
+        "fearful": "garvi",
+        "terrible": "garvi",
+        "feared": "garav",
+        "fears": "gariv",
+        "frighten": "tagarav",
+        "fearless": "fagarvi",
+        "fears_plural": "girav"
+      },
+      "translations_de": {
+        "Furcht": "gorv",
+        "Grauen": "guraav",
+        "furchtsam": "garvi",
+        "schrecklich": "garvi",
+        "fürchtete": "garav",
+        "fürchtet": "gariv",
+        "erschrecken": "tagarav",
+        "furchtlos": "fagarvi",
+        "Ängste": "girav"
+      }
+    },
+    {
+      "root": "K-N-L",
+      "consonants": [
+        "k",
+        "n",
+        "l"
+      ],
+      "meaning": "knowledge, learning, truth",
+      "domain": "perception",
+      "register": "all",
+      "forms": {
+        "noun": "konl",
+        "agent": "kanlun",
+        "abstract_sacred": "kunaal",
+        "abstract_common": "kunal",
+        "place": "kanlal",
+        "adjective": "kanli",
+        "perfective": "kanal",
+        "imperfective": "kanil",
+        "causative": "takanal",
+        "negated": "fakonl",
+        "plural": "kinal"
+      },
+      "translations": {
+        "knowledge": "konl",
+        "scholar": "kanlun",
+        "wise": "kanli",
+        "knowledgeable": "kanli",
+        "learned": "kanal",
+        "learns": "kanil",
+        "teach": "takanal",
+        "ignorance": "fakonl",
+        "school": "kanlal",
+        "library": "kanlal"
+      },
+      "translations_de": {
+        "Wissen": "konl",
+        "Gelehrter": "kanlun",
+        "weise": "kanli",
+        "kundig": "kanli",
+        "lernte": "kanal",
+        "lernt": "kanil",
+        "lehren": "takanal",
+        "Unwissenheit": "fakonl",
+        "Schule": "kanlal",
+        "Bibliothek": "kanlal"
+      }
+    },
+    {
+      "root": "T-R-N",
+      "consonants": [
+        "t",
+        "r",
+        "n"
+      ],
+      "meaning": "warrior, battle, conflict",
+      "domain": "war",
+      "register": "all",
+      "forms": {
+        "noun": "torn",
+        "agent": "tarnun",
+        "abstract_sacred": "turaan",
+        "abstract_common": "turan",
+        "place": "tarnal",
+        "adjective": "tarni",
+        "perfective": "taran",
+        "imperfective": "tarin",
+        "causative": "tataran",
+        "intensive": "tarran",
+        "reciprocal": "tiranan",
+        "plural": "tiran"
+      },
+      "translations": {
+        "battle": "torn",
+        "warrior": "tarnun",
+        "warlike": "tarni",
+        "fierce": "tarni",
+        "fought": "taran",
+        "fights": "tarin",
+        "battlefield": "tarnal",
+        "provoke": "tataran",
+        "battles": "tiran"
+      },
+      "translations_de": {
+        "Schlacht": "torn",
+        "Krieger": "tarnun",
+        "kriegerisch": "tarni",
+        "wild": "tarni",
+        "kämpfte": "taran",
+        "kämpft": "tarin",
+        "Schlachtfeld": "tarnal",
+        "provozieren": "tataran",
+        "Schlachten": "tiran"
+      }
+    },
+    {
+      "root": "R-M-L",
+      "consonants": [
+        "r",
+        "m",
+        "l"
+      ],
+      "meaning": "king, rule, sovereignty",
+      "domain": "war",
+      "register": "all",
+      "forms": {
+        "noun": "roml",
+        "agent": "ramlun",
+        "abstract_sacred": "rumaal",
+        "abstract_common": "rumal",
+        "place": "ramlal",
+        "adjective": "ramli",
+        "perfective": "ramal",
+        "imperfective": "ramil",
+        "causative": "taramal",
+        "negated_agent": "faramlun",
+        "plural": "rimal"
+      },
+      "translations": {
+        "kingship": "roml",
+        "rule": "roml",
+        "king": "ramlun",
+        "ruler": "ramlun",
+        "royal": "ramli",
+        "ruled": "ramal",
+        "rules": "ramil",
+        "palace": "ramlal",
+        "crown": "taramal",
+        "usurper": "faramlun",
+        "kings": "rimal"
+      },
+      "translations_de": {
+        "Königtum": "roml",
+        "Herrschaft": "roml",
+        "König": "ramlun",
+        "Herrscher": "ramlun",
+        "königlich": "ramli",
+        "herrschte": "ramal",
+        "herrscht": "ramil",
+        "Palast": "ramlal",
+        "krönen": "taramal",
+        "Usurpator": "faramlun",
+        "Könige": "rimal"
+      }
+    },
+    {
+      "root": "D-R-N",
+      "consonants": [
+        "d",
+        "r",
+        "n"
+      ],
+      "meaning": "blade, weapon, cutting",
+      "domain": "war",
+      "register": "common",
+      "forms": {
+        "noun": "dorn",
+        "agent": "darnun",
+        "place": "darnal",
+        "adjective": "darni",
+        "perfective": "daran",
+        "imperfective": "darin",
+        "causative": "tadaran",
+        "plural": "diran"
+      },
+      "translations": {
+        "blade": "dorn",
+        "weapon": "dorn",
+        "swordsman": "darnun",
+        "sharp": "darni",
+        "struck": "daran",
+        "strikes": "darin",
+        "armory": "darnal",
+        "arm someone": "tadaran",
+        "weapons": "diran"
+      },
+      "translations_de": {
+        "Klinge": "dorn",
+        "Waffe": "dorn",
+        "Schwertkämpfer": "darnun",
+        "scharf": "darni",
+        "schlug": "daran",
+        "schlägt": "darin",
+        "Waffenkammer": "darnal",
+        "bewaffnen": "tadaran",
+        "Waffen": "diran"
+      }
+    },
+    {
+      "root": "V-K-T",
+      "consonants": [
+        "v",
+        "k",
+        "t"
+      ],
+      "meaning": "walking, journeying, passage",
+      "domain": "movement",
+      "register": "all",
+      "forms": {
+        "noun": "vokt",
+        "agent": "vaktun",
+        "abstract_sacred": "vukaat",
+        "abstract_common": "vukat",
+        "place": "vaktal",
+        "adjective": "vakti",
+        "perfective": "vakat",
+        "imperfective": "vakit",
+        "causative": "tavakat",
+        "plural": "vikat"
+      },
+      "translations": {
+        "journey": "vokt",
+        "walk": "vakit",
+        "walked": "vakat",
+        "traveler": "vaktun",
+        "road": "vaktal",
+        "path": "vaktal",
+        "traveling": "vakti",
+        "journeys": "vikat"
+      },
+      "translations_de": {
+        "Reise": "vokt",
+        "gehen": "vakit",
+        "ging": "vakat",
+        "Reisender": "vaktun",
+        "Straße": "vaktal",
+        "Pfad": "vaktal",
+        "reisend": "vakti",
+        "Reisen": "vikat"
+      }
+    },
+    {
+      "root": "K-F-R",
+      "consonants": [
+        "k",
+        "f",
+        "r"
+      ],
+      "meaning": "carrying, bearing, responsibility",
+      "domain": "family",
+      "register": "all",
+      "forms": {
+        "noun": "kofr",
+        "agent": "kafrun",
+        "abstract_sacred": "kufaar",
+        "abstract_common": "kufar",
+        "adjective": "kafri",
+        "perfective": "kafar",
+        "imperfective": "kafir",
+        "causative": "takafar",
+        "plural": "kifar"
+      },
+      "translations": {
+        "burden": "kofr",
+        "bearer": "kafrun",
+        "carrier": "kafrun",
+        "duty": "kufar",
+        "burdened": "kafri",
+        "carried": "kafar",
+        "carries": "kafir",
+        "burdens": "kifar"
+      },
+      "translations_de": {
+        "Last": "kofr",
+        "Träger": "kafrun",
+        "Pflicht": "kufar",
+        "belastet": "kafri",
+        "trug": "kafar",
+        "trägt": "kafir",
+        "Lasten": "kifar"
+      }
+    },
+    {
+      "root": "V-L-T",
+      "consonants": [
+        "v",
+        "l",
+        "t"
+      ],
+      "meaning": "song, voice, calling",
+      "domain": "ritual",
+      "register": "all",
+      "forms": {
+        "noun": "volt",
+        "agent": "valtun",
+        "abstract_sacred": "vulaat",
+        "abstract_common": "vulat",
+        "place": "valtal",
+        "adjective": "valti",
+        "perfective": "valat",
+        "imperfective": "valit",
+        "causative": "tavalat",
+        "intensive": "vallat",
+        "plural": "vilat",
+        "construct": "vel"
+      },
+      "translations": {
+        "song": "volt",
+        "singer": "valtun",
+        "melodious": "valti",
+        "sang": "valat",
+        "sings": "valit",
+        "invoke": "vallat",
+        "songs": "vilat",
+        "song of": "vel"
+      },
+      "translations_de": {
+        "Lied": "volt",
+        "Sänger": "valtun",
+        "melodisch": "valti",
+        "sang": "valat",
+        "singt": "valit",
+        "anrufen": "vallat",
+        "Lieder": "vilat",
+        "Lied von": "vel"
+      }
+    },
+    {
+      "root": "T-N-M",
+      "consonants": [
+        "t",
+        "n",
+        "m"
+      ],
+      "meaning": "youth, becoming, growth into self",
+      "domain": "family",
+      "register": "all",
+      "forms": {
+        "noun": "tonm",
+        "agent": "tanmun",
+        "abstract_sacred": "tunaam",
+        "abstract_common": "tunam",
+        "adjective": "tanmi",
+        "perfective": "tanam",
+        "imperfective": "tanim",
+        "plural": "tinam"
+      },
+      "translations": {
+        "youth": "tonm",
+        "child": "tanmun",
+        "young one": "tanmun",
+        "young": "tanmi",
+        "became": "tanam",
+        "is becoming": "tanim",
+        "children": "tinam"
+      },
+      "note": "Also provides the -tam patronymic suffix for Adneroth naming",
+      "translations_de": {
+        "Jugend": "tonm",
+        "Kind": "tanmun",
+        "Junges": "tanmun",
+        "jung": "tanmi",
+        "wurde": "tanam",
+        "wird": "tanim",
+        "Kinder": "tinam"
+      }
+    },
+    {
+      "root": "S-L-N",
+      "consonants": [
+        "s",
+        "l",
+        "n"
+      ],
+      "meaning": "warmth, hearth, home, belonging",
+      "domain": "family",
+      "register": "all",
+      "god_connection": "Solin (name)",
+      "forms": {
+        "noun": "soln",
+        "agent": "salnun",
+        "abstract_sacred": "sulaan",
+        "abstract_common": "sulan",
+        "place": "salnal",
+        "adjective": "salni",
+        "perfective": "salan",
+        "imperfective": "salin",
+        "causative": "tasalan",
+        "negated": "fasoln",
+        "plural": "silan"
+      },
+      "translations": {
+        "warmth": "soln",
+        "home": "soln",
+        "hearth": "salnal",
+        "warm": "salni",
+        "homely": "salni",
+        "welcome": "tasalan",
+        "homelessness": "fasoln",
+        "homes": "silan"
+      },
+      "translations_de": {
+        "Wärme": "soln",
+        "Heim": "soln",
+        "Herd": "salnal",
+        "warm": "salni",
+        "heimelig": "salni",
+        "willkommen heißen": "tasalan",
+        "Heimatlosigkeit": "fasoln",
+        "Heime": "silan"
+      }
+    },
+    {
+      "root": "P-L-K",
+      "consonants": [
+        "p",
+        "l",
+        "k"
+      ],
+      "meaning": "surface, mask, outer appearance",
+      "domain": "family",
+      "register": "all",
+      "god_connection": "Palia (name)",
+      "forms": {
+        "noun": "polk",
+        "agent": "palkun",
+        "abstract_sacred": "pulaak",
+        "abstract_common": "pulak",
+        "adjective": "palki",
+        "perfective": "palak",
+        "imperfective": "palik",
+        "causative": "tapalak",
+        "negated_adj": "fapalki",
+        "plural": "pilak"
+      },
+      "translations": {
+        "mask": "polk",
+        "surface": "polk",
+        "deceiver": "palkun",
+        "false": "palki",
+        "masked": "palki",
+        "deceived": "palak",
+        "deceives": "palik",
+        "unmasked": "fapalki",
+        "revealed": "fapalki"
+      },
+      "translations_de": {
+        "Maske": "polk",
+        "Oberfläche": "polk",
+        "Betrüger": "palkun",
+        "falsch": "palki",
+        "maskiert": "palki",
+        "täuschte": "palak",
+        "täuscht": "palik",
+        "entlarvt": "fapalki",
+        "enthüllt": "fapalki"
+      }
+    },
+    {
+      "root": "A-M-R",
+      "consonants": [
+        "a",
+        "m",
+        "r"
+      ],
+      "meaning": "people, folk, the common",
+      "domain": "collective",
+      "register": "all",
+      "god_connection": "Amrex (name)",
+      "forms": {
+        "noun": "omr",
+        "agent": "amrun",
+        "abstract_sacred": "umaar",
+        "abstract_common": "umar",
+        "place": "amral",
+        "adjective": "amri",
+        "perfective": "amar",
+        "imperfective": "amir",
+        "plural": "imar"
+      },
+      "translations": {
+        "people": "omr",
+        "folk": "omr",
+        "person": "amrun",
+        "humanity": "umaar",
+        "common": "amri",
+        "settlement": "amral",
+        "village": "amral",
+        "peoples": "imar",
+        "nations": "imar"
+      },
+      "note": "Post-trilogy: A-M-R gains 'hope' as second meaning after Amrex's death",
+      "translations_de": {
+        "Volk": "omr",
+        "Person": "amrun",
+        "Menschheit": "umaar",
+        "gewöhnlich": "amri",
+        "Siedlung": "amral",
+        "Dorf": "amral",
+        "Völker": "imar",
+        "Nationen": "imar"
+      }
+    },
+    {
+      "root": "D-N-R",
+      "consonants": [
+        "d",
+        "n",
+        "r"
+      ],
+      "meaning": "north, harsh land, endurance",
+      "domain": "collective",
+      "register": "common",
+      "god_connection": "Adneroth (place)",
+      "forms": {
+        "noun": "donr",
+        "agent": "danrun",
+        "abstract_sacred": "dunaar",
+        "abstract_common": "dunar",
+        "place": "danral",
+        "adjective": "danri",
+        "plural": "dinar"
+      },
+      "translations": {
+        "north": "donr",
+        "northerner": "danrun",
+        "northern": "danri",
+        "harsh": "danri"
+      },
+      "translations_de": {
+        "Norden": "donr",
+        "Nordländer": "danrun",
+        "nördlich": "danri",
+        "rau": "danri"
+      }
+    },
+    {
+      "root": "G-R-N",
+      "consonants": [
+        "g",
+        "r",
+        "n"
+      ],
+      "meaning": "west, fertile land, growth",
+      "domain": "collective",
+      "register": "common",
+      "god_connection": "Agrinal (place)",
+      "forms": {
+        "noun": "gorn",
+        "agent": "garnun",
+        "place": "garnal",
+        "adjective": "garni",
+        "plural": "giran"
+      },
+      "translations": {
+        "west": "gorn",
+        "westerner": "garnun",
+        "western": "garni",
+        "fertile": "garni"
+      },
+      "translations_de": {
+        "Westen": "gorn",
+        "Westler": "garnun",
+        "westlich": "garni",
+        "fruchtbar": "garni"
+      }
+    },
+    {
+      "root": "W-N-D",
+      "consonants": [
+        "w",
+        "n",
+        "d"
+      ],
+      "meaning": "wind, breath, air",
+      "domain": "nature",
+      "register": "proto-divine",
+      "forms": {
+        "noun": "wond",
+        "abstract_sacred": "wunaat",
+        "adjective": "wandi",
+        "imperfective": "wanid",
+        "plural": "winad"
+      },
+      "translations": {
+        "wind": "wond",
+        "breath": "wond",
+        "air": "wond",
+        "windy": "wandi",
+        "blows": "wanid",
+        "winds": "winad"
+      },
+      "translations_de": {
+        "Wind": "wond",
+        "Atem": "wond",
+        "Luft": "wond",
+        "windig": "wandi",
+        "weht": "wanid",
+        "Winde": "winad"
+      }
+    },
+    {
+      "root": "L-M-N",
+      "consonants": [
+        "l",
+        "m",
+        "n"
+      ],
+      "meaning": "earth, ground, foundation",
+      "domain": "nature",
+      "register": "proto-divine",
+      "god_connection": "Lomneus",
+      "forms": {
+        "noun": "lomn",
+        "abstract_sacred": "lumaan",
+        "place": "lamnal",
+        "adjective": "lamni",
+        "imperfective": "lamin",
+        "plural": "liman"
+      },
+      "translations": {
+        "earth": "lomn",
+        "ground": "lomn",
+        "earthen": "lamni",
+        "grounded": "lamni",
+        "homeland": "lamnal",
+        "lands": "liman"
+      },
+      "translations_de": {
+        "Erde": "lomn",
+        "Boden": "lomn",
+        "irden": "lamni",
+        "geerdet": "lamni",
+        "Heimat": "lamnal",
+        "Länder": "liman"
+      }
+    },
+    {
+      "root": "SH-M-N",
+      "consonants": [
+        "sh",
+        "m",
+        "n"
+      ],
+      "meaning": "sky, heaven, above",
+      "domain": "nature",
+      "register": "proto-divine",
+      "god_connection": "Shamuun",
+      "forms": {
+        "noun": "shomn",
+        "abstract_sacred": "shumaan",
+        "adjective": "shamni",
+        "imperfective": "shamin",
+        "plural": "shiman"
+      },
+      "translations": {
+        "sky": "shomn",
+        "heaven": "shumaan",
+        "heavenly": "shamni",
+        "skies": "shiman"
+      },
+      "translations_de": {
+        "Himmel": "shiman",
+        "himmlisch": "shamni",
+        "Himmel (Sg.)": "shomn",
+        "himmlisch (SH-M-N)": "shamni",
+        "Himmel (Pl.)": "shiman",
+        "Himmelreich (sakral)": "shumaan"
+      }
+    },
+    {
+      "root": "T-R-K",
+      "consonants": [
+        "t",
+        "r",
+        "k"
+      ],
+      "meaning": "tree, growth, standing",
+      "domain": "nature",
+      "register": "proto-divine",
+      "god_connection": "Torkea",
+      "forms": {
+        "noun": "tork",
+        "abstract_sacred": "turaak",
+        "adjective": "tarki",
+        "imperfective": "tarik",
+        "plural": "tirak"
+      },
+      "translations": {
+        "tree": "tork",
+        "forest": "turaak",
+        "rooted": "tarki",
+        "grows": "tarik",
+        "trees": "tirak"
+      },
+      "translations_de": {
+        "Baum": "tork",
+        "Wald": "turaak",
+        "verwurzelt": "tarki",
+        "wächst": "tarik",
+        "Bäume": "tirak"
+      }
+    },
+    {
+      "root": "W-T-R",
+      "consonants": [
+        "w",
+        "t",
+        "r"
+      ],
+      "meaning": "water, flow, life-stream",
+      "domain": "nature",
+      "register": "proto-divine",
+      "god_connection": "Wotrea",
+      "forms": {
+        "noun": "wotr",
+        "abstract_sacred": "wutaar",
+        "adjective": "watri",
+        "imperfective": "watir",
+        "plural": "witar"
+      },
+      "translations": {
+        "water": "wotr",
+        "flowing": "watri",
+        "wet": "watri",
+        "flows": "watir",
+        "waters": "witar"
+      },
+      "translations_de": {
+        "Wasser": "witar",
+        "fließend": "watri",
+        "nass": "watri",
+        "fließt": "watir",
+        "Wasser (Pl.)": "witar",
+        "Wasser (Sg.)": "wotr"
+      }
+    },
+    {
+      "root": "N-R-G",
+      "consonants": [
+        "n",
+        "r",
+        "g"
+      ],
+      "meaning": "fire, burning, transformation",
+      "domain": "nature",
+      "register": "all",
+      "god_connection": "Nargea",
+      "forms": {
+        "noun": "norg",
+        "agent": "nargun",
+        "adjective": "nargi",
+        "perfective": "narag",
+        "imperfective": "narig",
+        "causative": "tanarag",
+        "plural": "nirag"
+      },
+      "translations": {
+        "fire": "norg",
+        "burning": "nargi",
+        "fiery": "nargi",
+        "fire-keeper": "nargun",
+        "burned": "narag",
+        "burns": "narig",
+        "set ablaze": "tanarag",
+        "fires": "nirag"
+      },
+      "translations_de": {
+        "Feuer": "nirag",
+        "brennend": "nargi",
+        "feurig": "nargi",
+        "Feuerhüter": "nargun",
+        "brannte": "narag",
+        "brennt": "narig",
+        "entzünden": "tanarag",
+        "Feuer (Pl.)": "nirag",
+        "Feuer (Sg.)": "norg"
+      }
+    },
+    {
+      "root": "K-L-M",
+      "consonants": [
+        "k",
+        "l",
+        "m"
+      ],
+      "meaning": "stone, mountain, endurance",
+      "domain": "nature",
+      "register": "proto-divine",
+      "god_connection": "Kolmus",
+      "forms": {
+        "noun": "kolm",
+        "abstract_sacred": "kulaam",
+        "place": "kalmal",
+        "adjective": "kalmi",
+        "plural": "kilam"
+      },
+      "translations": {
+        "stone": "kolm",
+        "mountain": "kolm",
+        "stony": "kalmi",
+        "unyielding": "kalmi",
+        "mountain fortress": "kalmal",
+        "stones": "kilam"
+      },
+      "translations_de": {
+        "Stein": "kolm",
+        "Berg": "kolm",
+        "steinig": "kalmi",
+        "unnachgiebig": "kalmi",
+        "Bergfestung": "kalmal",
+        "Steine": "kilam"
+      }
+    },
+    {
+      "root": "M-R-N",
+      "consonants": [
+        "m",
+        "r",
+        "n"
+      ],
+      "meaning": "sea, deep water, vastness",
+      "domain": "nature",
+      "register": "proto-divine",
+      "forms": {
+        "noun": "morn",
+        "abstract_sacred": "muraan",
+        "adjective": "marni",
+        "imperfective": "marin",
+        "plural": "miran"
+      },
+      "translations": {
+        "sea": "morn",
+        "ocean": "morn",
+        "oceanic": "marni",
+        "vast": "marni",
+        "surges": "marin",
+        "seas": "miran"
+      },
+      "translations_de": {
+        "Meer": "morn",
+        "Ozean": "morn",
+        "ozeanisch": "marni",
+        "weit": "marni",
+        "wogt": "marin",
+        "Meere": "miran"
+      }
+    },
+    {
+      "root": "F-N-L",
+      "consonants": [
+        "f",
+        "n",
+        "l"
+      ],
+      "meaning": "ending, cessation, finality",
+      "domain": "death",
+      "register": "all",
+      "forms": {
+        "noun": "fonl",
+        "agent": "fanlun",
+        "abstract_sacred": "funaal",
+        "abstract_common": "funal",
+        "place": "fanlal",
+        "adjective": "fanli",
+        "perfective": "fanal",
+        "imperfective": "fanil",
+        "causative": "tafanal",
+        "plural": "final"
+      },
+      "translations": {
+        "end": "fonl",
+        "ending": "fonl",
+        "finisher": "fanlun",
+        "final": "fanli",
+        "ended": "fanal",
+        "is ending": "fanil",
+        "boundary": "fanlal",
+        "bring to end": "tafanal",
+        "endings": "final"
+      },
+      "translations_de": {
+        "Ende": "fonl",
+        "Beender": "fanlun",
+        "endgültig": "fanli",
+        "endete": "fanal",
+        "endet": "fanil",
+        "Grenze": "fanlal",
+        "beenden": "tafanal",
+        "Enden": "final"
+      }
+    },
+    {
+      "root": "B-N-D",
+      "consonants": [
+        "b",
+        "n",
+        "d"
+      ],
+      "meaning": "bond, tie, connection",
+      "domain": "connection",
+      "register": "all",
+      "forms": {
+        "noun": "bond",
+        "agent": "bandun",
+        "abstract_sacred": "bunaat",
+        "abstract_common": "bunat",
+        "adjective": "bandi",
+        "perfective": "banad",
+        "imperfective": "banid",
+        "causative": "tabanad",
+        "reciprocal": "binadan",
+        "negated": "fabond",
+        "plural": "binad"
+      },
+      "translations": {
+        "bond": "bond",
+        "ally": "bandun",
+        "bound": "bandi",
+        "allied": "bandi",
+        "was bound": "banad",
+        "connects": "banid",
+        "bind": "tabanad",
+        "severance": "fabond",
+        "bonds": "binad"
+      },
+      "translations_de": {
+        "Band": "bond",
+        "Verbündeter": "bandun",
+        "gebunden": "bandi",
+        "verbündet": "bandi",
+        "war gebunden": "banad",
+        "verbindet": "banid",
+        "binden": "tabanad",
+        "Trennung": "fabond",
+        "Bande": "binad"
+      }
+    },
+    {
+      "root": "K-R-M",
+      "consonants": [
+        "k",
+        "r",
+        "m"
+      ],
+      "meaning": "mercy, compassion, grace",
+      "domain": "connection",
+      "register": "all",
+      "forms": {
+        "noun": "korm",
+        "agent": "karmun",
+        "abstract_sacred": "kuraam",
+        "abstract_common": "kuram",
+        "adjective": "karmi",
+        "perfective": "karam",
+        "imperfective": "karim",
+        "causative": "takaram",
+        "negated_adj": "fakarmi",
+        "plural": "kiram"
+      },
+      "translations": {
+        "mercy": "korm",
+        "compassion": "korm",
+        "merciful": "karmi",
+        "gracious": "karmi",
+        "showed mercy": "karam",
+        "is merciful": "karim",
+        "merciless": "fakarmi"
+      },
+      "translations_de": {
+        "Gnade": "korm",
+        "Mitgefühl": "korm",
+        "gnädig": "karmi",
+        "zeigte Gnade": "karam",
+        "ist gnädig": "karim",
+        "gnadenlos": "fakarmi"
+      }
+    },
+    {
+      "root": "T-S-R",
+      "consonants": [
+        "t",
+        "s",
+        "r"
+      ],
+      "meaning": "ritual, sacred act, ceremony",
+      "domain": "ritual",
+      "register": "sacred",
+      "forms": {
+        "noun": "tosr",
+        "agent": "tasrun",
+        "abstract_sacred": "tusaar",
+        "abstract_common": "tusar",
+        "place": "tasral",
+        "adjective": "tasri",
+        "perfective": "tasar",
+        "imperfective": "tasir",
+        "plural": "tisar"
+      },
+      "translations": {
+        "ritual": "tosr",
+        "ceremony": "tosr",
+        "priest": "tasrun",
+        "temple": "tasral",
+        "ceremonial": "tasri",
+        "performed ritual": "tasar",
+        "performs ritual": "tasir"
+      },
+      "translations_de": {
+        "Ritual": "tosr",
+        "Zeremonie": "tosr",
+        "Priester": "tasrun",
+        "Tempel": "tasral",
+        "zeremoniell": "tasri",
+        "vollzog das Ritual": "tasar",
+        "vollzieht das Ritual": "tasir"
+      }
+    },
+    {
+      "root": "N-V-K",
+      "consonants": [
+        "n",
+        "v",
+        "k"
+      ],
+      "meaning": "prayer, invocation, calling upon",
+      "domain": "ritual",
+      "register": "sacred",
+      "forms": {
+        "noun": "novk",
+        "agent": "navkun",
+        "abstract_sacred": "nuvaak",
+        "abstract_common": "nuvak",
+        "adjective": "navki",
+        "perfective": "navak",
+        "imperfective": "navik",
+        "causative": "tanavak",
+        "intensive": "navvak",
+        "plural": "nivak"
+      },
+      "translations": {
+        "prayer": "novk",
+        "invocation": "novk",
+        "devout": "navki",
+        "prayed": "navak",
+        "prays": "navik",
+        "desperate prayer": "navvak",
+        "prayers": "nivak"
+      },
+      "translations_de": {
+        "Gebet": "novk",
+        "Anrufung": "novk",
+        "fromm": "navki",
+        "betete": "navak",
+        "betet": "navik",
+        "verzweifeltes Gebet": "navvak",
+        "Gebete": "nivak"
+      }
+    },
+    {
+      "root": "B-M-N",
+      "consonants": [
+        "b",
+        "m",
+        "n"
+      ],
+      "meaning": "fool, emptiness of mind",
+      "domain": "insult",
+      "register": "common",
+      "forms": {
+        "noun": "bomn",
+        "agent": "bamnun",
+        "adjective": "bamni",
+        "perfective": "baman",
+        "imperfective": "bamin",
+        "causative": "tabaman",
+        "plural": "bimah"
+      },
+      "translations": {
+        "fool": "bomn",
+        "idiot": "bomn",
+        "foolish": "bamni",
+        "stupid": "bamni",
+        "bambam": "bambam"
+      },
+      "note": "Bambam is a colloquial reduplication — Amrex's insult-name for disguised Valkorin",
+      "translations_de": {
+        "Narr": "bomn",
+        "Idiot": "bomn",
+        "närrisch": "bamni",
+        "dumm": "bamni",
+        "Bambam": "bambam"
+      }
+    },
+    {
+      "root": "G-L-K",
+      "consonants": [
+        "g",
+        "l",
+        "k"
+      ],
+      "meaning": "coward, weakness, shrinking",
+      "domain": "insult",
+      "register": "common",
+      "forms": {
+        "noun": "golk",
+        "agent": "galkun",
+        "adjective": "galki",
+        "perfective": "galak",
+        "imperfective": "galik",
+        "plural": "gilak"
+      },
+      "translations": {
+        "coward": "golk",
+        "weakling": "golk",
+        "cowardly": "galki"
+      },
+      "translations_de": {
+        "Feigling": "golk",
+        "Schwächling": "golk",
+        "feige": "galki"
+      }
+    },
+    {
+      "root": "B-R-T",
+      "consonants": [
+        "b",
+        "r",
+        "t"
+      ],
+      "meaning": "traitor, betrayal",
+      "domain": "insult",
+      "register": "common",
+      "forms": {
+        "noun": "bort",
+        "agent": "bartun",
+        "adjective": "barti",
+        "perfective": "barat",
+        "imperfective": "barit",
+        "negated": "fabort",
+        "plural": "birat"
+      },
+      "translations": {
+        "traitor": "bort",
+        "betrayal": "bort",
+        "treacherous": "barti",
+        "betrayed": "barat",
+        "is betraying": "barit",
+        "loyalty": "fabort"
+      },
+      "translations_de": {
+        "Verräter": "bort",
+        "Verrat": "bort",
+        "verräterisch": "barti",
+        "verriet": "barat",
+        "verrät": "barit",
+        "Treue": "fabort"
+      }
+    },
+    {
+      "root": "D-G-R",
+      "consonants": [
+        "d",
+        "g",
+        "r"
+      ],
+      "meaning": "filth, degradation",
+      "domain": "insult",
+      "register": "common",
+      "forms": {
+        "noun": "dogr",
+        "agent": "dagrun",
+        "adjective": "dagri",
+        "perfective": "dagar",
+        "imperfective": "dagir",
+        "plural": "digar"
+      },
+      "translations": {
+        "filth": "dogr",
+        "degradation": "dogr",
+        "filthy": "dagri",
+        "degraded": "dagri"
+      },
+      "translations_de": {
+        "Schmutz": "dogr",
+        "Erniedrigung": "dogr",
+        "schmutzig": "dagri",
+        "erniedrigt": "dagri"
+      }
+    },
+    {
+      "root": "L-V-N",
+      "consonants": [
+        "l",
+        "v",
+        "n"
+      ],
+      "meaning": "love, deep affection, devotion",
+      "domain": "emotion",
+      "register": "all",
+      "forms": {
+        "noun": "lavna",
+        "agent": "lavnun",
+        "adjective": "lavni",
+        "perfective": "lavan",
+        "imperfective": "lavin",
+        "causative": "talavan",
+        "negated": "falavna",
+        "plural": "livana"
+      },
+      "translations": {
+        "love": "lavna",
+        "lover": "lavnun",
+        "beloved": "lavnun",
+        "loving": "lavni",
+        "loved": "lavan",
+        "loves": "lavin",
+        "inspire love": "talavan",
+        "lovelessness": "falavna"
+      },
+      "translations_de": {
+        "Liebe": "lavna",
+        "Liebender": "lavnun",
+        "Geliebter": "lavnun",
+        "liebend": "lavni",
+        "liebte": "lavan",
+        "liebt": "lavin",
+        "Liebe erwecken": "talavan",
+        "Lieblosigkeit": "falavna"
+      }
+    },
+    {
+      "root": "R-G-N",
+      "consonants": [
+        "r",
+        "g",
+        "n"
+      ],
+      "meaning": "anger, wrath, fury",
+      "domain": "emotion",
+      "register": "all",
+      "forms": {
+        "noun": "rogn",
+        "agent": "ragnun",
+        "adjective": "ragni",
+        "perfective": "ragan",
+        "imperfective": "ragin",
+        "intensive": "raggan",
+        "negated": "farogn",
+        "plural": "rigan"
+      },
+      "translations": {
+        "anger": "rogn",
+        "wrath": "rogn",
+        "angry": "ragni",
+        "wrathful": "ragni",
+        "raged": "ragan",
+        "rages": "ragin",
+        "fury": "raggan",
+        "calm": "farogn"
+      },
+      "translations_de": {
+        "Zorn": "rogn",
+        "Wut": "rogn",
+        "zornig": "ragni",
+        "wütend": "ragni",
+        "wütete": "ragan",
+        "wütet": "ragin",
+        "Raserei": "raggan",
+        "Ruhe": "farogn"
+      }
+    },
+    {
+      "root": "S-K-R",
+      "consonants": [
+        "s",
+        "k",
+        "r"
+      ],
+      "meaning": "sorrow, grief, mourning",
+      "domain": "emotion",
+      "register": "all",
+      "forms": {
+        "noun": "sakra",
+        "agent": "sakrun",
+        "adjective": "sakri",
+        "perfective": "sakar",
+        "imperfective": "sakir",
+        "intensive": "sakkar",
+        "negated": "fasakra",
+        "plural": "sikar"
+      },
+      "translations": {
+        "sorrow": "sakra",
+        "grief": "sakra",
+        "mourner": "sakrun",
+        "sorrowful": "sakri",
+        "grieved": "sakar",
+        "grieves": "sakir",
+        "broken by grief": "sakkar",
+        "solace": "fasakra"
+      },
+      "translations_de": {
+        "Kummer": "sakra",
+        "Trauer": "sakra",
+        "Trauernder": "sakrun",
+        "kummervoll": "sakri",
+        "trauerte": "sakar",
+        "trauert": "sakir",
+        "von Trauer gebrochen": "sakkar",
+        "Trost": "fasakra"
+      }
+    },
+    {
+      "root": "V-R-N",
+      "consonants": [
+        "v",
+        "r",
+        "n"
+      ],
+      "meaning": "joy, gladness, celebration",
+      "domain": "emotion",
+      "register": "all",
+      "forms": {
+        "noun": "varna",
+        "agent": "varnun",
+        "adjective": "varni",
+        "perfective": "varan",
+        "imperfective": "varin",
+        "causative": "tavaran",
+        "negated": "favarna",
+        "plural": "viran"
+      },
+      "translations": {
+        "joy": "varna",
+        "joyful": "varni",
+        "rejoiced": "varan",
+        "rejoices": "varin",
+        "bring joy": "tavaran",
+        "joylessness": "favarna"
+      },
+      "translations_de": {
+        "Freude": "varna",
+        "freudig": "varni",
+        "freute sich": "varan",
+        "freut sich": "varin",
+        "Freude bringen": "tavaran",
+        "Freudlosigkeit": "favarna"
+      }
+    },
+    {
+      "root": "SH-M-K",
+      "consonants": [
+        "sh",
+        "m",
+        "k"
+      ],
+      "meaning": "shame, dishonor",
+      "domain": "emotion",
+      "register": "all",
+      "forms": {
+        "noun": "shomk",
+        "agent": "shamkun",
+        "adjective": "shamki",
+        "perfective": "shamak",
+        "imperfective": "shamik",
+        "negated_adj": "fashamki",
+        "plural": "shimak"
+      },
+      "translations": {
+        "shame": "shomk",
+        "shameful": "shamki",
+        "shameless": "fashamki"
+      },
+      "translations_de": {
+        "Scham": "shomk",
+        "beschämend": "shamki",
+        "schamlos": "fashamki"
+      }
+    },
+    {
+      "root": "K-B-R",
+      "consonants": [
+        "k",
+        "b",
+        "r"
+      ],
+      "meaning": "pride, self-worth",
+      "domain": "emotion",
+      "register": "all",
+      "forms": {
+        "noun": "kobr",
+        "agent": "kabrun",
+        "adjective": "kabri",
+        "perfective": "kabar",
+        "imperfective": "kabir",
+        "negated": "fakobr",
+        "plural": "kibar"
+      },
+      "translations": {
+        "pride": "kobr",
+        "proud": "kabri",
+        "humility": "fakobr"
+      },
+      "translations_de": {
+        "Stolz": "kobr",
+        "stolz": "kabri",
+        "Demut": "fakobr"
+      }
+    },
+    {
+      "root": "K-R-N",
+      "consonants": [
+        "k",
+        "r",
+        "n"
+      ],
+      "meaning": "heart, center, core",
+      "domain": "body",
+      "register": "all",
+      "forms": {
+        "noun": "korna",
+        "adjective": "karni",
+        "plural": "kirana"
+      },
+      "translations": {
+        "heart": "korna",
+        "heartfelt": "karni",
+        "hearts": "kirana"
+      },
+      "translations_de": {
+        "Herz": "korna",
+        "herzlich": "karni",
+        "Herzen": "kirana"
+      }
+    },
+    {
+      "root": "D-M-K",
+      "consonants": [
+        "d",
+        "m",
+        "k"
+      ],
+      "meaning": "hand, grip, action",
+      "domain": "body",
+      "register": "all",
+      "forms": {
+        "noun": "damka",
+        "agent": "damkun",
+        "adjective": "damki",
+        "plural": "dimaka"
+      },
+      "translations": {
+        "hand": "damka",
+        "craftsman": "damkun",
+        "skilled": "damki",
+        "hands": "dimaka"
+      },
+      "translations_de": {
+        "Hand": "damka",
+        "Handwerker": "damkun",
+        "geschickt": "damki",
+        "Hände": "dimaka"
+      }
+    },
+    {
+      "root": "V-R-S",
+      "consonants": [
+        "v",
+        "r",
+        "s"
+      ],
+      "meaning": "eye, sight, watchfulness",
+      "domain": "body",
+      "register": "all",
+      "forms": {
+        "noun": "varsa",
+        "agent": "varsun",
+        "adjective": "varsi",
+        "plural": "virasa",
+        "perfective": "varas",
+        "imperfective": "varis"
+      },
+      "translations": {
+        "eye": "varsa",
+        "watcher": "varsun",
+        "watchful": "varsi",
+        "eyes": "virasa",
+        "saw": "varas",
+        "sees": "varis"
+      },
+      "translations_de": {
+        "Auge": "varsa",
+        "Wächter": "varsun",
+        "wachsam": "varsi",
+        "Augen": "virasa",
+        "sah": "varas",
+        "sieht": "varis"
+      },
+      "note": "Physical seeing (varis) is distinct from perceiving (sariv, S-R-V) and hearing (shariv, SH-R-V)"
+    },
+    {
+      "root": "S-N-G",
+      "consonants": [
+        "s",
+        "n",
+        "g"
+      ],
+      "meaning": "blood, lineage, life-force",
+      "domain": "body",
+      "register": "all",
+      "forms": {
+        "noun": "sanga",
+        "agent": "sangur",
+        "adjective": "sangi",
+        "perfective": "sanag",
+        "imperfective": "sanig",
+        "plural": "sinaga"
+      },
+      "translations": {
+        "blood": "sanga",
+        "bloodline": "sangur",
+        "lineage": "sangur",
+        "bloody": "sangi",
+        "bled": "sanag",
+        "bleeds": "sanig"
+      },
+      "translations_de": {
+        "Blut": "sanga",
+        "Blutlinie": "sangur",
+        "Abstammung": "sangur",
+        "blutig": "sangi",
+        "blutete": "sanag",
+        "blutet": "sanig"
+      }
+    },
+    {
+      "root": "K-R-P",
+      "consonants": [
+        "k",
+        "r",
+        "p"
+      ],
+      "meaning": "bone, structure, framework",
+      "domain": "body",
+      "register": "all",
+      "forms": {
+        "noun": "korp",
+        "adjective": "karpi",
+        "plural": "kirap"
+      },
+      "translations": {
+        "bone": "korp",
+        "skeletal": "karpi",
+        "structural": "karpi",
+        "bones": "kirap"
+      },
+      "translations_de": {
+        "Knochen": "kirap",
+        "knöchern": "karpi",
+        "strukturell": "karpi",
+        "Knochen (Pl.)": "kirap",
+        "Knochen (Sg.)": "korp"
+      }
+    },
+    {
+      "root": "P-N-K",
+      "consonants": [
+        "p",
+        "n",
+        "k"
+      ],
+      "meaning": "face, countenance, identity",
+      "domain": "body",
+      "register": "all",
+      "forms": {
+        "noun": "panka",
+        "adjective": "panki",
+        "negated_adj": "fapanki",
+        "plural": "pinak"
+      },
+      "translations": {
+        "face": "panka",
+        "honest": "panki",
+        "open": "panki",
+        "faceless": "fapanki",
+        "hidden": "fapanki",
+        "faces": "pinak"
+      },
+      "translations_de": {
+        "Gesicht": "panka",
+        "ehrlich": "panki",
+        "offen": "panki",
+        "gesichtslos": "fapanki",
+        "verborgen": "fapanki",
+        "Gesichter": "pinak"
+      }
+    },
+    {
+      "root": "K-L-T",
+      "consonants": [
+        "k",
+        "l",
+        "t"
+      ],
+      "meaning": "speaking, saying, telling",
+      "domain": "speech",
+      "register": "all",
+      "forms": {
+        "noun": "kalat",
+        "agent": "kaltun",
+        "adjective": "kalti",
+        "perfective": "kalat",
+        "imperfective": "kalit",
+        "causative": "takalat",
+        "negated": "fakalat",
+        "plural": "kilata"
+      },
+      "translations": {
+        "speech": "kalat",
+        "words": "kalat",
+        "speaker": "kaltun",
+        "spoke": "kalat",
+        "speaks": "kalit",
+        "compel testimony": "takalat",
+        "silence": "fakalat"
+      },
+      "translations_de": {
+        "Rede": "kalat",
+        "Worte": "kalat",
+        "Sprecher": "kaltun",
+        "sprach": "kalat",
+        "spricht": "kalit",
+        "Aussage erzwingen": "takalat",
+        "Stille": "fakalat"
+      }
+    },
+    {
+      "root": "D-N-T",
+      "consonants": [
+        "d",
+        "n",
+        "t"
+      ],
+      "meaning": "giving, offering, generosity",
+      "domain": "verb",
+      "register": "all",
+      "forms": {
+        "noun": "dont",
+        "agent": "dantun",
+        "adjective": "danti",
+        "perfective": "danat",
+        "imperfective": "danit",
+        "negated_adj": "fadanti",
+        "plural": "dinat"
+      },
+      "translations": {
+        "gift": "dont",
+        "offering": "dont",
+        "giver": "dantun",
+        "generous": "danti",
+        "gave": "danat",
+        "gives": "danit",
+        "stingy": "fadanti"
+      },
+      "translations_de": {
+        "Geschenk": "dont",
+        "Gabe": "dont",
+        "Geber": "dantun",
+        "großzügig": "danti",
+        "gab": "danat",
+        "gibt": "danit",
+        "geizig": "fadanti"
+      }
+    },
+    {
+      "root": "K-P-S",
+      "consonants": [
+        "k",
+        "p",
+        "s"
+      ],
+      "meaning": "taking, claiming, seizing",
+      "domain": "verb",
+      "register": "all",
+      "forms": {
+        "noun": "kops",
+        "agent": "kapsun",
+        "perfective": "kapas",
+        "imperfective": "kapis",
+        "plural": "kipas"
+      },
+      "translations": {
+        "claim": "kops",
+        "seizure": "kops",
+        "taker": "kapsun",
+        "took": "kapas",
+        "takes": "kapis"
+      },
+      "translations_de": {
+        "Anspruch": "kops",
+        "Ergreifung": "kops",
+        "Nehmer": "kapsun",
+        "nahm": "kapas",
+        "nimmt": "kapis"
+      }
+    },
+    {
+      "root": "B-N-K",
+      "consonants": [
+        "b",
+        "n",
+        "k"
+      ],
+      "meaning": "building, making, crafting",
+      "domain": "verb",
+      "register": "all",
+      "forms": {
+        "noun": "bonk",
+        "agent": "bankun",
+        "adjective": "banki",
+        "perfective": "banak",
+        "imperfective": "banik",
+        "plural": "binak"
+      },
+      "translations": {
+        "building": "bonk",
+        "structure": "bonk",
+        "builder": "bankun",
+        "built": "banak",
+        "builds": "banik"
+      },
+      "translations_de": {
+        "Gebäude": "bonk",
+        "Struktur": "bonk",
+        "Erbauer": "bankun",
+        "baute": "banak",
+        "baut": "banik"
+      }
+    },
+    {
+      "root": "S-K-L",
+      "consonants": [
+        "s",
+        "k",
+        "l"
+      ],
+      "meaning": "eating, consuming, sustenance",
+      "domain": "verb",
+      "register": "all",
+      "forms": {
+        "noun": "sakla",
+        "agent": "saklun",
+        "perfective": "sakal",
+        "imperfective": "sakil",
+        "plural": "sikala"
+      },
+      "translations": {
+        "food": "sakla",
+        "meal": "sakla",
+        "host": "saklun",
+        "ate": "sakal",
+        "eats": "sakil"
+      },
+      "translations_de": {
+        "Essen": "sakla",
+        "Mahlzeit": "sakla",
+        "Gastgeber": "saklun",
+        "aß": "sakal",
+        "isst": "sakil"
+      }
+    },
+    {
+      "root": "R-K-N",
+      "consonants": [
+        "r",
+        "k",
+        "n"
+      ],
+      "meaning": "sleeping, rest, stillness",
+      "domain": "verb",
+      "register": "all",
+      "forms": {
+        "noun": "rakna",
+        "agent": "raknun",
+        "adjective": "rakni",
+        "perfective": "rakan",
+        "imperfective": "rakin",
+        "negated": "farakna",
+        "plural": "rikana"
+      },
+      "translations": {
+        "sleep": "rakna",
+        "rest": "rakna",
+        "sleeper": "raknun",
+        "restful": "rakni",
+        "slept": "rakan",
+        "sleeps": "rakin",
+        "insomnia": "farakna"
+      },
+      "translations_de": {
+        "Schlaf": "rakna",
+        "Ruhe": "rakna",
+        "Schläfer": "raknun",
+        "erholsam": "rakni",
+        "schlief": "rakan",
+        "schläft": "rakin",
+        "Schlaflosigkeit": "farakna"
+      }
+    },
+    {
+      "root": "T-K-R",
+      "consonants": [
+        "t",
+        "k",
+        "r"
+      ],
+      "meaning": "finding, discovering",
+      "domain": "verb",
+      "register": "all",
+      "forms": {
+        "noun": "tokr",
+        "agent": "takrun",
+        "perfective": "takar",
+        "imperfective": "takir",
+        "plural": "tikar"
+      },
+      "translations": {
+        "discovery": "tokr",
+        "discoverer": "takrun",
+        "found": "takar",
+        "finds": "takir",
+        "discoveries": "tikar"
+      },
+      "translations_de": {
+        "Entdeckung": "tokr",
+        "Entdecker": "takrun",
+        "fand": "takar",
+        "findet": "takir",
+        "Entdeckungen": "tikar"
+      }
+    },
+    {
+      "root": "F-R-S",
+      "consonants": [
+        "f",
+        "r",
+        "s"
+      ],
+      "meaning": "losing, being lost, absence",
+      "domain": "verb",
+      "register": "all",
+      "forms": {
+        "noun": "farsa",
+        "agent": "farsun",
+        "adjective": "farsi",
+        "perfective": "faras",
+        "imperfective": "faris",
+        "plural": "firas"
+      },
+      "translations": {
+        "loss": "farsa",
+        "lost one": "farsun",
+        "lost": "farsi",
+        "lost_verb": "faras",
+        "is losing": "faris"
+      },
+      "translations_de": {
+        "Verlust": "farsa",
+        "Verlorener": "farsun",
+        "verloren": "farsi",
+        "verlor": "faras",
+        "verliert": "faris"
+      }
+    },
+    {
+      "root": "R-V-N",
+      "consonants": [
+        "r",
+        "v",
+        "n"
+      ],
+      "meaning": "rising, ascending, lifting",
+      "domain": "verb",
+      "register": "all",
+      "forms": {
+        "noun": "rovn",
+        "agent": "ravnun",
+        "adjective": "ravni",
+        "perfective": "ravan",
+        "imperfective": "ravin",
+        "causative": "taravan",
+        "plural": "rivan"
+      },
+      "translations": {
+        "ascent": "rovn",
+        "risen one": "ravnun",
+        "risen": "ravni",
+        "rose": "ravan",
+        "rises": "ravin",
+        "raise": "taravan"
+      },
+      "translations_de": {
+        "Aufstieg": "rovn",
+        "Erhobener": "ravnun",
+        "erhoben": "ravni",
+        "stieg auf": "ravan",
+        "steigt auf": "ravin",
+        "erheben": "taravan"
+      }
+    },
+    {
+      "root": "F-L-K",
+      "consonants": [
+        "f",
+        "l",
+        "k"
+      ],
+      "meaning": "falling, descending, collapse",
+      "domain": "verb",
+      "register": "all",
+      "forms": {
+        "noun": "folk",
+        "agent": "falkun",
+        "adjective": "falki",
+        "perfective": "falak",
+        "imperfective": "falik",
+        "plural": "filak"
+      },
+      "translations": {
+        "fall": "folk",
+        "collapse": "folk",
+        "fallen one": "falkun",
+        "fallen": "falki",
+        "fell": "falak",
+        "falls": "falik"
+      },
+      "translations_de": {
+        "Fall": "folk",
+        "Zusammenbruch": "folk",
+        "Gefallener": "falkun",
+        "gefallen": "falki",
+        "fiel": "falak",
+        "fällt": "falik"
+      }
+    },
+    {
+      "root": "T-V-R",
+      "consonants": [
+        "t",
+        "v",
+        "r"
+      ],
+      "meaning": "turning, changing, transforming",
+      "domain": "verb",
+      "register": "all",
+      "forms": {
+        "noun": "tovr",
+        "agent": "tavrun",
+        "adjective": "tavri",
+        "perfective": "tavar",
+        "imperfective": "tavir",
+        "causative": "tatavar",
+        "plural": "tivar"
+      },
+      "translations": {
+        "change": "tovr",
+        "turn": "tovr",
+        "changed one": "tavrun",
+        "transformed": "tavri",
+        "turned": "tavar",
+        "turns": "tavir",
+        "transform": "tatavar"
+      },
+      "translations_de": {
+        "Wandel": "tovr",
+        "Wende": "tovr",
+        "Verwandelter": "tavrun",
+        "verwandelt": "tavri",
+        "wandte": "tavar",
+        "wendet": "tavir",
+        "verwandeln": "tatavar"
+      }
+    },
+    {
+      "root": "K-S-R",
+      "consonants": [
+        "k",
+        "s",
+        "r"
+      ],
+      "meaning": "breaking, shattering, destroying",
+      "domain": "verb",
+      "register": "all",
+      "forms": {
+        "noun": "kosr",
+        "agent": "kasrun",
+        "adjective": "kasri",
+        "perfective": "kasar",
+        "imperfective": "kasir",
+        "intensive": "kassar",
+        "plural": "kisar"
+      },
+      "translations": {
+        "ruin": "kosr",
+        "break": "kosr",
+        "destroyer": "kasrun",
+        "broken": "kasri",
+        "broke": "kasar",
+        "breaks": "kasir",
+        "shatter": "kassar"
+      },
+      "translations_de": {
+        "Ruine": "kosr",
+        "Bruch": "kosr",
+        "Zerstörer": "kasrun",
+        "zerbrochen": "kasri",
+        "zerbrach": "kasar",
+        "zerbricht": "kasir",
+        "zerschmettern": "kassar"
+      }
+    },
+    {
+      "root": "S-R-K",
+      "consonants": [
+        "s",
+        "r",
+        "k"
+      ],
+      "meaning": "healing, mending, restoration",
+      "domain": "verb",
+      "register": "all",
+      "forms": {
+        "noun": "sarka",
+        "agent": "sarkun",
+        "adjective": "sarki",
+        "perfective": "sarak",
+        "imperfective": "sarik",
+        "causative": "tasarak",
+        "negated": "fasarka",
+        "plural": "sirak"
+      },
+      "translations": {
+        "healing": "sarka",
+        "healer": "sarkun",
+        "healed": "sarki",
+        "whole": "sarki",
+        "healed_verb": "sarak",
+        "heals": "sarik",
+        "heal someone": "tasarak",
+        "wound": "fasarka",
+        "injury": "fasarka"
+      },
+      "translations_de": {
+        "Heilung": "sarka",
+        "Heiler": "sarkun",
+        "geheilt": "sarki",
+        "heil": "sarki",
+        "heilte": "sarak",
+        "heilt": "sarik",
+        "jemanden heilen": "tasarak",
+        "Wunde": "fasarka",
+        "Verletzung": "fasarka"
+      }
+    },
+    {
+      "root": "D-N-S",
+      "consonants": [
+        "d",
+        "n",
+        "s"
+      ],
+      "meaning": "day, daylight, waking",
+      "domain": "time",
+      "register": "all",
+      "forms": {
+        "noun": "dons",
+        "adjective": "dansi",
+        "plural": "dins"
+      },
+      "translations": {
+        "day": "dons",
+        "daily": "dansi",
+        "days": "dins"
+      },
+      "translations_de": {
+        "Tag": "dons",
+        "täglich": "dansi",
+        "Tage": "dins"
+      }
+    },
+    {
+      "root": "N-L-K",
+      "consonants": [
+        "n",
+        "l",
+        "k"
+      ],
+      "meaning": "night, darkness of sky",
+      "domain": "time",
+      "register": "all",
+      "forms": {
+        "noun": "nolk",
+        "adjective": "nalki",
+        "plural": "nilak"
+      },
+      "translations": {
+        "night": "nolk",
+        "nightly": "nalki",
+        "nights": "nilak"
+      },
+      "translations_de": {
+        "Nacht": "nolk",
+        "nächtlich": "nalki",
+        "Nächte": "nilak"
+      }
+    },
+    {
+      "root": "V-R-K",
+      "consonants": [
+        "v",
+        "r",
+        "k"
+      ],
+      "meaning": "season, cycle",
+      "domain": "time",
+      "register": "all",
+      "forms": {
+        "noun": "vork",
+        "adjective": "varki",
+        "plural": "virak"
+      },
+      "translations": {
+        "season": "vork",
+        "cycle": "vork",
+        "seasonal": "varki",
+        "seasons": "virak"
+      },
+      "translations_de": {
+        "Jahreszeit": "vork",
+        "Zyklus": "vork",
+        "saisonal": "varki",
+        "Jahreszeiten": "virak"
+      }
+    },
+    {
+      "root": "T-M-N",
+      "consonants": [
+        "t",
+        "m",
+        "n"
+      ],
+      "meaning": "year, full cycle",
+      "domain": "time",
+      "register": "all",
+      "forms": {
+        "noun": "tomn",
+        "adjective": "tamni",
+        "plural": "timan"
+      },
+      "translations": {
+        "year": "tomn",
+        "yearly": "tamni",
+        "years": "timan"
+      },
+      "translations_de": {
+        "Jahr": "tomn",
+        "jährlich": "tamni",
+        "Jahre": "timan"
+      }
+    },
+    {
+      "root": "L-N-K",
+      "consonants": [
+        "l",
+        "n",
+        "k"
+      ],
+      "meaning": "moon, month",
+      "domain": "time",
+      "register": "all",
+      "forms": {
+        "noun": "lonk",
+        "adjective": "lanki",
+        "plural": "linak"
+      },
+      "translations": {
+        "moon": "lonk",
+        "month": "lonk",
+        "lunar": "lanki",
+        "months": "linak"
+      },
+      "translations_de": {
+        "Mond": "lonk",
+        "Monat": "lonk",
+        "lunar": "lanki",
+        "Monate": "linak"
+      }
+    },
+    {
+      "root": "G-R-T",
+      "consonants": [
+        "g",
+        "r",
+        "t"
+      ],
+      "meaning": "large, great, vast",
+      "domain": "descriptor",
+      "register": "all",
+      "forms": {
+        "adjective": "garti",
+        "noun": "gort"
+      },
+      "translations": {
+        "large": "garti",
+        "great": "garti",
+        "vast": "garti",
+        "greatness": "gort"
+      },
+      "translations_de": {
+        "groß": "garti",
+        "weit": "garti",
+        "Größe": "gort"
+      }
+    },
+    {
+      "root": "P-R-K",
+      "consonants": [
+        "p",
+        "r",
+        "k"
+      ],
+      "meaning": "small, little",
+      "domain": "descriptor",
+      "register": "all",
+      "forms": {
+        "adjective": "parki",
+        "noun": "pork"
+      },
+      "translations": {
+        "small": "parki",
+        "little": "parki"
+      },
+      "translations_de": {
+        "klein": "parki"
+      }
+    },
+    {
+      "root": "D-R-M",
+      "consonants": [
+        "d",
+        "r",
+        "m"
+      ],
+      "meaning": "old, ancient, weathered",
+      "domain": "descriptor",
+      "register": "all",
+      "forms": {
+        "adjective": "darmi",
+        "noun": "dorm",
+        "negated": "fadorm"
+      },
+      "translations": {
+        "old": "darmi",
+        "ancient": "darmi",
+        "age": "dorm",
+        "newness": "fadorm"
+      },
+      "translations_de": {
+        "alt": "darmi",
+        "uralt": "darmi",
+        "Alter": "dorm",
+        "Neuheit": "fadorm"
+      }
+    },
+    {
+      "root": "N-V-R",
+      "consonants": [
+        "n",
+        "v",
+        "r"
+      ],
+      "meaning": "new, fresh, recent",
+      "domain": "descriptor",
+      "register": "all",
+      "forms": {
+        "adjective": "navri",
+        "noun": "novr"
+      },
+      "translations": {
+        "new": "navri",
+        "fresh": "navri"
+      },
+      "translations_de": {
+        "neu": "navri",
+        "frisch": "navri"
+      }
+    },
+    {
+      "root": "R-K-S",
+      "consonants": [
+        "r",
+        "k",
+        "s"
+      ],
+      "meaning": "fast, swift, urgent",
+      "domain": "descriptor",
+      "register": "all",
+      "forms": {
+        "adjective": "raksi",
+        "noun": "roks"
+      },
+      "translations": {
+        "fast": "raksi",
+        "swift": "raksi",
+        "speed": "roks",
+        "urgent": "raksi"
+      },
+      "translations_de": {
+        "schnell": "raksi",
+        "flink": "raksi",
+        "Geschwindigkeit": "roks",
+        "dringend": "raksi"
+      }
+    },
+    {
+      "root": "T-L-K",
+      "consonants": [
+        "t",
+        "l",
+        "k"
+      ],
+      "meaning": "slow, deliberate, patient",
+      "domain": "descriptor",
+      "register": "all",
+      "forms": {
+        "adjective": "talki",
+        "noun": "tolk"
+      },
+      "translations": {
+        "slow": "talki",
+        "patient": "talki",
+        "patience": "tolk"
+      },
+      "translations_de": {
+        "langsam": "talki",
+        "geduldig": "talki",
+        "Geduld": "tolk"
+      }
+    },
+    {
+      "root": "G-V-R",
+      "consonants": [
+        "g",
+        "v",
+        "r"
+      ],
+      "meaning": "heavy, weighty",
+      "domain": "descriptor",
+      "register": "all",
+      "forms": {
+        "adjective": "gavri",
+        "noun": "govr"
+      },
+      "translations": {
+        "heavy": "gavri",
+        "weighty": "gavri",
+        "weight": "govr"
+      },
+      "translations_de": {
+        "schwer": "gavri",
+        "gewichtig": "gavri",
+        "Gewicht": "govr"
+      }
+    },
+    {
+      "root": "L-T-K",
+      "consonants": [
+        "l",
+        "t",
+        "k"
+      ],
+      "meaning": "good, right, proper",
+      "domain": "descriptor",
+      "register": "all",
+      "forms": {
+        "adjective": "latki",
+        "noun": "lotk",
+        "negated": "falotk"
+      },
+      "translations": {
+        "good": "latki",
+        "right": "latki",
+        "proper": "latki",
+        "evil_abstract": "falotk",
+        "wrongness": "falotk"
+      },
+      "translations_de": {
+        "gut": "latki",
+        "richtig": "latki",
+        "angemessen": "latki",
+        "das Böse": "falotk",
+        "Unrecht": "falotk"
+      }
+    },
+    {
+      "root": "M-V-R",
+      "consonants": [
+        "m",
+        "v",
+        "r"
+      ],
+      "meaning": "bad, wrong, harmful",
+      "domain": "descriptor",
+      "register": "all",
+      "forms": {
+        "adjective": "mavri",
+        "noun": "movr"
+      },
+      "translations": {
+        "bad": "mavri",
+        "wrong": "mavri",
+        "harmful": "mavri"
+      },
+      "translations_de": {
+        "schlecht": "mavri",
+        "falsch": "mavri",
+        "schädlich": "mavri"
+      }
+    },
+    {
+      "root": "K-V-L",
+      "consonants": [
+        "k",
+        "v",
+        "l"
+      ],
+      "meaning": "horse, mount",
+      "domain": "animal",
+      "register": "all",
+      "forms": {
+        "noun": "kovl",
+        "agent": "kavlun",
+        "adjective": "kavli",
+        "plural": "kival"
+      },
+      "translations": {
+        "horse": "kovl",
+        "rider": "kavlun",
+        "horses": "kival"
+      },
+      "translations_de": {
+        "Pferd": "kovl",
+        "Reiter": "kavlun",
+        "Pferde": "kival"
+      }
+    },
+    {
+      "root": "V-R-G",
+      "consonants": [
+        "v",
+        "r",
+        "g"
+      ],
+      "meaning": "wolf, predator",
+      "domain": "animal",
+      "register": "all",
+      "forms": {
+        "noun": "vorg",
+        "adjective": "vargi",
+        "plural": "virag"
+      },
+      "translations": {
+        "wolf": "vorg",
+        "predatory": "vargi",
+        "wolves": "virag"
+      },
+      "translations_de": {
+        "Wolf": "vorg",
+        "räuberisch": "vargi",
+        "Wölfe": "virag"
+      }
+    },
+    {
+      "root": "F-R-P",
+      "consonants": [
+        "f",
+        "r",
+        "p"
+      ],
+      "meaning": "bird, flight",
+      "domain": "animal",
+      "register": "all",
+      "forms": {
+        "noun": "forp",
+        "adjective": "farpi",
+        "plural": "firap"
+      },
+      "translations": {
+        "bird": "forp",
+        "avian": "farpi",
+        "birds": "firap"
+      },
+      "translations_de": {
+        "Vogel": "forp",
+        "vogelartig": "farpi",
+        "Vögel": "firap"
+      }
+    },
+    {
+      "root": "S-R-P",
+      "consonants": [
+        "s",
+        "r",
+        "p"
+      ],
+      "meaning": "serpent, crawler",
+      "domain": "animal",
+      "register": "all",
+      "forms": {
+        "noun": "sorp",
+        "adjective": "sarpi",
+        "plural": "sirap"
+      },
+      "translations": {
+        "serpent": "sorp",
+        "snake": "sorp",
+        "serpents": "sirap"
+      },
+      "translations_de": {
+        "Schlange": "sorp",
+        "Schlangen": "sirap"
+      }
+    },
+    {
+      "root": "K-R-D",
+      "consonants": [
+        "k",
+        "r",
+        "d"
+      ],
+      "meaning": "iron, metal, hardness",
+      "domain": "material",
+      "register": "all",
+      "god_connection": "Kordea",
+      "forms": {
+        "noun": "korda",
+        "agent": "kardun",
+        "adjective": "kardi",
+        "place": "kardal",
+        "plural": "kirada"
+      },
+      "translations": {
+        "iron": "korda",
+        "metal": "korda",
+        "smith": "kardun",
+        "forge": "kardal",
+        "metallic": "kardi"
+      },
+      "translations_de": {
+        "Eisen": "korda",
+        "Metall": "korda",
+        "Schmied": "kardun",
+        "Schmiede": "kardal",
+        "metallisch": "kardi"
+      }
+    },
+    {
+      "root": "S-V-R",
+      "consonants": [
+        "s",
+        "v",
+        "r"
+      ],
+      "meaning": "gold, treasure, value",
+      "domain": "material",
+      "register": "all",
+      "forms": {
+        "noun": "sovr",
+        "adjective": "savri",
+        "plural": "sivar"
+      },
+      "translations": {
+        "gold": "sovr",
+        "treasure": "sovr",
+        "golden": "savri",
+        "valuable": "savri"
+      },
+      "translations_de": {
+        "Gold": "sovr",
+        "Schatz": "sovr",
+        "golden": "savri",
+        "wertvoll": "savri"
+      }
+    },
+    {
+      "root": "T-R-S",
+      "consonants": [
+        "t",
+        "r",
+        "s"
+      ],
+      "meaning": "cloth, weaving, covering",
+      "domain": "material",
+      "register": "all",
+      "forms": {
+        "noun": "tors",
+        "agent": "tarsun",
+        "adjective": "tarsi",
+        "plural": "tiras"
+      },
+      "translations": {
+        "cloth": "tors",
+        "fabric": "tors",
+        "weaver": "tarsun",
+        "woven": "tarsi"
+      },
+      "translations_de": {
+        "Stoff": "tors",
+        "Gewebe": "tors",
+        "Weber": "tarsun",
+        "gewebt": "tarsi"
+      }
+    },
+    {
+      "root": "P-R-T",
+      "consonants": [
+        "p",
+        "r",
+        "t"
+      ],
+      "meaning": "door, gate, passage",
+      "domain": "material",
+      "register": "all",
+      "forms": {
+        "noun": "port",
+        "adjective": "parti",
+        "negated_adj": "faporti",
+        "plural": "pirat"
+      },
+      "translations": {
+        "door": "port",
+        "gate": "port",
+        "open": "parti",
+        "closed": "faporti",
+        "gates": "pirat"
+      },
+      "translations_de": {
+        "Tür": "port",
+        "Tor": "port",
+        "offen": "parti",
+        "geschlossen": "faporti",
+        "Tore": "pirat"
+      }
+    },
+    {
+      "root": "G-R-D",
+      "consonants": [
+        "g",
+        "r",
+        "d"
+      ],
+      "meaning": "wall, barrier, defense",
+      "domain": "material",
+      "register": "all",
+      "forms": {
+        "noun": "gord",
+        "agent": "gardun",
+        "adjective": "gardi",
+        "perfective": "garad",
+        "imperfective": "garid",
+        "plural": "girad"
+      },
+      "translations": {
+        "wall": "gord",
+        "barrier": "gord",
+        "defender": "gardun",
+        "guardian": "gardun",
+        "defended": "garad",
+        "defends": "garid"
+      },
+      "translations_de": {
+        "Mauer": "gord",
+        "Barriere": "gord",
+        "Verteidiger": "gardun",
+        "Wächter": "gardun",
+        "verteidigte": "garad",
+        "verteidigt": "garid"
+      }
+    },
+    {
+      "root": "R-N-K",
+      "consonants": [
+        "r",
+        "n",
+        "k"
+      ],
+      "meaning": "rain, falling water",
+      "domain": "weather",
+      "register": "all",
+      "forms": {
+        "noun": "ronk",
+        "adjective": "ranki",
+        "perfective": "ranak",
+        "imperfective": "ranik",
+        "plural": "rinak"
+      },
+      "translations": {
+        "rain": "ronk",
+        "rainy": "ranki",
+        "rained": "ranak",
+        "rains": "ranik"
+      },
+      "translations_de": {
+        "Regen": "ronk",
+        "regnerisch": "ranki",
+        "regnete": "ranak",
+        "regnet": "ranik"
+      }
+    },
+    {
+      "root": "S-T-R",
+      "consonants": [
+        "s",
+        "t",
+        "r"
+      ],
+      "meaning": "storm, violent weather",
+      "domain": "weather",
+      "register": "all",
+      "forms": {
+        "noun": "sotr",
+        "adjective": "satri",
+        "plural": "sitar"
+      },
+      "translations": {
+        "storm": "sotr",
+        "stormy": "satri",
+        "storms": "sitar"
+      },
+      "translations_de": {
+        "Sturm": "sotr",
+        "stürmisch": "satri",
+        "Stürme": "sitar"
+      }
+    },
+    {
+      "root": "G-L-S",
+      "consonants": [
+        "g",
+        "l",
+        "s"
+      ],
+      "meaning": "ice, cold, freezing",
+      "domain": "weather",
+      "register": "all",
+      "god_connection": "Golsorus",
+      "forms": {
+        "noun": "gols",
+        "adjective": "galsi",
+        "plural": "gilas"
+      },
+      "translations": {
+        "ice": "gols",
+        "frost": "gols",
+        "icy": "galsi",
+        "freezing": "galsi",
+        "cold": "galsi"
+      },
+      "translations_de": {
+        "Eis": "gols",
+        "Frost": "gols",
+        "eisig": "galsi",
+        "eiskalt": "galsi",
+        "kalt": "galsi"
+      }
+    },
+    {
+      "root": "S-N-V",
+      "consonants": [
+        "s",
+        "n",
+        "v"
+      ],
+      "meaning": "snow, white fall",
+      "domain": "weather",
+      "register": "all",
+      "forms": {
+        "noun": "sonv",
+        "adjective": "sanvi",
+        "plural": "sinav"
+      },
+      "translations": {
+        "snow": "sonv",
+        "snowy": "sanvi"
+      },
+      "translations_de": {
+        "Schnee": "sonv",
+        "verschneit": "sanvi"
+      }
+    },
+    {
+      "root": "V-N-K",
+      "consonants": [
+        "v",
+        "n",
+        "k"
+      ],
+      "meaning": "trade, exchange, commerce",
+      "domain": "social",
+      "register": "common",
+      "forms": {
+        "noun": "vonk",
+        "agent": "vankun",
+        "adjective": "vanki",
+        "perfective": "vanak",
+        "imperfective": "vanik",
+        "plural": "vinak"
+      },
+      "translations": {
+        "trade": "vonk",
+        "trader": "vankun",
+        "merchant": "vankun",
+        "traded": "vanak",
+        "trades": "vanik"
+      },
+      "translations_de": {
+        "Handel": "vonk",
+        "Händler": "vankun",
+        "Kaufmann": "vankun",
+        "handelte": "vanak",
+        "handelt": "vanik"
+      }
+    },
+    {
+      "root": "L-M-R",
+      "consonants": [
+        "l",
+        "m",
+        "r"
+      ],
+      "meaning": "farming, cultivation",
+      "domain": "social",
+      "register": "common",
+      "forms": {
+        "noun": "lomr",
+        "agent": "lamrun",
+        "adjective": "lamri",
+        "perfective": "lamar",
+        "imperfective": "lamir",
+        "plural": "limar"
+      },
+      "translations": {
+        "farming": "lomr",
+        "cultivation": "lomr",
+        "farmer": "lamrun",
+        "cultivated": "lamri",
+        "farms": "lamir"
+      },
+      "translations_de": {
+        "Landwirtschaft": "lomr",
+        "Anbau": "lomr",
+        "Bauer": "lamrun",
+        "bebaut": "lamri",
+        "bewirtschaftet": "lamir"
+      }
+    },
+    {
+      "root": "N-M-R",
+      "consonants": [
+        "n",
+        "m",
+        "r"
+      ],
+      "meaning": "name, identity, true calling",
+      "domain": "speech",
+      "register": "all",
+      "forms": {
+        "noun": "namra",
+        "agent": "namrun",
+        "adjective": "namri",
+        "perfective": "namar",
+        "imperfective": "namir",
+        "negated": "fanamra",
+        "plural": "nimara"
+      },
+      "translations": {
+        "name": "namra",
+        "named": "namri",
+        "nameless": "fanamra",
+        "was named": "namar",
+        "is called": "namir",
+        "names": "nimara"
+      },
+      "translations_de": {
+        "Name": "namra",
+        "benannt": "namri",
+        "namenlos": "fanamra",
+        "wurde benannt": "namar",
+        "heißt": "namir",
+        "Namen": "nimara"
+      }
+    },
+    {
+      "root": "V-R-T",
+      "consonants": [
+        "v",
+        "r",
+        "t"
+      ],
+      "meaning": "truth, reality, the proven",
+      "domain": "speech",
+      "register": "all",
+      "forms": {
+        "noun": "varta",
+        "agent": "vartun",
+        "adjective": "varti",
+        "perfective": "varat",
+        "imperfective": "varit",
+        "negated": "favarta",
+        "negated_agent": "favartun",
+        "plural": "virata"
+      },
+      "translations": {
+        "truth": "varta",
+        "truth-teller": "vartun",
+        "true": "varti",
+        "real": "varti",
+        "proved true": "varat",
+        "is true": "varit",
+        "lie": "favarta",
+        "falsehood": "favarta",
+        "liar": "favartun"
+      },
+      "translations_de": {
+        "Wahrheit": "varta",
+        "Wahrheitssager": "vartun",
+        "wahr": "varti",
+        "wirklich": "varti",
+        "bewahrheitete sich": "varat",
+        "ist wahr": "varit",
+        "Lüge": "favarta",
+        "Falschheit": "favarta",
+        "Lügner": "favartun"
+      }
+    },
+    {
+      "root": "L-G-N",
+      "consonants": [
+        "l",
+        "g",
+        "n"
+      ],
+      "meaning": "lie, falsehood, deception",
+      "domain": "speech",
+      "register": "all",
+      "forms": {
+        "noun": "logn",
+        "agent": "lagnun",
+        "adjective": "lagni",
+        "perfective": "lagan",
+        "imperfective": "lagin",
+        "plural": "ligan"
+      },
+      "translations": {
+        "lie": "logn",
+        "liar": "lagnun",
+        "false": "lagni",
+        "lied": "lagan",
+        "lies": "lagin"
+      },
+      "translations_de": {
+        "Lüge": "logn",
+        "Lügner": "lagnun",
+        "falsch": "lagni",
+        "log": "lagan",
+        "lügt": "lagin"
+      }
+    },
+    {
+      "root": "V-R-L",
+      "consonants": [
+        "v",
+        "r",
+        "l"
+      ],
+      "meaning": "life, living, being alive",
+      "domain": "life",
+      "register": "all",
+      "god_connection": "Varlea",
+      "forms": {
+        "noun": "varla",
+        "agent": "varlun",
+        "adjective": "varli",
+        "perfective": "varal",
+        "imperfective": "varil",
+        "negated": "favarla",
+        "plural": "virala"
+      },
+      "translations": {
+        "life": "varla",
+        "living one": "varlun",
+        "alive": "varli",
+        "lived": "varal",
+        "lives": "varil",
+        "death_absence": "favarla"
+      },
+      "translations_de": {
+        "Leben": "varla",
+        "Lebender": "varlun",
+        "lebendig": "varli",
+        "lebte": "varal",
+        "lebt": "varil",
+        "Leblosigkeit": "favarla"
+      }
+    },
+    {
+      "root": "B-R-N",
+      "consonants": [
+        "b",
+        "r",
+        "n"
+      ],
+      "meaning": "birth, emergence",
+      "domain": "life",
+      "register": "all",
+      "forms": {
+        "noun": "barna",
+        "agent": "barnun",
+        "adjective": "barni",
+        "perfective": "baran",
+        "imperfective": "barin",
+        "causative": "tabaran",
+        "plural": "birana"
+      },
+      "translations": {
+        "birth": "barna",
+        "newborn": "barnun",
+        "was born": "baran",
+        "is being born": "barin",
+        "deliver": "tabaran"
+      },
+      "translations_de": {
+        "Geburt": "barna",
+        "Neugeborenes": "barnun",
+        "wurde geboren": "baran",
+        "wird geboren": "barin",
+        "entbinden": "tabaran"
+      }
+    },
+    {
+      "root": "D-R-V",
+      "consonants": [
+        "d",
+        "r",
+        "v"
+      ],
+      "meaning": "fate, destiny",
+      "domain": "abstract",
+      "register": "all",
+      "forms": {
+        "noun": "darva",
+        "adjective": "darvi",
+        "negated_adj": "fadarvi",
+        "plural": "dirava"
+      },
+      "translations": {
+        "fate": "darva",
+        "destiny": "darva",
+        "fated": "darvi",
+        "free": "fadarvi",
+        "unfated": "fadarvi"
+      },
+      "translations_de": {
+        "Schicksal": "darva",
+        "Bestimmung": "darva",
+        "vorherbestimmt": "darvi",
+        "frei": "fadarvi",
+        "schicksalslos": "fadarvi"
+      }
+    },
+    {
+      "root": "F-R-K",
+      "consonants": [
+        "f",
+        "r",
+        "k"
+      ],
+      "meaning": "freedom, release",
+      "domain": "abstract",
+      "register": "all",
+      "forms": {
+        "noun": "faraka",
+        "agent": "farkun",
+        "adjective": "farki",
+        "perfective": "farak",
+        "imperfective": "farik",
+        "causative": "tafarak",
+        "negated": "fafaraka",
+        "plural": "firaka"
+      },
+      "translations": {
+        "freedom": "faraka",
+        "free one": "farkun",
+        "free": "farki",
+        "was freed": "farak",
+        "is free": "farik",
+        "free someone": "tafarak",
+        "imprisonment": "fafaraka"
+      },
+      "translations_de": {
+        "Freiheit": "faraka",
+        "Freier": "farkun",
+        "frei": "farki",
+        "wurde befreit": "farak",
+        "ist frei": "farik",
+        "befreien": "tafarak",
+        "Gefangenschaft": "fafaraka"
+      }
+    },
+    {
+      "root": "V-N-R",
+      "consonants": [
+        "v",
+        "n",
+        "r"
+      ],
+      "meaning": "honor, reputation",
+      "domain": "abstract",
+      "register": "all",
+      "forms": {
+        "noun": "vanra",
+        "agent": "vanrun",
+        "adjective": "vanri",
+        "perfective": "vanar",
+        "imperfective": "vanir",
+        "negated": "favanra",
+        "plural": "vinara"
+      },
+      "translations": {
+        "honor": "vanra",
+        "honored one": "vanrun",
+        "honorable": "vanri",
+        "was honored": "vanar",
+        "is honored": "vanir",
+        "dishonor": "favanra"
+      },
+      "translations_de": {
+        "Ehre": "vanra",
+        "Geehrter": "vanrun",
+        "ehrenhaft": "vanri",
+        "wurde geehrt": "vanar",
+        "wird geehrt": "vanir",
+        "Schande": "favanra"
+      }
+    },
+    {
+      "root": "H-R-K",
+      "consonants": [
+        "h",
+        "r",
+        "k"
+      ],
+      "meaning": "space, expanse, vastness",
+      "domain": "divine",
+      "register": "all",
+      "god_connection": "Horkus",
+      "forms": {
+        "noun": "horka",
+        "agent": "harkun",
+        "adjective": "harki",
+        "perfective": "harak",
+        "imperfective": "harik",
+        "causative": "taharik",
+        "negated": "fahorka",
+        "plural": "hiraka"
+      },
+      "translations": {
+        "space": "horka",
+        "expanse": "horka",
+        "vast": "harki",
+        "expanded": "harak",
+        "expands": "harik",
+        "confinement": "fahorka"
+      },
+      "translations_de": {
+        "Raum": "horka",
+        "Weite": "horka",
+        "weit": "harki",
+        "dehnte sich aus": "harak",
+        "dehnt sich aus": "harik",
+        "Enge": "fahorka"
+      }
+    },
+    {
+      "root": "K-R-L",
+      "consonants": [
+        "k",
+        "r",
+        "l"
+      ],
+      "meaning": "time, flow, duration",
+      "domain": "divine",
+      "register": "all",
+      "god_connection": "Kerilea",
+      "forms": {
+        "noun": "karla",
+        "agent": "karlun",
+        "adjective": "karli",
+        "perfective": "karal",
+        "imperfective": "karil",
+        "causative": "takaral",
+        "negated": "fakarla",
+        "plural": "kirala"
+      },
+      "translations": {
+        "time": "karla",
+        "temporal": "karli",
+        "time-bound": "karli",
+        "passed": "karal",
+        "passes": "karil",
+        "eternity": "fakarla",
+        "timelessness": "fakarla"
+      },
+      "translations_de": {
+        "Zeit": "karla",
+        "zeitlich": "karli",
+        "zeitgebunden": "karli",
+        "verging": "karal",
+        "vergeht": "karil",
+        "Ewigkeit": "fakarla",
+        "Zeitlosigkeit": "fakarla"
+      }
+    },
+    {
+      "root": "S-M-K",
+      "consonants": [
+        "s",
+        "m",
+        "k"
+      ],
+      "meaning": "sound, resonance, vibration",
+      "domain": "divine",
+      "register": "all",
+      "god_connection": "Samkea",
+      "forms": {
+        "noun": "samka",
+        "agent": "samkun",
+        "adjective": "samki",
+        "perfective": "samak",
+        "imperfective": "samik",
+        "causative": "tasamak",
+        "negated": "fasamka",
+        "plural": "simaka"
+      },
+      "translations": {
+        "sound": "samka",
+        "resonance": "samka",
+        "resonant": "samki",
+        "sounded": "samak",
+        "sounds": "samik",
+        "absolute silence": "fasamka"
+      },
+      "translations_de": {
+        "Klang": "samka",
+        "Resonanz": "samka",
+        "resonant": "samki",
+        "erklang": "samak",
+        "erklingt": "samik",
+        "absolute Stille": "fasamka"
+      }
+    },
+    {
+      "root": "M-K-N",
+      "consonants": [
+        "m",
+        "k",
+        "n"
+      ],
+      "meaning": "memory, remembrance",
+      "domain": "abstract",
+      "register": "all",
+      "forms": {
+        "noun": "makna",
+        "agent": "maknun",
+        "adjective": "makni",
+        "perfective": "makan",
+        "imperfective": "makin",
+        "causative": "tamakan",
+        "negated": "famakna",
+        "plural": "mikana"
+      },
+      "translations": {
+        "memory": "makna",
+        "remembered": "makni",
+        "remembers": "makin",
+        "remind": "tamakan",
+        "forgetting": "famakna",
+        "oblivion": "famakna",
+        "memories": "mikana"
+      },
+      "translations_de": {
+        "Erinnerung": "makna",
+        "erinnert": "makni",
+        "erinnert sich": "makin",
+        "erinnern": "tamakan",
+        "Vergessen": "famakna",
+        "Vergessenheit": "famakna",
+        "Erinnerungen": "mikana"
+      }
+    },
+    {
+      "root": "S-V-L",
+      "consonants": [
+        "s",
+        "v",
+        "l"
+      ],
+      "meaning": "purity, cleanliness, the unspoiled",
+      "domain": "abstract",
+      "register": "sacred",
+      "forms": {
+        "noun": "savla",
+        "adjective": "savli",
+        "negated": "fasavla"
+      },
+      "translations": {
+        "purity": "savla",
+        "pure": "savli",
+        "clean": "savli",
+        "impurity": "fasavla",
+        "tainted": "fasavla"
+      },
+      "translations_de": {
+        "Reinheit": "savla",
+        "rein": "savli",
+        "sauber": "savli",
+        "Unreinheit": "fasavla",
+        "befleckt": "fasavla"
+      }
+    },
+    {
+      "root": "R-S-K",
+      "consonants": [
+        "r",
+        "s",
+        "k"
+      ],
+      "meaning": "wanting, desire, longing",
+      "domain": "verb",
+      "register": "all",
+      "forms": {
+        "noun": "rosk",
+        "agent": "raskun",
+        "adjective": "raski",
+        "perfective": "rasak",
+        "imperfective": "rasik",
+        "negated": "farosk",
+        "plural": "risak"
+      },
+      "translations": {
+        "desire": "rosk",
+        "want": "rasik",
+        "wanted": "rasak",
+        "wants": "rasik",
+        "reluctance": "farosk"
+      },
+      "translations_de": {
+        "Verlangen": "rosk",
+        "wollen": "rasik",
+        "wollte": "rasak",
+        "will": "rasik",
+        "Widerwille": "farosk"
+      }
+    },
+    {
+      "root": "K-N-V",
+      "consonants": [
+        "k",
+        "n",
+        "v"
+      ],
+      "meaning": "knowing, familiarity, recognition",
+      "domain": "perception",
+      "register": "all",
+      "forms": {
+        "noun": "konv",
+        "agent": "kanvun",
+        "adjective": "kanvi",
+        "perfective": "kanav",
+        "imperfective": "kaniv",
+        "negated": "fakonv",
+        "plural": "kinav"
+      },
+      "translations": {
+        "knowing": "konv",
+        "familiar": "kanvi",
+        "known": "kanvi",
+        "knew": "kanav",
+        "knows": "kaniv",
+        "stranger": "fakonv",
+        "unknown": "fakonv"
+      },
+      "translations_de": {
+        "Kennen": "konv",
+        "vertraut": "kanvi",
+        "bekannt": "kanvi",
+        "kannte": "kanav",
+        "kennt": "kaniv",
+        "Fremder": "fakonv",
+        "unbekannt": "fakonv"
+      }
+    },
+    {
+      "root": "V-N-T",
+      "consonants": [
+        "v",
+        "n",
+        "t"
+      ],
+      "meaning": "coming, arriving, approach",
+      "domain": "movement",
+      "register": "all",
+      "forms": {
+        "noun": "vont",
+        "agent": "vantun",
+        "adjective": "vanti",
+        "perfective": "vanat",
+        "imperfective": "vanit",
+        "causative": "tavanat",
+        "plural": "vinat"
+      },
+      "translations": {
+        "arrival": "vont",
+        "came": "vanat",
+        "comes": "vanit",
+        "arriving": "vanti",
+        "summon": "tavanat"
+      },
+      "translations_de": {
+        "Ankunft": "vont",
+        "kam": "vanat",
+        "kommt": "vanit",
+        "ankommend": "vanti",
+        "herbeirufen": "tavanat"
+      }
+    },
+    {
+      "root": "T-K-L",
+      "consonants": [
+        "t",
+        "k",
+        "l"
+      ],
+      "meaning": "doing, making, acting",
+      "domain": "verb",
+      "register": "all",
+      "forms": {
+        "noun": "tokl",
+        "agent": "taklun",
+        "adjective": "takli",
+        "perfective": "takal",
+        "imperfective": "takil",
+        "causative": "tatakal",
+        "plural": "tikal"
+      },
+      "translations": {
+        "deed": "tokl",
+        "action": "tokl",
+        "doer": "taklun",
+        "maker": "taklun",
+        "did": "takal",
+        "does": "takil",
+        "make": "takil"
+      },
+      "translations_de": {
+        "Tat": "tokl",
+        "Handlung": "tokl",
+        "Täter": "taklun",
+        "Macher": "taklun",
+        "tat": "takal",
+        "tut": "takil",
+        "machen": "takil"
+      }
+    },
+    {
+      "root": "S-K-N",
+      "consonants": [
+        "s",
+        "k",
+        "n"
+      ],
+      "meaning": "friend, companion, fellowship",
+      "domain": "connection",
+      "register": "all",
+      "forms": {
+        "noun": "sokna",
+        "agent": "saknun",
+        "adjective": "sakni",
+        "perfective": "sakan",
+        "imperfective": "sakin",
+        "reciprocal": "sikanan",
+        "negated": "fasokna",
+        "plural": "sikana"
+      },
+      "translations": {
+        "friend": "sokna",
+        "companion": "saknun",
+        "friendly": "sakni",
+        "befriended": "sakan",
+        "befriends": "sakin",
+        "friendship": "sikanan",
+        "enemy": "fasokna",
+        "loneliness": "fasokna",
+        "friends": "sikana"
+      },
+      "translations_de": {
+        "Freund": "sokna",
+        "Gefährte": "saknun",
+        "freundlich": "sakni",
+        "befreundete sich": "sakan",
+        "befreundet sich": "sakin",
+        "Freundschaft": "sikanan",
+        "Feind": "fasokna",
+        "Einsamkeit": "fasokna",
+        "Freunde": "sikana"
+      }
+    },
+    {
+      "root": "G-R-S",
+      "consonants": [
+        "g",
+        "r",
+        "s"
+      ],
+      "meaning": "house, dwelling, shelter",
+      "domain": "material",
+      "register": "all",
+      "forms": {
+        "noun": "gors",
+        "agent": "garsun",
+        "adjective": "garsi",
+        "plural": "giras"
+      },
+      "translations": {
+        "house": "gors",
+        "dwelling": "gors",
+        "homeowner": "garsun",
+        "sheltered": "garsi",
+        "houses": "giras"
+      },
+      "translations_de": {
+        "Haus": "gors",
+        "Behausung": "gors",
+        "Hausbesitzer": "garsun",
+        "geschützt": "garsi",
+        "Häuser": "giras"
+      }
+    },
+    {
+      "root": "N-G-L",
+      "consonants": [
+        "n",
+        "g",
+        "l"
+      ],
+      "meaning": "going, departing, purposeful movement",
+      "domain": "movement",
+      "register": "all",
+      "forms": {
+        "noun": "nogl",
+        "agent": "naglun",
+        "perfective": "nagal",
+        "imperfective": "nagil",
+        "causative": "tanagal",
+        "plural": "nigal"
+      },
+      "translations": {
+        "departure": "nogl",
+        "went": "nagal",
+        "goes": "nagil",
+        "send away": "tanagal"
+      },
+      "translations_de": {
+        "Fortgang": "nogl",
+        "ging": "nagal",
+        "geht": "nagil",
+        "fortschicken": "tanagal"
+      },
+      "note": "Purposeful going, distinct from V-K-T (walking as activity)"
+    },
+    {
+      "root": "SH-R-V",
+      "consonants": [
+        "sh",
+        "r",
+        "v"
+      ],
+      "meaning": "hearing, listening",
+      "domain": "perception",
+      "register": "all",
+      "forms": {
+        "noun": "shorv",
+        "agent": "sharvun",
+        "adjective": "sharvi",
+        "perfective": "sharav",
+        "imperfective": "shariv",
+        "negated": "fashorv",
+        "plural": "shirav"
+      },
+      "translations": {
+        "hearing": "shorv",
+        "listener": "sharvun",
+        "attentive": "sharvi",
+        "heard": "sharav",
+        "hears": "shariv",
+        "deafness": "fashorv"
+      },
+      "translations_de": {
+        "Gehör": "shorv",
+        "Zuhörer": "sharvun",
+        "aufmerksam": "sharvi",
+        "hörte": "sharav",
+        "hört": "shariv",
+        "Taubheit": "fashorv"
+      },
+      "note": "Proto-divine sibling of S-R-V (perception) — marked by sh- onset. Hearing is perception's older sibling."
+    },
+    {
+      "root": "T-N-K",
+      "consonants": [
+        "t",
+        "n",
+        "k"
+      ],
+      "meaning": "thinking, pondering",
+      "domain": "perception",
+      "register": "common",
+      "forms": {
+        "noun": "tonk",
+        "agent": "tankun",
+        "perfective": "tanak",
+        "imperfective": "tanik",
+        "plural": "tinak"
+      },
+      "translations": {
+        "thought": "tonk",
+        "thinker": "tankun",
+        "thought_verb": "tanak",
+        "thinks": "tanik"
+      },
+      "translations_de": {
+        "Gedanke": "tonk",
+        "Denker": "tankun",
+        "dachte": "tanak",
+        "denkt": "tanik"
+      },
+      "note": "COMMON REGISTER ONLY. Gods do not think — they know (K-N-V). Thinking is a mortal process of uncertainty."
+    },
+    {
+      "root": "T-B-N",
+      "consonants": [
+        "t",
+        "b",
+        "n"
+      ],
+      "meaning": "believing, trusting",
+      "domain": "perception",
+      "register": "common",
+      "forms": {
+        "noun": "tobn",
+        "agent": "tabnun",
+        "perfective": "taban",
+        "imperfective": "tabin",
+        "negated": "fatobn",
+        "plural": "tiban"
+      },
+      "translations": {
+        "belief": "tobn",
+        "believer": "tabnun",
+        "believed": "taban",
+        "believes": "tabin",
+        "doubt": "fatobn"
+      },
+      "translations_de": {
+        "Glaube": "tobn",
+        "Gläubiger": "tabnun",
+        "glaubte": "taban",
+        "glaubt": "tabin",
+        "Zweifel": "fatobn"
+      },
+      "note": "COMMON REGISTER ONLY. For the gods there is only is and will be — belief implies uncertainty."
+    },
+    {
+      "root": "S-B-R",
+      "consonants": [
+        "s",
+        "b",
+        "r"
+      ],
+      "meaning": "waiting, patience",
+      "domain": "verb",
+      "register": "all",
+      "forms": {
+        "noun": "sobr",
+        "agent": "sabrun",
+        "perfective": "sabar",
+        "imperfective": "sabir",
+        "plural": "sibar"
+      },
+      "translations": {
+        "wait": "sobr",
+        "waiter": "sabrun",
+        "waited": "sabar",
+        "waits": "sabir"
+      },
+      "translations_de": {
+        "Warten": "sobr",
+        "Wartender": "sabrun",
+        "wartete": "sabar",
+        "wartet": "sabir"
+      }
+    },
+    {
+      "root": "K-M-T",
+      "consonants": [
+        "k",
+        "m",
+        "t"
+      ],
+      "meaning": "holding, grasping",
+      "domain": "verb",
+      "register": "all",
+      "forms": {
+        "noun": "komt",
+        "agent": "kamtun",
+        "perfective": "kamat",
+        "imperfective": "kamit",
+        "causative": "takamat",
+        "plural": "kimat"
+      },
+      "translations": {
+        "grip": "komt",
+        "holder": "kamtun",
+        "held": "kamat",
+        "holds": "kamit",
+        "hand over": "takamat"
+      },
+      "translations_de": {
+        "Griff": "komt",
+        "Halter": "kamtun",
+        "hielt": "kamat",
+        "hält": "kamit",
+        "übergeben": "takamat"
+      }
+    },
+    {
+      "root": "S-T-M",
+      "consonants": [
+        "s",
+        "t",
+        "m"
+      ],
+      "meaning": "standing, upright position",
+      "domain": "verb",
+      "register": "all",
+      "forms": {
+        "noun": "stom",
+        "agent": "satmun",
+        "perfective": "satam",
+        "imperfective": "satim",
+        "causative": "tasatam",
+        "plural": "sitam"
+      },
+      "translations": {
+        "stance": "stom",
+        "stander": "satmun",
+        "stood": "satam",
+        "stands": "satim",
+        "erect": "tasatam"
+      },
+      "translations_de": {
+        "Stand": "stom",
+        "Stehender": "satmun",
+        "stand": "satam",
+        "steht": "satim",
+        "aufstellen": "tasatam"
+      }
+    },
+    {
+      "root": "N-D-R",
+      "consonants": [
+        "n",
+        "d",
+        "r"
+      ],
+      "meaning": "helping, aiding",
+      "domain": "verb",
+      "register": "all",
+      "forms": {
+        "noun": "nodr",
+        "agent": "nadrun",
+        "adjective": "nadri",
+        "perfective": "nadar",
+        "imperfective": "nadir",
+        "negated": "fanodr",
+        "plural": "nidar"
+      },
+      "translations": {
+        "help": "nodr",
+        "helper": "nadrun",
+        "helpful": "nadri",
+        "helped": "nadar",
+        "helps": "nadir",
+        "abandonment": "fanodr"
+      },
+      "translations_de": {
+        "Hilfe": "nodr",
+        "Helfer": "nadrun",
+        "hilfreich": "nadri",
+        "half": "nadar",
+        "hilft": "nadir",
+        "Verlassen": "fanodr"
+      }
+    }
+  ],
+  "function_words": {
+    "pronouns": {
+      "1sg": {
+        "form": "ta",
+        "meaning": "I"
+      },
+      "1pl": {
+        "form": "taan",
+        "meaning": "we"
+      },
+      "2sg": {
+        "form": "va",
+        "meaning": "you"
+      },
+      "2pl": {
+        "form": "vaan",
+        "meaning": "you all"
+      },
+      "3sg_sen": {
+        "form": "tal",
+        "meaning": "he/she/they (sentient)"
+      },
+      "3pl_sen": {
+        "form": "talan",
+        "meaning": "they (sentient)"
+      },
+      "3sg_ani": {
+        "form": "tur",
+        "meaning": "it (animal)"
+      },
+      "3pl_ani": {
+        "form": "turan",
+        "meaning": "they (animal)"
+      },
+      "3sg_obj": {
+        "form": "til",
+        "meaning": "it (object)"
+      },
+      "3pl_obj": {
+        "form": "tilan",
+        "meaning": "they (object)"
+      }
+    },
+    "possessive_suffixes": {
+      "my": "-ta",
+      "your_sg": "-va",
+      "his_her": "-la",
+      "its_animal": "-ru",
+      "its_object": "-li",
+      "our": "-taan",
+      "your_pl": "-vaan",
+      "their": "-lan"
+    },
+    "conjunctions": {
+      "and": "ak",
+      "or": "ves",
+      "but": "ma",
+      "if": "kin",
+      "because": "par",
+      "so that": "tak",
+      "while": "sev",
+      "after": "nar",
+      "before": "pren",
+      "although": "dul"
+    },
+    "prepositions": {
+      "with": {
+        "form": "sur",
+        "case": "accusative"
+      },
+      "from": {
+        "form": "dak",
+        "case": "accusative"
+      },
+      "through": {
+        "form": "tren",
+        "case": "accusative"
+      },
+      "for": {
+        "form": "per",
+        "case": "accusative"
+      },
+      "against": {
+        "form": "kon",
+        "case": "accusative"
+      },
+      "without": {
+        "form": "fas",
+        "case": "accusative"
+      },
+      "in": {
+        "form": "en",
+        "case": "locative"
+      },
+      "above": {
+        "form": "ov",
+        "case": "locative"
+      },
+      "below": {
+        "form": "und",
+        "case": "locative"
+      },
+      "between": {
+        "form": "mek",
+        "case": "locative"
+      },
+      "near": {
+        "form": "nir",
+        "case": "locative"
+      }
+    },
+    "temporal": {
+      "now": "nis",
+      "before": "pren",
+      "after": "nar",
+      "once": "sem",
+      "then": "ren",
+      "tomorrow": "moren",
+      "yesterday": "prendan",
+      "always": "turak",
+      "never": "faturak",
+      "soon": "dural",
+      "long ago": "parmal"
+    },
+    "particles": {
+      "indeed": "na",
+      "then_consequence": "ke",
+      "still": "al",
+      "even": "ru",
+      "question": "ar",
+      "relative": "sin"
+    },
+    "interrogatives": {
+      "who": "kal",
+      "what": "tul",
+      "where": "enul",
+      "when": "parik",
+      "why": "nakir",
+      "how": "trenul",
+      "how many": "kasor"
+    },
+    "demonstratives": {
+      "this": "ik",
+      "that": "uk",
+      "here": "ikul",
+      "there": "ukul"
+    },
+    "numbers": {
+      "0": "ven",
+      "1": "an",
+      "2": "dur",
+      "3": "tel",
+      "4": "kas",
+      "5": "nim",
+      "6": "sol",
+      "7": "vek",
+      "8": "tor",
+      "9": "ral",
+      "10": "den",
+      "100": "sor",
+      "1000": "maen"
+    },
+    "copula": {
+      "is": {
+        "form": "sa",
+        "register": "common",
+        "note": "Zero-copula in sacred and proto-divine registers"
+      }
+    },
+    "negation": {
+      "no": "fa",
+      "prefix": "fa-",
+      "sacred_form": "faa"
+    },
+    "mood_markers": {
+      "imperative": {
+        "prefix": "ka-"
+      },
+      "optative": {
+        "prefix": "naa-"
+      }
+    },
+    "class_suffixes": {
+      "sentient": "-an",
+      "animal": "-ur",
+      "object": "-al"
+    },
+    "case_suffixes": {
+      "nominative": "",
+      "accusative": "-en",
+      "locative": "-ul"
+    },
+    "modals": {
+      "can": {
+        "form": "vol",
+        "de": "kann",
+        "register": "common",
+        "derived_from": "V-L-K (strength)",
+        "note": "Ability and permission merged. FORBIDDEN in sacred/proto-divine registers — implies alternatives."
+      },
+      "must": {
+        "form": "dar",
+        "de": "muss",
+        "register": "all",
+        "derived_from": "D-R-V (fate)",
+        "note": "Necessity is fate. Survives in divine registers because inevitability is certainty."
+      },
+      "should": {
+        "form": "lat",
+        "de": "sollte",
+        "register": "common",
+        "derived_from": "L-T-K (good)",
+        "note": "FORBIDDEN in sacred/proto-divine registers."
+      }
+    },
+    "german_glosses": {
+      "conjunctions": {
+        "ak": "und",
+        "ves": "oder",
+        "ma": "aber",
+        "kin": "wenn/falls",
+        "par": "weil",
+        "tak": "damit",
+        "sev": "während",
+        "nar": "nachdem",
+        "pren": "bevor",
+        "dul": "obwohl"
+      },
+      "temporal": {
+        "nis": "jetzt",
+        "pren": "vorher",
+        "nar": "danach",
+        "sem": "einst",
+        "ren": "damals",
+        "moren": "morgen",
+        "prendan": "gestern",
+        "turak": "immer",
+        "faturak": "niemals",
+        "dural": "bald",
+        "parmal": "vor langer Zeit"
+      },
+      "interrogatives": {
+        "kal": "wer",
+        "tul": "was",
+        "enul": "wo",
+        "parik": "wann",
+        "nakir": "warum",
+        "trenul": "wie",
+        "kasor": "wie viele"
+      },
+      "demonstratives": {
+        "ik": "dieser",
+        "uk": "jener",
+        "ikul": "hier",
+        "ukul": "dort"
+      },
+      "prepositions": {
+        "sur": "mit",
+        "dak": "von/aus",
+        "tren": "durch",
+        "per": "für",
+        "kon": "gegen",
+        "fas": "ohne",
+        "en": "in",
+        "ov": "über",
+        "und": "unter",
+        "mek": "zwischen",
+        "nir": "nahe"
+      }
+    }
+  },
+  "named_entities": {
+    "gods": {
+      "primordials": [
+        {
+          "name": "Varlea",
+          "domain": "Life",
+          "gender": "female",
+          "root": "V-R-L"
+        },
+        {
+          "name": "Mierkus",
+          "domain": "Death",
+          "gender": "male",
+          "root": "M-R-K"
+        }
+      ],
+      "creator_pairs": [
+        {
+          "male": {
+            "name": "Horkus",
+            "domain": "Space",
+            "root": "H-R-K"
+          },
+          "female": {
+            "name": "Kerilea",
+            "domain": "Time",
+            "root": "K-R-L"
+          }
+        },
+        {
+          "male": {
+            "name": "Kolmus",
+            "domain": "Stone",
+            "root": "K-L-M"
+          },
+          "female": {
+            "name": "Kordea",
+            "domain": "Metal",
+            "root": "K-R-D"
+          }
+        },
+        {
+          "male": {
+            "name": "Wondrus",
+            "domain": "Air",
+            "root": "W-N-D"
+          },
+          "female": {
+            "name": "Samkea",
+            "domain": "Sound",
+            "root": "S-M-K"
+          }
+        },
+        {
+          "male": {
+            "name": "Golsorus",
+            "domain": "Ice",
+            "root": "G-L-S"
+          },
+          "female": {
+            "name": "Wotrea",
+            "domain": "Water",
+            "root": "W-T-R"
+          }
+        },
+        {
+          "male": {
+            "name": "Lomneus",
+            "domain": "Earth",
+            "root": "L-M-N"
+          },
+          "female": {
+            "name": "Torkea",
+            "domain": "Wood",
+            "root": "T-R-K"
+          }
+        },
+        {
+          "male": {
+            "name": "Naritus",
+            "domain": "Shadow",
+            "root": "N-R-T"
+          },
+          "female": {
+            "name": "Nargea",
+            "domain": "Fire",
+            "root": "N-R-G"
+          }
+        }
+      ],
+      "santulan": [
+        {
+          "name": "Valkorin",
+          "domain": "Balance",
+          "gender": "sovereign",
+          "root": "V-L-K",
+          "suffix": "-orin"
+        },
+        {
+          "name": "Nektus",
+          "domain": "Light",
+          "gender": "male",
+          "root": "N-K-T",
+          "suffix": "-us"
+        },
+        {
+          "name": "Mortius",
+          "domain": "Evil",
+          "gender": "male",
+          "root": "M-R-T",
+          "suffix": "-ius"
+        },
+        {
+          "name": "Shamuun",
+          "domain": "Nature",
+          "gender": "neutral",
+          "root": "SH-M-N",
+          "suffix": "-uun"
+        }
+      ]
+    },
+    "places": {
+      "capital": {
+        "full": "Santal Porsiran",
+        "everyday": "Porsiran",
+        "meaning": "Sanctuary of the Star-Gate"
+      },
+      "regional_capitals": {
+        "Adneroth": {
+          "name": "Turamgard",
+          "meaning": "Fortress of Endurance"
+        },
+        "Agrinal": {
+          "name": "Lamrisal",
+          "meaning": "Farmer's Hearth"
+        },
+        "Rumatia": {
+          "name": "Farimarn",
+          "meaning": "Free Port"
+        },
+        "Dwenrih": {
+          "name": "Gals",
+          "meaning": "Ice (corrupted)"
+        },
+        "Wanilomnir": {
+          "name": "Karimarn",
+          "meaning": "Port of Grace"
+        }
+      },
+      "landmarks": {
+        "southern_island": {
+          "name": "Wanilomnir",
+          "meaning": "Breathing Lone-Earth"
+        },
+        "garden": {
+          "name": "Tarkal Savla",
+          "meaning": "Garden of Purity"
+        },
+        "canyon": {
+          "name": "Norta Markal",
+          "meaning": "Shadow's Death-Ground"
+        },
+        "mirrored_realm": {
+          "name": "Golsiravokh",
+          "meaning": "Mirror-Ice of Souls"
+        }
+      }
+    },
+    "cultural_terms": {
+      "Maksaarin": {
+        "meaning": "Memories of the Departed",
+        "type": "card game"
+      },
+      "Tavvarlaa": {
+        "meaning": "Return of Life",
+        "type": "game"
+      },
+      "Praemali": {
+        "meaning": "Of Praema",
+        "type": "language name"
+      },
+      "Lukafir": {
+        "meaning": "Light-bearer / Light's end",
+        "type": "royal family name"
+      },
+      "Bambam": {
+        "meaning": "Fool-fool (reduplication insult)",
+        "type": "nickname"
+      }
+    }
+  },
+  "kinship": {
+    "suffix": {
+      "form": "-ra",
+      "meaning": "kinship marker",
+      "note": "Productive suffix deriving kin terms"
+    },
+    "terms": {
+      "mother": {
+        "praemali": "Mimara",
+        "de": "Mutter",
+        "origin": "Mima (universal baby-word) + -ra"
+      },
+      "father": {
+        "praemali": "Pipara",
+        "de": "Vater",
+        "origin": "Pipa (universal baby-word) + -ra"
+      },
+      "sibling": {
+        "praemali": "Sangira",
+        "de": "Geschwister",
+        "origin": "S-N-G (blood) + -ra — 'one of the blood'. Ungendered by design."
+      }
+    }
+  },
+  "comparison": {
+    "comparative": {
+      "rule": "Internal vowel A -> I in adjective template C1aC2C3i",
+      "example": "valki (strong) -> vilki (stronger)",
+      "de_example": "stark -> stärker"
+    },
+    "superlative": {
+      "rule": "Internal vowel -> IO",
+      "example": "valki -> violki (strongest)",
+      "de_example": "stark -> am stärksten",
+      "note": "IO sequence occurs nowhere else in the language — collision-proof. The O reaches back toward the base noun (volk), touching the essence of the quality."
+    },
+    "irregular_particles": {
+      "more": {
+        "form": "gir",
+        "de": "mehr"
+      },
+      "most": {
+        "form": "gior",
+        "de": "am meisten"
+      },
+      "note": "For adjectives that already contain I (proto-divine/borrowed). Derived from G-R-T (great) with the same vowel shift: gart -> girt -> gir."
+    }
+  },
+  "grammar_rules": {
+    "word_order": {
+      "common": "SVO",
+      "sacred": "VSO",
+      "proto_divine": "VSO",
+      "note": "Interrogative words front regardless of register"
+    },
+    "adjective_placement": {
+      "rule": "Adjective follows the noun it modifies and carries the noun-class agreement suffix",
+      "example": "Toran valkian — warrior strong-SEN ('the strong warrior')"
+    },
+    "verb_structure": {
+      "order": [
+        "mood_prefix (ka-/naa-)",
+        "negation (fa-) if negating verb",
+        "root-in-aspect-template",
+        "class_suffix (-an/-ur/-al)"
+      ],
+      "note": "Imperatives take no class suffix"
+    },
+    "sentence_element_order": {
+      "common": [
+        "temporal_marker (optional)",
+        "subject_pronoun_or_noun",
+        "modal (optional)",
+        "verb_complex",
+        "object (accusative)",
+        "locative_phrase (optional)"
+      ],
+      "note": "Modals sit immediately before the verb complex"
+    },
+    "copula_rule": {
+      "common": "Use 'sa' between subject and predicate: Toran sa valkian",
+      "sacred": "Zero-copula: Toran valkian",
+      "proto_divine": "Zero-copula"
+    },
+    "negation_scope": {
+      "rule": "fa- attaches directly to the word it negates; scope is compositional",
+      "examples": {
+        "cannot fight": "favol tarin (negated modal — unable)",
+        "can choose not to fight": "vol fatarin (negated verb — able to refrain)"
+      },
+      "ellipsis_note": "Because fa- carries its scope, dialects can drop words aggressively: 'Favol.' alone means 'Can't.'"
+    },
+    "modal_optative_stacking": {
+      "rule": "Legal but marks the speaker as human/mortal",
+      "example_human_priest": "Dar naanakitan sarin — 'It must be — may the star shine' (redundant certainty = human doubt wearing ceremony)",
+      "example_god": "Naanakitan sarin — gods never stack; divine speech is always shorter"
+    },
+    "construct_state": {
+      "rule": "Possessed noun drops its final vowel; if it ends in a consonant, add -i. Pattern: [possessed-CONSTRUCT] [possessor-NOM]",
+      "examples": {
+        "song of our light": "vel nokt taan",
+        "grief of the king": "sakr ramlun",
+        "memory of the departed": "makn miraken"
+      }
+    },
+    "case_assignment": {
+      "nominative": "Subject — unmarked",
+      "accusative": "-en — direct object; also governed by prepositions sur/dak/tren/per/kon/fas",
+      "locative": "-ul — location/direction; also governed by prepositions en/ov/und/mek/nir"
+    },
+    "plural": {
+      "rule": "Internal vowel shift to i-a: C1oC2C3 -> C1iC2aC3 (mort -> mirat). Open-ending nouns shift internal vowels and keep the final -a (lavna -> livana). Case suffixes attach after pluralization."
+    },
+    "register_restrictions": {
+      "common_only_words": [
+        "vol (can)",
+        "lat (should)",
+        "T-N-K forms (thinking)",
+        "T-B-N forms (believing)",
+        "sa (copula)"
+      ],
+      "rationale": "Divine registers admit no uncertainty. Gods do not think, believe, or speak in possibilities — only is, will be, and must."
+    },
+    "disambiguation": {
+      "dark": {
+        "preferred": "narti (N-R-T, shadow)",
+        "alternative": "marti (M-R-T) only when meaning morally evil"
+      },
+      "silence": {
+        "preferred": "fakalat (absence of speech)",
+        "alternative": "fasamka (absence of all sound)"
+      },
+      "see": {
+        "physical": "varis (V-R-S)",
+        "perceive": "sariv (S-R-V)",
+        "hear": "shariv (SH-R-V)"
+      },
+      "death": {
+        "event_force": "mork (M-R-K)",
+        "absence_of_life": "favarla (negated V-R-L)"
+      },
+      "know": {
+        "facts_learning": "kanil (K-N-L)",
+        "familiarity_recognition": "kaniv (K-N-V)"
+      },
+      "go": {
+        "purposeful_departure": "nagil (N-G-L)",
+        "walking_activity": "vakit (V-K-T)"
+      }
+    }
+  }
+}

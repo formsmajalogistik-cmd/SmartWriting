@@ -52,6 +52,16 @@
 //     updateRoute(id, patch)               -> Route
 //     deleteRoute(id)                      -> void
 //
+//   Praemali translator (user layer on top of the bundled base lexicon)
+//     listCustomLexicon(projectId)         -> Entry[] (project rows + global
+//                                             project_id-null rows; no deleted)
+//     createCustomLexicon(projectId, { entry_type, payload, global? }) -> Entry
+//     updateCustomLexicon(id, patch)       -> Entry
+//     deleteCustomLexicon(id)              -> void (SOFT delete via deleted_at)
+//     listSavedPhrases(projectId)          -> Phrase[]
+//     createSavedPhrase(projectId, { register, praemali, gloss, translation }) -> Phrase
+//     deleteSavedPhrase(id)                -> void (SOFT delete)
+//
 //   Characters
 //     listCharacters(projectId)            -> Character[]
 //     createCharacter(projectId, { name }) -> Character

@@ -506,6 +506,69 @@ export function createSupabaseRepository() {
       unwrap(await supabase.from('routes').delete().eq('id', id))
     },
 
+    // ---- Praemali: custom lexicon entries + saved phrases ----------------
+    async listCustomLexicon(projectId) {
+      return unwrap(
+        await supabase
+          .from('custom_lexicon_entries')
+          .select('*')
+          .or(`project_id.eq.${projectId},project_id.is.null`)
+          .is('deleted_at', null)
+          .order('created_at', { ascending: true }),
+      )
+    },
+    async createCustomLexicon(projectId, { entry_type, payload, global = false } = {}) {
+      const user_id = await currentUserId()
+      return unwrap(
+        await supabase
+          .from('custom_lexicon_entries')
+          .insert({ user_id, project_id: global ? null : projectId, entry_type, payload })
+          .select()
+          .single(),
+      )
+    },
+    async updateCustomLexicon(id, patch) {
+      return unwrap(
+        await supabase.from('custom_lexicon_entries').update(patch).eq('id', id).select().single(),
+      )
+    },
+    async deleteCustomLexicon(id) {
+      // Soft delete: propagates as a row update.
+      unwrap(
+        await supabase
+          .from('custom_lexicon_entries')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('id', id),
+      )
+    },
+
+    async listSavedPhrases(projectId) {
+      return unwrap(
+        await supabase
+          .from('saved_phrases')
+          .select('*')
+          .eq('project_id', projectId)
+          .is('deleted_at', null)
+          .order('created_at', { ascending: true }),
+      )
+    },
+    async createSavedPhrase(projectId, opts = {}) {
+      const user_id = await currentUserId()
+      const insert = { user_id, project_id: projectId }
+      for (const k of ['register', 'praemali', 'gloss', 'translation']) {
+        if (opts[k] != null) insert[k] = opts[k]
+      }
+      return unwrap(await supabase.from('saved_phrases').insert(insert).select().single())
+    },
+    async deleteSavedPhrase(id) {
+      unwrap(
+        await supabase
+          .from('saved_phrases')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('id', id),
+      )
+    },
+
     // ---- Events ---------------------------------------------------------
     async listEvents(projectId) {
       return unwrap(

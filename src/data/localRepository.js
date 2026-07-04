@@ -13,6 +13,8 @@ import {
   makeEvent,
   makeRegion,
   makeRoute,
+  makeCustomLexiconEntry,
+  makeSavedPhrase,
   nowIso,
 } from './types.js'
 
@@ -454,6 +456,66 @@ export function createLocalRepository() {
     async deleteRoute(id) {
       const db = await getDb()
       await db.delete(STORES.routes, id)
+    },
+
+    // ---- Praemali: custom lexicon entries + saved phrases ----------------
+    // project_id NULL means "all projects", so list = getAll + filter (nulls
+    // aren't indexed). Deletes are SOFT (deleted_at) so they propagate across
+    // devices as ordinary row updates via the sync queue.
+    async listCustomLexicon(projectId) {
+      const db = await getDb()
+      const all = await db.getAll(STORES.custom_lexicon_entries)
+      return all
+        .filter((e) => !e.deleted_at && (e.project_id == null || e.project_id === projectId))
+        .sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''))
+    },
+    async createCustomLexicon(projectId, { entry_type, payload, global = false } = {}) {
+      const db = await getDb()
+      const entry = makeCustomLexiconEntry({
+        project_id: global ? null : projectId,
+        entry_type,
+        payload,
+      })
+      await db.put(STORES.custom_lexicon_entries, entry)
+      return entry
+    },
+    async updateCustomLexicon(id, patch) {
+      const db = await getDb()
+      const existing = await db.get(STORES.custom_lexicon_entries, id)
+      if (!existing) throw new Error(`Lexicon entry ${id} not found`)
+      const updated = { ...existing, ...patch, updated_at: nowIso() }
+      await db.put(STORES.custom_lexicon_entries, updated)
+      return updated
+    },
+    async deleteCustomLexicon(id) {
+      const db = await getDb()
+      const existing = await db.get(STORES.custom_lexicon_entries, id)
+      if (!existing) return
+      await db.put(STORES.custom_lexicon_entries, {
+        ...existing,
+        deleted_at: nowIso(),
+        updated_at: nowIso(),
+      })
+    },
+
+    async listSavedPhrases(projectId) {
+      const db = await getDb()
+      const rows = await db.getAllFromIndex(STORES.saved_phrases, 'project_id', projectId)
+      return rows
+        .filter((p) => !p.deleted_at)
+        .sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''))
+    },
+    async createSavedPhrase(projectId, opts = {}) {
+      const db = await getDb()
+      const phrase = makeSavedPhrase({ project_id: projectId, ...opts })
+      await db.put(STORES.saved_phrases, phrase)
+      return phrase
+    },
+    async deleteSavedPhrase(id) {
+      const db = await getDb()
+      const existing = await db.get(STORES.saved_phrases, id)
+      if (!existing) return
+      await db.put(STORES.saved_phrases, { ...existing, deleted_at: nowIso(), updated_at: nowIso() })
     },
 
     // ---- Events ---------------------------------------------------------

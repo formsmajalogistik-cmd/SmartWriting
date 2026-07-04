@@ -45,6 +45,8 @@ const PULL_TABLES = [
   'regions',
   'routes',
   'terrains',
+  'custom_lexicon_entries',
+  'saved_phrases',
   'chapters',
   'chapter_versions',
   'character_locations',

@@ -17,6 +17,7 @@ import MapView from './components/MapView.jsx'
 import SearchView from './components/SearchView.jsx'
 import ProgressView from './components/ProgressView.jsx'
 import SyncStatus from './components/SyncStatus.jsx'
+import PraemaliView from './components/PraemaliView.jsx'
 
 const VIEWS = [
   { key: 'write', label: 'Schreiben' },
@@ -27,6 +28,7 @@ const VIEWS = [
   { key: 'places', label: 'Orte' },
   { key: 'events', label: 'Ereignisse' },
   { key: 'map', label: 'Karte' },
+  { key: 'praemali', label: 'Praemali' },
   { key: 'names', label: 'Namen' },
   { key: 'export', label: 'Export' },
 ]
@@ -66,6 +68,7 @@ export default function App() {
     if (view === 'places') return <main className="content"><PlacesView /></main>
     if (view === 'events') return <main className="content"><EventsView /></main>
     if (view === 'map') return <main className="content map-content"><MapView /></main>
+    if (view === 'praemali') return <main className="content"><PraemaliView /></main>
     if (view === 'names') return <main className="content"><NamesView /></main>
     if (view === 'export') return <main className="content"><ExportView /></main>
     return (
