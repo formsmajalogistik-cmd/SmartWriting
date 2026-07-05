@@ -44,6 +44,7 @@ const PULL_TABLES = [
   'events',
   'regions',
   'routes',
+  'ideas',
   'terrains',
   'custom_lexicon_entries',
   'saved_phrases',
@@ -220,6 +221,7 @@ async function applyRemoteDelete(db, table, id) {
     for (const store of [
       STORES.chapters, STORES.chapter_versions, STORES.terrains, STORES.characters,
       STORES.places, STORES.character_locations, STORES.events, STORES.regions, STORES.routes,
+      STORES.ideas,
     ]) {
       await del(store, await byIndex(store, 'project_id', id))
     }

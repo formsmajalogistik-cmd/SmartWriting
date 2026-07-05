@@ -13,6 +13,7 @@ import {
   makeEvent,
   makeRegion,
   makeRoute,
+  makeIdea,
   makeCustomLexiconEntry,
   makeSavedPhrase,
   nowIso,
@@ -456,6 +457,31 @@ export function createLocalRepository() {
     async deleteRoute(id) {
       const db = await getDb()
       await db.delete(STORES.routes, id)
+    },
+
+    // ---- Ideas (Ideen brainstorming scratchpad) --------------------------
+    async listIdeas(projectId) {
+      const rows = await byProject(STORES.ideas, projectId)
+      // Newest first; the UI floats pinned ideas on top of that.
+      return rows.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
+    },
+    async createIdea(projectId, opts = {}) {
+      const db = await getDb()
+      const idea = makeIdea({ project_id: projectId, ...opts })
+      await db.put(STORES.ideas, idea)
+      return idea
+    },
+    async updateIdea(id, patch) {
+      const db = await getDb()
+      const existing = await db.get(STORES.ideas, id)
+      if (!existing) throw new Error(`Idea ${id} not found`)
+      const updated = { ...existing, ...patch, updated_at: nowIso() }
+      await db.put(STORES.ideas, updated)
+      return updated
+    },
+    async deleteIdea(id) {
+      const db = await getDb()
+      await db.delete(STORES.ideas, id)
     },
 
     // ---- Praemali: custom lexicon entries + saved phrases ----------------

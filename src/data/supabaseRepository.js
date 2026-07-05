@@ -506,6 +506,32 @@ export function createSupabaseRepository() {
       unwrap(await supabase.from('routes').delete().eq('id', id))
     },
 
+    // ---- Ideas (Ideen brainstorming scratchpad) --------------------------
+    async listIdeas(projectId) {
+      return unwrap(
+        await supabase
+          .from('ideas')
+          .select('*')
+          .eq('project_id', projectId)
+          .order('created_at', { ascending: false }),
+      )
+    },
+    async createIdea(projectId, opts = {}) {
+      const user_id = await currentUserId()
+      const insert = { user_id, project_id: projectId }
+      if (opts.title?.trim()) insert.title = opts.title.trim()
+      if (typeof opts.content === 'string') insert.content = opts.content
+      if (Array.isArray(opts.tags)) insert.tags = opts.tags
+      if (opts.pinned != null) insert.pinned = !!opts.pinned
+      return unwrap(await supabase.from('ideas').insert(insert).select().single())
+    },
+    async updateIdea(id, patch) {
+      return unwrap(await supabase.from('ideas').update(patch).eq('id', id).select().single())
+    },
+    async deleteIdea(id) {
+      unwrap(await supabase.from('ideas').delete().eq('id', id))
+    },
+
     // ---- Praemali: custom lexicon entries + saved phrases ----------------
     async listCustomLexicon(projectId) {
       return unwrap(

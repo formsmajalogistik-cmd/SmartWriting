@@ -18,6 +18,7 @@ import SearchView from './components/SearchView.jsx'
 import ProgressView from './components/ProgressView.jsx'
 import SyncStatus from './components/SyncStatus.jsx'
 import PraemaliView from './components/PraemaliView.jsx'
+import IdeasView from './components/IdeasView.jsx'
 
 // Section navigation lives in the collapsible LEFT sidebar. The two big
 // workspaces (Karte, Praemali) and the manuscript CONTEXT (project / book /
@@ -25,6 +26,7 @@ import PraemaliView from './components/PraemaliView.jsx'
 const NAV_VIEWS = [
   { key: 'write', label: 'Schreiben' },
   { key: 'overview', label: 'Übersicht' },
+  { key: 'ideas', label: 'Ideen' },
   { key: 'compile', label: 'Manuskript' },
   { key: 'search', label: 'Suche' },
   { key: 'progress', label: 'Fortschritt' },
@@ -137,6 +139,7 @@ export default function App() {
         </div>
       )
     }
+    if (view === 'ideas') return <IdeasView />
     if (view === 'compile') return <CompileView />
     if (view === 'search') return <SearchView />
     if (view === 'progress') return <ProgressView />

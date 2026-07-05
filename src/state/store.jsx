@@ -60,6 +60,7 @@ export function StoreProvider({ children }) {
   const [events, setEvents] = useState([])
   const [regions, setRegions] = useState([])
   const [routes, setRoutes] = useState([])
+  const [ideas, setIdeas] = useState([])
   const [customLexicon, setCustomLexicon] = useState([])
   const [savedPhrases, setSavedPhrases] = useState([])
   // Versions of the currently open chapter (PROSE only; metadata stays on the chapter).
@@ -105,6 +106,9 @@ export function StoreProvider({ children }) {
   }, [])
   const refreshRoutes = useCallback(async (pid) => {
     setRoutes(pid ? await repo.listRoutes(pid) : [])
+  }, [])
+  const refreshIdeas = useCallback(async (pid) => {
+    setIdeas(pid ? await repo.listIdeas(pid) : [])
   }, [])
   const refreshCustomLexicon = useCallback(async (pid) => {
     setCustomLexicon(pid ? await repo.listCustomLexicon(pid) : [])
@@ -155,6 +159,7 @@ export function StoreProvider({ children }) {
           refreshEvents(activeProjectId),
           refreshRegions(activeProjectId),
           refreshRoutes(activeProjectId),
+          refreshIdeas(activeProjectId),
           refreshCustomLexicon(activeProjectId),
           refreshSavedPhrases(activeProjectId),
         ])
@@ -163,7 +168,7 @@ export function StoreProvider({ children }) {
         /* error already surfaced via the guarded repo */
       }
     })()
-  }, [activeProjectId, refreshChapters, refreshCharacters, refreshPlaces, refreshLocations, refreshEvents, refreshRegions, refreshRoutes, refreshCustomLexicon, refreshSavedPhrases])
+  }, [activeProjectId, refreshChapters, refreshCharacters, refreshPlaces, refreshLocations, refreshEvents, refreshRegions, refreshRoutes, refreshIdeas, refreshCustomLexicon, refreshSavedPhrases])
 
   // Persist the active chapter so a reload reopens it.
   useEffect(() => {
@@ -185,6 +190,7 @@ export function StoreProvider({ children }) {
         if (t.has('events')) await refreshEvents(activeProjectId)
         if (t.has('regions')) await refreshRegions(activeProjectId)
         if (t.has('routes')) await refreshRoutes(activeProjectId)
+        if (t.has('ideas')) await refreshIdeas(activeProjectId)
         if (t.has('custom_lexicon_entries')) await refreshCustomLexicon(activeProjectId)
         if (t.has('saved_phrases')) await refreshSavedPhrases(activeProjectId)
         if (t.has('chapter_versions') && activeChapterId) {
@@ -205,6 +211,7 @@ export function StoreProvider({ children }) {
     refreshEvents,
     refreshRegions,
     refreshRoutes,
+    refreshIdeas,
     refreshCustomLexicon,
     refreshSavedPhrases,
     refreshChapterVersions,
@@ -558,6 +565,31 @@ export function StoreProvider({ children }) {
   )
 
   // --- event actions ---------------------------------------------------
+  // --- idea actions (Ideen brainstorming scratchpad) --------------------
+  const createIdea = useCallback(
+    async (opts) => {
+      const idea = await repo.createIdea(activeProjectId, opts || {})
+      await refreshIdeas(activeProjectId)
+      return idea
+    },
+    [activeProjectId, refreshIdeas],
+  )
+  const updateIdea = useCallback(
+    async (id, patch) => {
+      const updated = await repo.updateIdea(id, patch)
+      setIdeas((prev) => prev.map((i) => (i.id === id ? updated : i)))
+      return updated
+    },
+    [],
+  )
+  const deleteIdea = useCallback(
+    async (id) => {
+      await repo.deleteIdea(id)
+      await refreshIdeas(activeProjectId)
+    },
+    [activeProjectId, refreshIdeas],
+  )
+
   const createEvent = useCallback(
     async (title) => {
       const e = await repo.createEvent(activeProjectId, { title })
@@ -707,6 +739,7 @@ export function StoreProvider({ children }) {
     events,
     regions,
     routes,
+    ideas,
     customLexicon,
     savedPhrases,
     chapterVersions,
@@ -764,6 +797,9 @@ export function StoreProvider({ children }) {
     createPlace,
     updatePlace,
     deletePlace,
+    createIdea,
+    updateIdea,
+    deleteIdea,
     createEvent,
     updateEvent,
     deleteEvent,

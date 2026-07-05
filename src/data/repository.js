@@ -52,6 +52,12 @@
 //     updateRoute(id, patch)               -> Route
 //     deleteRoute(id)                      -> void
 //
+//   Ideas (Ideen brainstorming scratchpad; newest first)
+//     listIdeas(projectId)                 -> Idea[]
+//     createIdea(projectId, { title?, content?, tags?, pinned? }) -> Idea
+//     updateIdea(id, patch)                -> Idea
+//     deleteIdea(id)                       -> void
+//
 //   Praemali translator (user layer on top of the bundled base lexicon)
 //     listCustomLexicon(projectId)         -> Entry[] (project rows + global
 //                                             project_id-null rows; no deleted)

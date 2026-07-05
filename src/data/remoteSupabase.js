@@ -25,6 +25,7 @@ const UPSERT_ORDER = [
   'events',
   'regions',
   'routes',
+  'ideas',
   'terrains',
   'custom_lexicon_entries',
   'saved_phrases',

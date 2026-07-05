@@ -131,6 +131,22 @@ export function makeRoute({ project_id, label, colour, place_ids, book }) {
   }
 }
 
+// ideas — quick brainstorming captures (Ideen tab): optional short title,
+// free text content (light Markdown), optional tag strings, pinned flag.
+export function makeIdea({ project_id, title, content, tags, pinned }) {
+  return {
+    id: newId(),
+    user_id: LOCAL_USER_ID,
+    project_id,
+    title: title?.trim() || '',
+    content: content ?? '',
+    tags: Array.isArray(tags) ? tags : [],
+    pinned: !!pinned,
+    created_at: nowIso(),
+    updated_at: nowIso(),
+  }
+}
+
 // custom_lexicon_entries — user additions to the Praemali base lexicon.
 // payload mirrors the base lexicon entry shape for its entry_type; `override`
 // entries shadow a base root by payload.root. project_id null = all projects.

@@ -153,6 +153,42 @@ select:focus, input:focus, textarea:focus {
   color: white;
 }
 
+/* ---- Ideen: brainstorming scratchpad ---- */
+.ideas-view { flex: 1; min-width: 0; overflow-y: auto; }
+.ideas-inner { max-width: 780px; margin: 0 auto; padding: 16px 14px 40px; display: flex; flex-direction: column; gap: 12px; }
+.ideas-inner h2 { margin: 0; font-size: 18px; }
+.idea-capture { display: flex; align-items: flex-end; gap: 8px; }
+.idea-capture textarea { flex: 1; resize: vertical; min-height: 44px; }
+.ideas-search { max-width: 420px; }
+.ideas-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.idea-card { border: 1px solid var(--border); border-radius: 10px; background: var(--bg-2); padding: 9px 12px; }
+.idea-card.pinned { border-color: var(--accent); }
+.idea-card.editing { display: flex; flex-direction: column; gap: 8px; }
+.idea-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.idea-pin.on { color: var(--accent); }
+.idea-card.pinned .idea-pin { opacity: 1; }
+.idea-title { font-weight: 600; font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.idea-date { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+.idea-card .row-actions { opacity: 0; }
+.idea-card:hover .row-actions { opacity: 1; }
+.idea-tagrow { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.idea-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--text-dim); border: 1px solid var(--border); border-radius: 999px; padding: 1px 8px; background: var(--bg-1); }
+.idea-tag.clickable { cursor: pointer; }
+.idea-tag.clickable:hover { color: var(--text); border-color: var(--accent-2); }
+.idea-tag button { display: inline-flex; border: 0; background: none; color: var(--text-dim); cursor: pointer; padding: 0; }
+.idea-tag button:hover { color: var(--text); }
+.idea-tags-input { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-1); padding: 4px 8px; min-height: 32px; }
+.idea-tags-input input { flex: 1; min-width: 90px; border: 0; background: none; color: var(--text); font-size: 13px; outline: none; padding: 2px 0; }
+.idea-body { font-size: 13px; color: var(--text); margin-top: 6px; cursor: pointer; overflow-wrap: anywhere; }
+.idea-body.clamped { max-height: 66px; overflow: hidden; -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent); mask-image: linear-gradient(to bottom, #000 55%, transparent); }
+.idea-body p { margin: 0 0 6px; }
+.idea-body h1, .idea-body h2, .idea-body h3 { font-size: 14px; margin: 6px 0 4px; }
+.idea-body ul, .idea-body ol { margin: 4px 0; padding-left: 20px; }
+.idea-body code { background: var(--bg-3); border-radius: 4px; padding: 0 4px; font-size: 12px; }
+.idea-title-input { font-weight: 600; }
+.idea-content-input { resize: vertical; }
+.idea-actions { display: flex; gap: 8px; }
+
 /* ---- Übersicht: book/chapter tree pane ---- */
 .overview-pane {
   flex: 1;

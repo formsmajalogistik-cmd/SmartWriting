@@ -4,7 +4,7 @@
 import { openDB } from 'idb'
 
 const DB_NAME = 'smartwriting'
-const DB_VERSION = 10
+const DB_VERSION = 11
 
 export const STORES = {
   projects: 'projects',
@@ -18,6 +18,8 @@ export const STORES = {
   regions: 'regions',
   // Per-project authored routes (Phase 3, Stage C): named ordered place paths.
   routes: 'routes',
+  // Quick brainstorming captures (Ideen tab).
+  ideas: 'ideas',
   // Praemali translator: user lexicon additions (project_id NULLABLE — null =
   // global) and the saved-phrase library. Soft-deleted via deleted_at.
   custom_lexicon_entries: 'custom_lexicon_entries',
@@ -49,6 +51,7 @@ export const SYNCED_STORES = new Set([
   STORES.events,
   STORES.regions,
   STORES.routes,
+  STORES.ideas,
   STORES.terrains,
   STORES.custom_lexicon_entries,
   STORES.saved_phrases,
@@ -136,6 +139,10 @@ export function getDb() {
         }
         if (!db.objectStoreNames.contains(STORES.routes)) {
           const s = db.createObjectStore(STORES.routes, { keyPath: 'id' })
+          s.createIndex('project_id', 'project_id')
+        }
+        if (!db.objectStoreNames.contains(STORES.ideas)) {
+          const s = db.createObjectStore(STORES.ideas, { keyPath: 'id' })
           s.createIndex('project_id', 'project_id')
         }
         if (!db.objectStoreNames.contains(STORES.custom_lexicon_entries)) {
