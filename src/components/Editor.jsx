@@ -3,6 +3,7 @@ import { Marked } from 'marked'
 import { Bold, Italic, User, MapPin } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 import { makeResolver, hashlinkExtension } from '../lib/hashlinks.js'
+import { noBlockquote, GUILLEMET_MAP } from '../lib/markdown.js'
 import { getCaretCoordinates } from '../lib/caret.js'
 import CardPreview from './CardPreview.jsx'
 
@@ -11,11 +12,14 @@ import CardPreview from './CardPreview.jsx'
 //   inserts the literal "#Name" into the Markdown (no hidden ids).
 // - The preview pane renders #Name tokens as resolved / provisional / unresolved
 //   links; hovering or tapping a resolved link shows a compact card preview.
+// - German dialogue quotes: typing ">" inserts » and "<" inserts « (direct
+//   substitution, no auto-pairing) — toggleable in the Profil tab. Markdown
+//   blockquotes are disabled (a "> " line renders literally).
 const PARTIAL_RE = /#([\p{L}\p{N}_'’\-]*)$/u
 const NAME_CHAR = /[\p{L}\p{N}]/u
 
 export default function Editor({ value, onChange, preview, focusSelection, onFocusApplied }) {
-  const { characters, places, openCard } = useStore()
+  const { characters, places, openCard, editorGuillemets } = useStore()
   const taRef = useRef(null)
   const popRef = useRef(null)
 
@@ -41,9 +45,30 @@ export default function Editor({ value, onChange, preview, focusSelection, onFoc
   const html = useMemo(() => {
     if (!preview) return ''
     const m = new Marked({ breaks: true })
+    m.use(noBlockquote)
     m.use(hashlinkExtension(resolver))
     return m.parse(value || '')
   }, [preview, value, resolver])
+
+  // ---- »« substitution ---------------------------------------------------
+  // Replace a typed ">"/"<" with the German guillemet before it ever lands in
+  // the text (works for keyboard and mobile IMEs via beforeinput). Pastes and
+  // multi-character inputs pass through untouched.
+  function onBeforeInput(e) {
+    if (!editorGuillemets) return
+    const sub = GUILLEMET_MAP[e.data]
+    if (!sub) return
+    e.preventDefault()
+    const ta = taRef.current
+    if (!ta) return
+    const start = ta.selectionStart
+    const end = ta.selectionEnd
+    onChange(ta.value.slice(0, start) + sub + ta.value.slice(end))
+    requestAnimationFrame(() => {
+      ta.focus()
+      try { ta.setSelectionRange(start + 1, start + 1) } catch { /* ignore */ }
+    })
+  }
 
   // ---- #autocomplete --------------------------------------------------
   const [ac, setAc] = useState(null) // { items, index, top, left, tokenStart, caret }
@@ -245,6 +270,7 @@ export default function Editor({ value, onChange, preview, focusSelection, onFoc
             onChange(e.target.value)
             refreshAutocomplete()
           }}
+          onBeforeInput={onBeforeInput}
           onKeyDown={onKeyDown}
           onKeyUp={onKeyUp}
           onClick={refreshAutocomplete}

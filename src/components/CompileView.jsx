@@ -3,6 +3,7 @@ import { Marked } from 'marked'
 import { BookOpen } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 import { makeResolver, hashlinkExtension } from '../lib/hashlinks.js'
+import { noBlockquote } from '../lib/markdown.js'
 import { groupChaptersByBook } from '../lib/export/markdown.js'
 import EmptyState from './EmptyState.jsx'
 
@@ -16,6 +17,7 @@ export default function CompileView() {
   const resolver = useMemo(() => makeResolver(characters, places), [characters, places])
   const marked = useMemo(() => {
     const m = new Marked({ breaks: true })
+    m.use(noBlockquote)
     m.use(hashlinkExtension(resolver))
     return m
   }, [resolver])

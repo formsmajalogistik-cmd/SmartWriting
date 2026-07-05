@@ -14,6 +14,7 @@ import { Marked } from 'marked'
 import pdfMakeUrl from 'pdfmake/build/pdfmake.min.js?url'
 import vfsUrl from 'pdfmake/build/vfs_fonts.js?url'
 import { makeResolver, hashlinkExtension } from '../hashlinks.js'
+import { noBlockquote } from '../markdown.js'
 import { groupChaptersByBook } from './markdown.js'
 import { triggerDownload } from './util.js'
 import { CHARACTER_CONFIG, PLACE_CONFIG } from '../../components/cardConfig.js'
@@ -87,6 +88,7 @@ function baseDoc(content, info = {}) {
 
 async function mdToContent(md, resolver) {
   const marked = new Marked({ breaks: true })
+  marked.use(noBlockquote)
   marked.use(hashlinkExtension(resolver))
   const html = marked.parse(md || '')
   const htmlToPdfmake = (await import('html-to-pdfmake')).default

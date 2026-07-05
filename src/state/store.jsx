@@ -13,6 +13,7 @@ import { findNameOccurrences, replaceNameReferences } from '../lib/hashlinks.js'
 
 const ACTIVE_PROJECT_KEY = 'smartwriting.activeProjectId'
 const ACTIVE_CHAPTER_KEY = 'smartwriting.activeChapterId'
+const GUILLEMETS_KEY = 'smartwriting.guillemets'
 
 const StoreContext = createContext(null)
 
@@ -68,6 +69,16 @@ export function StoreProvider({ children }) {
   const [activeChapterId, setActiveChapterId] = useState(
     () => localStorage.getItem(ACTIVE_CHAPTER_KEY) || null,
   )
+
+  // Editor preference: substitute typed ">"/"<" with German guillemets »/«.
+  // Default ON; per-device (localStorage), toggleable in the Profil tab.
+  const [editorGuillemets, setEditorGuillemetsState] = useState(
+    () => localStorage.getItem(GUILLEMETS_KEY) !== '0',
+  )
+  const setEditorGuillemets = useCallback((on) => {
+    setEditorGuillemetsState(!!on)
+    localStorage.setItem(GUILLEMETS_KEY, on ? '1' : '0')
+  }, [])
 
   // Top-level navigation (which view is showing) + a card to focus when its
   // view opens (e.g. clicking a #link in the editor jumps to that card).
@@ -749,6 +760,8 @@ export function StoreProvider({ children }) {
     // navigation
     view,
     setView,
+    editorGuillemets,
+    setEditorGuillemets,
     focusCard,
     openCard,
     consumeFocusCard,

@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { Marked } from 'marked'
 import { Plus, Search, Pin, Pencil, Trash2, Check, X } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
+import { noBlockquote } from '../lib/markdown.js'
 
 // IDEEN — brainstorming scratchpad for the active project. Frictionless quick
 // capture on top (type + Enter), below it the idea list: pinned first, then
@@ -9,6 +10,7 @@ import { useStore } from '../state/store.jsx'
 // that matches text OR tags. Content renders light Markdown when not editing.
 
 const md = new Marked({ gfm: true, breaks: true })
+md.use(noBlockquote)
 
 const firstLine = (text) => (text || '').split('\n')[0].trim()
 const fmtDate = (iso) => {

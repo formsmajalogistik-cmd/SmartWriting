@@ -244,10 +244,10 @@ const SYNTAX = [
     sample: <em>kursiv</em>,
   },
   {
-    code: '> Zitat',
-    title: 'Blockzitat',
-    desc: '„> “ am Zeilenanfang.',
-    sample: <span className="syntax-quote">Zitat</span>,
+    code: '>Hallo<',
+    title: 'Anführungszeichen',
+    desc: 'Beim Tippen wird „>“ sofort zu » und „<“ zu « (deutsche Guillemets). Kein Blockzitat mehr.',
+    sample: <span>»Hallo«</span>,
   },
   {
     code: '- Punkt',
@@ -274,12 +274,25 @@ const SYNTAX = [
 ]
 
 function SyntaxGuide() {
+  const { editorGuillemets, setEditorGuillemets } = useStore()
   return (
     <section className="profile-section">
       <h3>
         <BookOpen size={17} /> Steuerung &amp; Syntax
       </h3>
       <p className="hint">So funktioniert der Editor. Die Vorschau zeigt das Ergebnis.</p>
+
+      <label className="checkbox syntax-toggle">
+        <input
+          type="checkbox"
+          checked={editorGuillemets}
+          onChange={(e) => setEditorGuillemets(e.target.checked)}
+        />
+        <span>
+          »«-Ersetzung beim Tippen („&gt;“ → » und „&lt;“ → «). Ausschalten, falls du wörtliche
+          spitze Klammern brauchst.
+        </span>
+      </label>
 
       <div className="syntax-table">
         {SYNTAX.map((s) => (

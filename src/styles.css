@@ -972,7 +972,7 @@ select:focus, input:focus, textarea:focus {
 .syntax-desc { font-size: 12px; color: var(--text-dim); }
 .syntax-sample { font-size: 14px; text-align: right; }
 .syntax-h { font-weight: 700; font-size: 16px; }
-.syntax-quote { border-left: 3px solid var(--border); padding-left: 8px; color: var(--text-dim); }
+.syntax-toggle { margin: 4px 0 10px; }
 .syntax-link { color: var(--accent-2); text-decoration: underline; }
 .profile-section .hashlink.static { cursor: default; }
 
