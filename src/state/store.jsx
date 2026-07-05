@@ -274,6 +274,21 @@ export function StoreProvider({ children }) {
     },
     [activeProjectId, refreshProjects, refreshChapters, refreshLocations],
   )
+  // Move a book up (-1) or down (+1); book order IS the settings.books order.
+  const reorderBook = useCallback(
+    async (bookId, dir) => {
+      const books = [...(activeProject?.settings?.books ?? [])]
+      const i = books.findIndex((b) => b.id === bookId)
+      const j = i + dir
+      if (i < 0 || j < 0 || j >= books.length) return
+      ;[books[i], books[j]] = [books[j], books[i]]
+      await repo.updateProject(activeProjectId, {
+        settings: { ...activeProject.settings, books },
+      })
+      await refreshProjects()
+    },
+    [activeProject, activeProjectId, refreshProjects],
+  )
 
   // --- chapter actions -------------------------------------------------
   const createChapter = useCallback(
@@ -297,6 +312,33 @@ export function StoreProvider({ children }) {
   const renameChapter = useCallback(
     async (id, title) => updateChapter(id, { title }),
     [updateChapter],
+  )
+  // Move a chapter up (-1) or down (+1) within its book; the persisted order
+  // is the `number` field, so reordering swaps the two numbers (with a
+  // sequential renumber as fallback if numbers ever collide).
+  const reorderChapter = useCallback(
+    async (id, dir) => {
+      const ch = chapters.find((c) => c.id === id)
+      if (!ch) return
+      const list = chapters
+        .filter((c) => (c.book ?? null) === (ch.book ?? null))
+        .sort((a, b) => a.number - b.number)
+      const i = list.findIndex((c) => c.id === id)
+      const j = i + dir
+      if (j < 0 || j >= list.length) return
+      const other = list[j]
+      if (ch.number !== other.number) {
+        await updateChapter(ch.id, { number: other.number })
+        await updateChapter(other.id, { number: ch.number })
+      } else {
+        const swapped = [...list]
+        ;[swapped[i], swapped[j]] = [swapped[j], swapped[i]]
+        for (let k = 0; k < swapped.length; k++) {
+          if (swapped[k].number !== k + 1) await updateChapter(swapped[k].id, { number: k + 1 })
+        }
+      }
+    },
+    [chapters, updateChapter],
   )
   const deleteChapter = useCallback(
     async (id) => {
@@ -687,9 +729,11 @@ export function StoreProvider({ children }) {
     createBook,
     renameBook,
     deleteBook,
+    reorderBook,
     createChapter,
     updateChapter,
     renameChapter,
+    reorderChapter,
     deleteChapter,
     saveChapterBody,
     createVersion,

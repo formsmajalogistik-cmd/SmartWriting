@@ -1,8 +1,9 @@
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 
-// Per-project Book -> Chapter tree. Create/rename/delete books and chapters.
-// Clicking a chapter opens it instantly.
+// Per-project Book -> Chapter tree (the "Übersicht" tab). Create, rename,
+// delete and REORDER books and chapters. Clicking a chapter opens it in the
+// Schreiben view instantly.
 export default function Sidebar({ onChapterPick }) {
   const {
     activeProject,
@@ -12,8 +13,10 @@ export default function Sidebar({ onChapterPick }) {
     createBook,
     renameBook,
     deleteBook,
+    reorderBook,
     createChapter,
     renameChapter,
+    reorderChapter,
     deleteChapter,
   } = useStore()
 
@@ -50,11 +53,29 @@ export default function Sidebar({ onChapterPick }) {
         <p className="tree-empty">Noch keine Bücher. Lege eines an, um Kapitel zu schreiben.</p>
       )}
 
-      {books.map((book) => (
+      {books.map((book, bi) => (
         <div className="book" key={book.id}>
           <div className="book-row">
             <span className="book-title">{book.title}</span>
             <span className="row-actions">
+              <button
+                className="icon-btn"
+                title="Buch nach oben"
+                aria-label="Buch nach oben"
+                disabled={bi === 0}
+                onClick={() => reorderBook(book.id, -1)}
+              >
+                <ChevronUp size={15} />
+              </button>
+              <button
+                className="icon-btn"
+                title="Buch nach unten"
+                aria-label="Buch nach unten"
+                disabled={bi === books.length - 1}
+                onClick={() => reorderBook(book.id, 1)}
+              >
+                <ChevronDown size={15} />
+              </button>
               <button className="icon-btn" title="Kapitel hinzufügen" aria-label="Kapitel hinzufügen" onClick={() => addChapter(book.id)}>
                 <Plus size={16} />
               </button>
@@ -87,6 +108,7 @@ export default function Sidebar({ onChapterPick }) {
             activeChapterId={activeChapterId}
             openChapter={openChapter}
             renameChapter={renameChapter}
+            reorderChapter={reorderChapter}
             deleteChapter={deleteChapter}
           />
         </div>
@@ -102,6 +124,7 @@ export default function Sidebar({ onChapterPick }) {
             activeChapterId={activeChapterId}
             openChapter={openChapter}
             renameChapter={renameChapter}
+            reorderChapter={reorderChapter}
             deleteChapter={deleteChapter}
           />
         </div>
@@ -110,11 +133,11 @@ export default function Sidebar({ onChapterPick }) {
   )
 }
 
-function ChapterList({ list, activeChapterId, openChapter, renameChapter, deleteChapter }) {
+function ChapterList({ list, activeChapterId, openChapter, renameChapter, reorderChapter, deleteChapter }) {
   if (list.length === 0) return <p className="tree-empty small">— keine Kapitel —</p>
   return (
     <ul className="chapter-list">
-      {list.map((ch) => (
+      {list.map((ch, i) => (
         <li
           key={ch.id}
           className={`chapter-row ${ch.id === activeChapterId ? 'active' : ''}`}
@@ -126,6 +149,24 @@ function ChapterList({ list, activeChapterId, openChapter, renameChapter, delete
           </span>
           <span className={`status-dot status-${ch.status}`} title={ch.status} />
           <span className="row-actions" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="icon-btn"
+              title="Kapitel nach oben"
+              aria-label="Kapitel nach oben"
+              disabled={i === 0}
+              onClick={() => reorderChapter(ch.id, -1)}
+            >
+              <ChevronUp size={15} />
+            </button>
+            <button
+              className="icon-btn"
+              title="Kapitel nach unten"
+              aria-label="Kapitel nach unten"
+              disabled={i === list.length - 1}
+              onClick={() => reorderChapter(ch.id, 1)}
+            >
+              <ChevronDown size={15} />
+            </button>
             <button
               className="icon-btn"
               title="Kapitel umbenennen"
