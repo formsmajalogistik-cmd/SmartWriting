@@ -466,11 +466,12 @@ export function createSupabaseRepository() {
           .order('created_at', { ascending: true }),
       )
     },
-    async createRegion(projectId, { name, colour } = {}) {
+    async createRegion(projectId, { name, colour, description } = {}) {
       const user_id = await currentUserId()
       const insert = { user_id, project_id: projectId }
       if (name?.trim()) insert.name = name.trim()
       if (colour) insert.colour = colour
+      if (typeof description === 'string') insert.description = description
       return unwrap(await supabase.from('regions').insert(insert).select().single())
     },
     async updateRegion(id, patch) {
@@ -504,6 +505,33 @@ export function createSupabaseRepository() {
     },
     async deleteRoute(id) {
       unwrap(await supabase.from('routes').delete().eq('id', id))
+    },
+
+    // ---- Geo features (named geography as map text labels) ---------------
+    async listGeoFeatures(projectId) {
+      return unwrap(
+        await supabase
+          .from('geo_features')
+          .select('*')
+          .eq('project_id', projectId)
+          .order('name', { ascending: true }),
+      )
+    },
+    async createGeoFeature(projectId, opts = {}) {
+      const user_id = await currentUserId()
+      const insert = { user_id, project_id: projectId }
+      if (opts.name?.trim()) insert.name = opts.name.trim()
+      if (opts.feature_type) insert.feature_type = opts.feature_type
+      if (typeof opts.description === 'string') insert.description = opts.description
+      if (opts.coords !== undefined) insert.coords = opts.coords
+      if (opts.label_size) insert.label_size = opts.label_size
+      return unwrap(await supabase.from('geo_features').insert(insert).select().single())
+    },
+    async updateGeoFeature(id, patch) {
+      return unwrap(await supabase.from('geo_features').update(patch).eq('id', id).select().single())
+    },
+    async deleteGeoFeature(id) {
+      unwrap(await supabase.from('geo_features').delete().eq('id', id))
     },
 
     // ---- Ideas (Ideen brainstorming scratchpad) --------------------------

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Marked } from 'marked'
-import { Bold, Italic, User, MapPin } from 'lucide-react'
+import { Bold, Italic, User, MapPin, Flag, Mountain, Map as MapIcon } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 import { makeResolver, hashlinkExtension } from '../lib/hashlinks.js'
 import { noBlockquote, GUILLEMET_MAP } from '../lib/markdown.js'
@@ -18,8 +18,11 @@ import CardPreview from './CardPreview.jsx'
 const PARTIAL_RE = /#([\p{L}\p{N}_'’\-]*)$/u
 const NAME_CHAR = /[\p{L}\p{N}]/u
 
+// Autocomplete / preview icon per linkable kind.
+const KIND_ICONS = { character: User, place: MapPin, region: Flag, geo: Mountain }
+
 export default function Editor({ value, onChange, preview, focusSelection, onFocusApplied }) {
-  const { characters, places, openCard, editorGuillemets } = useStore()
+  const { characters, places, regions, geoFeatures, openCard, openOnMap, editorGuillemets } = useStore()
   const taRef = useRef(null)
   const popRef = useRef(null)
 
@@ -40,7 +43,10 @@ export default function Editor({ value, onChange, preview, focusSelection, onFoc
     return () => cancelAnimationFrame(id)
   }, [focusSelection, onFocusApplied])
 
-  const resolver = useMemo(() => makeResolver(characters, places), [characters, places])
+  const resolver = useMemo(
+    () => makeResolver(characters, places, regions, geoFeatures),
+    [characters, places, regions, geoFeatures],
+  )
 
   const html = useMemo(() => {
     if (!preview) return ''
@@ -87,6 +93,8 @@ export default function Editor({ value, onChange, preview, focusSelection, onFoc
     const all = [
       ...characters.map((c) => ({ id: c.id, name: c.name, kind: 'character', name_final: c.name_final })),
       ...places.map((p) => ({ id: p.id, name: p.name, kind: 'place', name_final: p.name_final })),
+      ...regions.map((r) => ({ id: r.id, name: r.name, kind: 'region', name_final: true })),
+      ...geoFeatures.map((g) => ({ id: g.id, name: g.name, kind: 'geo', name_final: true })),
     ].filter((o) => o.name && o.name.toLowerCase().includes(q))
     all.sort((a, b) => {
       const as = a.name.toLowerCase().startsWith(q) ? 0 : 1
@@ -192,9 +200,13 @@ export default function Editor({ value, onChange, preview, focusSelection, onFoc
 
   // ---- preview hover/tap preview --------------------------------------
   const [hover, setHover] = useState(null) // { kind, id, top, left, sticky }
-  const hoverCard = hover
-    ? (hover.kind === 'character' ? characters : places).find((c) => c.id === hover.id)
-    : null
+  const hoverPool =
+    hover?.kind === 'character' ? characters
+    : hover?.kind === 'place' ? places
+    : hover?.kind === 'region' ? regions
+    : hover?.kind === 'geo' ? geoFeatures
+    : []
+  const hoverCard = hover ? hoverPool.find((c) => c.id === hover.id) : null
 
   function popoverFor(el, sticky) {
     const rect = el.getBoundingClientRect()
@@ -302,8 +314,11 @@ export default function Editor({ value, onChange, preview, focusSelection, onFoc
               }}
               onMouseEnter={() => setAc((a) => ({ ...a, index: i }))}
             >
-              <span className="hash-ac-icon">
-                {it.kind === 'character' ? <User size={15} /> : <MapPin size={15} />}
+              <span className={`hash-ac-icon kind-${it.kind}`}>
+                {(() => {
+                  const Icon = KIND_ICONS[it.kind] || MapPin
+                  return <Icon size={15} />
+                })()}
               </span>
               <span className="hash-ac-name">{it.name}</span>
               {!it.name_final && <span className="badge provisional small">prov.</span>}
@@ -314,14 +329,46 @@ export default function Editor({ value, onChange, preview, focusSelection, onFoc
 
       {hover && hoverCard && (
         <div className="hash-popover" ref={popRef} style={{ top: hover.top, left: hover.left }}>
-          <CardPreview
-            kind={hover.kind}
-            card={hoverCard}
-            onOpen={() => {
-              openCard(hover.kind, hover.id)
-              setHover(null)
-            }}
-          />
+          {hover.kind === 'character' || hover.kind === 'place' ? (
+            <CardPreview
+              kind={hover.kind}
+              card={hoverCard}
+              onOpen={() => {
+                openCard(hover.kind, hover.id)
+                setHover(null)
+              }}
+            />
+          ) : (
+            // Compact preview for regions / geo features (no full card exists).
+            <div className="entity-preview">
+              <div className="entity-preview-head">
+                {hover.kind === 'region' ? (
+                  <span className="region-swatch" style={{ background: hoverCard.colour }} />
+                ) : (
+                  <Mountain size={14} />
+                )}
+                <b>{hoverCard.name}</b>
+                <span className="entity-kind">
+                  {hover.kind === 'region'
+                    ? 'Region'
+                    : { fluss: 'Fluss', wald: 'Wald', gebirge: 'Gebirge', see: 'See', sonstiges: 'Geografie' }[
+                        hoverCard.feature_type
+                      ] || 'Geografie'}
+                </span>
+              </div>
+              {hoverCard.description && <p className="entity-preview-desc">{hoverCard.description}</p>}
+              <button
+                type="button"
+                className="link-btn"
+                onClick={() => {
+                  openOnMap(hover.kind, hover.id)
+                  setHover(null)
+                }}
+              >
+                <MapIcon size={12} /> Auf der Karte zeigen
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

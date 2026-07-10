@@ -9,12 +9,15 @@ export const CHARACTER_CONFIG = {
   plural: 'Figuren',
   newName: 'Neue Figur',
   // Shown under the name in the list to give each card a glanceable subtitle.
-  subtitleKeys: ['role', 'origin'],
+  // *_region_id keys resolve to the region name (legacy free text as fallback).
+  subtitleKeys: ['role', 'origin_region_id'],
   // Portrait image at the top of the card (character cards only).
   portrait: true,
   topFields: [
     { key: 'role', label: 'Rolle', type: 'select', options: CHARACTER_ROLES, placeholder: '— Rolle —' },
-    { key: 'origin', label: 'Herkunft', type: 'text' },
+    // Region dropdown WITH free-text fallback (not every origin is a region).
+    // The legacy free-text `origin` stays visible/editable until a region is picked.
+    { key: 'origin_region_id', label: 'Herkunft', type: 'region-or-text', legacyKey: 'origin' },
     { key: 'language_name', label: 'Sprachform / Etymologie', type: 'text' },
     {
       key: 'status',
@@ -66,9 +69,11 @@ export const PLACE_CONFIG = {
   singular: 'Ort',
   plural: 'Orte',
   newName: 'Neuer Ort',
-  subtitleKeys: ['place_type', 'region'],
+  subtitleKeys: ['place_type', 'region_id'],
   topFields: [
-    { key: 'region', label: 'Region', type: 'text' },
+    // Dropdown over this project's regions (stored as region_id). Any legacy
+    // free-text `region` value stays visible until a region is picked.
+    { key: 'region_id', label: 'Region', type: 'region', legacyKey: 'region' },
     { key: 'place_type', label: 'Art des Orts', type: 'text' },
     { key: 'language_name', label: 'Sprachform / Etymologie', type: 'text' },
   ],

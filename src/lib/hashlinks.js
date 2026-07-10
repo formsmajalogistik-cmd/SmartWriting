@@ -21,10 +21,19 @@ export function escapeHtml(s) {
   )
 }
 
-// Build a resolver over the current characters + places.
-export function makeResolver(characters = [], places = []) {
+// Build a resolver over the current characters + places (+ regions and geo
+// features — both always name-final). Collision priority (later insertion
+// wins): geo feature < region < place < character.
+export function makeResolver(characters = [], places = [], regions = [], geoFeatures = []) {
   const byLowerName = new Map()
-  // Places first, characters second: if a name collides, the character wins.
+  for (const g of geoFeatures) {
+    const key = (g.name || '').trim().toLowerCase()
+    if (key) byLowerName.set(key, { id: g.id, name: g.name, name_final: true, _kind: 'geo', _card: g })
+  }
+  for (const r of regions) {
+    const key = (r.name || '').trim().toLowerCase()
+    if (key) byLowerName.set(key, { id: r.id, name: r.name, name_final: true, _kind: 'region', _card: r })
+  }
   for (const p of places) {
     const key = (p.name || '').trim().toLowerCase()
     if (key) byLowerName.set(key, { id: p.id, name: p.name, name_final: p.name_final, _kind: 'place', _card: p })

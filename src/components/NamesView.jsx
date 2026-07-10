@@ -6,10 +6,10 @@ import { makeResolver, extractHashRefs } from '../lib/hashlinks.js'
 // Project-wide "names to finalize or fix": every UNRESOLVED #reference (typo or
 // not-yet-carded) and every resolved link to a card whose name is not final.
 export default function NamesView() {
-  const { chapters, characters, places, setActiveChapterId, setView, openCard } = useStore()
+  const { chapters, characters, places, regions, geoFeatures, setActiveChapterId, setView, openCard } = useStore()
 
   const { unresolved, provisional } = useMemo(() => {
-    const resolver = makeResolver(characters, places)
+    const resolver = makeResolver(characters, places, regions, geoFeatures)
     const unresolvedMap = new Map() // name -> Set(chapterId)
     const provisionalMap = new Map() // cardId -> { card, name, chapters:Set }
     for (const ch of chapters) {
@@ -30,7 +30,7 @@ export default function NamesView() {
       unresolved: [...unresolvedMap.values()].sort((a, b) => a.name.localeCompare(b.name)),
       provisional: [...provisionalMap.values()].sort((a, b) => a.name.localeCompare(b.name)),
     }
-  }, [chapters, characters, places])
+  }, [chapters, characters, places, regions, geoFeatures])
 
   const chapterById = (id) => chapters.find((c) => c.id === id)
   function openChapter(id) {

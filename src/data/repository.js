@@ -52,6 +52,13 @@
 //     updateRoute(id, patch)               -> Route
 //     deleteRoute(id)                      -> void
 //
+//   Geo features (named geography rendered as map text labels; #-linkable)
+//     listGeoFeatures(projectId)           -> GeoFeature[]
+//     createGeoFeature(projectId, { name?, feature_type?, description?,
+//                                   coords?, label_size? }) -> GeoFeature
+//     updateGeoFeature(id, patch)          -> GeoFeature
+//     deleteGeoFeature(id)                 -> void
+//
 //   Ideas (Ideen brainstorming scratchpad; newest first)
 //     listIdeas(projectId)                 -> Idea[]
 //     createIdea(projectId, { title?, content?, tags?, pinned? }) -> Idea

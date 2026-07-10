@@ -39,12 +39,14 @@ const EPOCH = '1970-01-01T00:00:00.000Z'
 // Pull/push order: parents before children (matches the remote's FK order).
 const PULL_TABLES = [
   'projects',
+  // regions BEFORE characters/places: both carry region-id FKs to it.
+  'regions',
   'characters',
   'places',
   'events',
-  'regions',
   'routes',
   'ideas',
+  'geo_features',
   'terrains',
   'custom_lexicon_entries',
   'saved_phrases',
@@ -221,7 +223,7 @@ async function applyRemoteDelete(db, table, id) {
     for (const store of [
       STORES.chapters, STORES.chapter_versions, STORES.terrains, STORES.characters,
       STORES.places, STORES.character_locations, STORES.events, STORES.regions, STORES.routes,
-      STORES.ideas,
+      STORES.ideas, STORES.geo_features,
     ]) {
       await del(store, await byIndex(store, 'project_id', id))
     }

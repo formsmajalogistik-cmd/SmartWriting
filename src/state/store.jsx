@@ -62,6 +62,7 @@ export function StoreProvider({ children }) {
   const [regions, setRegions] = useState([])
   const [routes, setRoutes] = useState([])
   const [ideas, setIdeas] = useState([])
+  const [geoFeatures, setGeoFeatures] = useState([])
   const [customLexicon, setCustomLexicon] = useState([])
   const [savedPhrases, setSavedPhrases] = useState([])
   // Versions of the currently open chapter (PROSE only; metadata stays on the chapter).
@@ -121,6 +122,9 @@ export function StoreProvider({ children }) {
   const refreshIdeas = useCallback(async (pid) => {
     setIdeas(pid ? await repo.listIdeas(pid) : [])
   }, [])
+  const refreshGeoFeatures = useCallback(async (pid) => {
+    setGeoFeatures(pid ? await repo.listGeoFeatures(pid) : [])
+  }, [])
   const refreshCustomLexicon = useCallback(async (pid) => {
     setCustomLexicon(pid ? await repo.listCustomLexicon(pid) : [])
   }, [])
@@ -171,6 +175,7 @@ export function StoreProvider({ children }) {
           refreshRegions(activeProjectId),
           refreshRoutes(activeProjectId),
           refreshIdeas(activeProjectId),
+          refreshGeoFeatures(activeProjectId),
           refreshCustomLexicon(activeProjectId),
           refreshSavedPhrases(activeProjectId),
         ])
@@ -179,7 +184,7 @@ export function StoreProvider({ children }) {
         /* error already surfaced via the guarded repo */
       }
     })()
-  }, [activeProjectId, refreshChapters, refreshCharacters, refreshPlaces, refreshLocations, refreshEvents, refreshRegions, refreshRoutes, refreshIdeas, refreshCustomLexicon, refreshSavedPhrases])
+  }, [activeProjectId, refreshChapters, refreshCharacters, refreshPlaces, refreshLocations, refreshEvents, refreshRegions, refreshRoutes, refreshIdeas, refreshGeoFeatures, refreshCustomLexicon, refreshSavedPhrases])
 
   // Persist the active chapter so a reload reopens it.
   useEffect(() => {
@@ -202,6 +207,7 @@ export function StoreProvider({ children }) {
         if (t.has('regions')) await refreshRegions(activeProjectId)
         if (t.has('routes')) await refreshRoutes(activeProjectId)
         if (t.has('ideas')) await refreshIdeas(activeProjectId)
+        if (t.has('geo_features')) await refreshGeoFeatures(activeProjectId)
         if (t.has('custom_lexicon_entries')) await refreshCustomLexicon(activeProjectId)
         if (t.has('saved_phrases')) await refreshSavedPhrases(activeProjectId)
         if (t.has('chapter_versions') && activeChapterId) {
@@ -223,6 +229,7 @@ export function StoreProvider({ children }) {
     refreshRegions,
     refreshRoutes,
     refreshIdeas,
+    refreshGeoFeatures,
     refreshCustomLexicon,
     refreshSavedPhrases,
     refreshChapterVersions,
@@ -576,6 +583,31 @@ export function StoreProvider({ children }) {
   )
 
   // --- event actions ---------------------------------------------------
+  // --- geo feature actions (named geography on the map) -----------------
+  const createGeoFeature = useCallback(
+    async (opts) => {
+      const f = await repo.createGeoFeature(activeProjectId, opts || {})
+      await refreshGeoFeatures(activeProjectId)
+      return f
+    },
+    [activeProjectId, refreshGeoFeatures],
+  )
+  const updateGeoFeature = useCallback(
+    async (id, patch) => {
+      const updated = await repo.updateGeoFeature(id, patch)
+      setGeoFeatures((prev) => prev.map((f) => (f.id === id ? updated : f)))
+      return updated
+    },
+    [],
+  )
+  const deleteGeoFeature = useCallback(
+    async (id) => {
+      await repo.deleteGeoFeature(id)
+      await refreshGeoFeatures(activeProjectId)
+    },
+    [activeProjectId, refreshGeoFeatures],
+  )
+
   // --- idea actions (Ideen brainstorming scratchpad) --------------------
   const createIdea = useCallback(
     async (opts) => {
@@ -650,9 +682,10 @@ export function StoreProvider({ children }) {
       locations,
       regions,
       routes,
+      geoFeatures,
       lexicon,
     }
-  }, [activeProjectId, activeProject, chapters, characters, places, events, locations, regions, routes])
+  }, [activeProjectId, activeProject, chapters, characters, places, events, locations, regions, routes, geoFeatures])
 
   // --- Drive backup linkage (read/write; Drive logic lives in DriveProvider) -
   const getDriveLink = useCallback(() => repo.getDriveLink(), [])
@@ -664,6 +697,15 @@ export function StoreProvider({ children }) {
     setFocusCard({ kind, id })
   }, [])
   const consumeFocusCard = useCallback(() => setFocusCard(null), [])
+
+  // Jump to the map and focus an entity there (regions manager entry / geo
+  // feature manager entry) — used by resolved #Region / #GeoFeature previews.
+  const [mapFocus, setMapFocus] = useState(null) // { kind: 'region'|'geo', id } | null
+  const openOnMap = useCallback((kind, id) => {
+    setMapFocus({ kind, id })
+    setView('map')
+  }, [])
+  const consumeMapFocus = useCallback(() => setMapFocus(null), [])
 
   // Open a chapter in the writing view and (optionally) jump the editor to a
   // character range — used by manuscript search to land on the match.
@@ -751,6 +793,7 @@ export function StoreProvider({ children }) {
     regions,
     routes,
     ideas,
+    geoFeatures,
     customLexicon,
     savedPhrases,
     chapterVersions,
@@ -813,6 +856,12 @@ export function StoreProvider({ children }) {
     createIdea,
     updateIdea,
     deleteIdea,
+    createGeoFeature,
+    updateGeoFeature,
+    deleteGeoFeature,
+    mapFocus,
+    openOnMap,
+    consumeMapFocus,
     createEvent,
     updateEvent,
     deleteEvent,

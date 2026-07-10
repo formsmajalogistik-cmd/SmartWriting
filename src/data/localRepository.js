@@ -13,6 +13,7 @@ import {
   makeEvent,
   makeRegion,
   makeRoute,
+  makeGeoFeature,
   makeIdea,
   makeCustomLexiconEntry,
   makeSavedPhrase,
@@ -457,6 +458,30 @@ export function createLocalRepository() {
     async deleteRoute(id) {
       const db = await getDb()
       await db.delete(STORES.routes, id)
+    },
+
+    // ---- Geo features (named geography as map text labels) ---------------
+    async listGeoFeatures(projectId) {
+      const rows = await byProject(STORES.geo_features, projectId)
+      return rows.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+    },
+    async createGeoFeature(projectId, opts = {}) {
+      const db = await getDb()
+      const feature = makeGeoFeature({ project_id: projectId, ...opts })
+      await db.put(STORES.geo_features, feature)
+      return feature
+    },
+    async updateGeoFeature(id, patch) {
+      const db = await getDb()
+      const existing = await db.get(STORES.geo_features, id)
+      if (!existing) throw new Error(`GeoFeature ${id} not found`)
+      const updated = { ...existing, ...patch, updated_at: nowIso() }
+      await db.put(STORES.geo_features, updated)
+      return updated
+    },
+    async deleteGeoFeature(id) {
+      const db = await getDb()
+      await db.delete(STORES.geo_features, id)
     },
 
     // ---- Ideas (Ideen brainstorming scratchpad) --------------------------

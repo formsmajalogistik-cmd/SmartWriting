@@ -103,13 +103,39 @@ export function makeTerrain({ project_id, width, height, sea_level, heights, ter
 // regions — id, project_id, user_id, name, colour, created_at, updated_at.
 // Map areas: a definition row per region; the per-cell assignment lives on the
 // terrain (terrains.regions byte layer + settings.region_slots).
-export function makeRegion({ project_id, name, colour }) {
+export function makeRegion({ project_id, name, colour, description }) {
   return {
     id: newId(),
     user_id: LOCAL_USER_ID,
     project_id,
     name: name?.trim() || 'Region',
     colour: colour || '#e0b341',
+    description: description ?? '',
+    created_at: nowIso(),
+    updated_at: nowIso(),
+  }
+}
+
+// geo_features — named geography (river/forest/mountain range/lake …) shown as
+// a text label on the map (no marker pin) and #-linkable. coords {col,row}|null.
+export const GEO_FEATURE_TYPES = ['fluss', 'wald', 'gebirge', 'see', 'sonstiges']
+export const GEO_TYPE_LABELS = {
+  fluss: 'Fluss',
+  wald: 'Wald',
+  gebirge: 'Gebirge',
+  see: 'See',
+  sonstiges: 'Sonstiges',
+}
+export function makeGeoFeature({ project_id, name, feature_type, description, coords, label_size }) {
+  return {
+    id: newId(),
+    user_id: LOCAL_USER_ID,
+    project_id,
+    name: name?.trim() || 'Neues Merkmal',
+    feature_type: GEO_FEATURE_TYPES.includes(feature_type) ? feature_type : 'sonstiges',
+    description: description ?? '',
+    coords: coords ?? null,
+    label_size: label_size || 'm',
     created_at: nowIso(),
     updated_at: nowIso(),
   }
@@ -204,6 +230,7 @@ export function makeCharacter({ project_id, name }) {
     name_final: false,
     role: '',
     origin: '',
+    origin_region_id: null,
     language_name: '',
     status: '',
     card: {},
@@ -220,6 +247,7 @@ export function makePlace({ project_id, name }) {
     name: name?.trim() || 'Unbenannter Ort',
     name_final: false,
     region: '',
+    region_id: null,
     place_type: '',
     language_name: '',
     coords: null, // 3D position, set in Phase 3

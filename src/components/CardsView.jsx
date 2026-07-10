@@ -14,10 +14,22 @@ import ListField from './ListField.jsx'
 //   onCreate(name) -> Promise<card>
 //   onUpdate(id, patch) -> Promise<card>
 //   onDelete(id) -> Promise<void>
+// *_region_id subtitle keys resolve to the region's name; the legacy free-text
+// column is the fallback while nothing is picked yet.
+const REGION_LEGACY = { region_id: 'region', origin_region_id: 'origin' }
+
 export default function CardsView({ config, items, onCreate, onUpdate, onDelete, focusId, onFocusConsumed }) {
+  const { regions } = useStore()
   const [selectedId, setSelectedId] = useState(null)
   const [search, setSearch] = useState('')
   const [onlyProvisional, setOnlyProvisional] = useState(false)
+
+  const subtitleValue = (it, key) => {
+    if (key in REGION_LEGACY) {
+      return regions.find((r) => r.id === it[key])?.name || it[REGION_LEGACY[key]] || ''
+    }
+    return it[key]
+  }
 
   // Open a specific card when navigated here (e.g. clicking a #link).
   useEffect(() => {
@@ -87,7 +99,7 @@ export default function CardsView({ config, items, onCreate, onUpdate, onDelete,
                 </div>
                 <span className="card-item-sub">
                   {config.subtitleKeys
-                    .map((k) => it[k])
+                    .map((k) => subtitleValue(it, k))
                     .filter(Boolean)
                     .join(' · ')}
                 </span>
@@ -124,7 +136,10 @@ export default function CardsView({ config, items, onCreate, onUpdate, onDelete,
 
 function buildDraft(config, card) {
   const top = { name: card.name ?? '', name_final: !!card.name_final }
-  for (const f of config.topFields) top[f.key] = card[f.key] ?? ''
+  for (const f of config.topFields) {
+    top[f.key] = card[f.key] ?? ''
+    if (f.legacyKey) top[f.legacyKey] = card[f.legacyKey] ?? ''
+  }
   const cardObj = {}
   for (const f of config.cardFields) cardObj[f.key] = card.card?.[f.key] ?? ''
   for (const f of config.detailFields ?? []) cardObj[f.key] = card.card?.[f.key] ?? ''
@@ -137,7 +152,7 @@ function buildDraft(config, card) {
 }
 
 function CardEditor({ config, card, onUpdate, onDelete }) {
-  const { findReferences, renameReferences } = useStore()
+  const { findReferences, renameReferences, regions } = useStore()
   const [draft, setDraft] = useState(() => buildDraft(config, card))
   const saveTimer = useRef(null)
   // The name as it was when this card was opened — to detect renames on blur.
@@ -172,7 +187,10 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
 
   function buildPatch(next) {
     const patch = { name: next.name, name_final: next.name_final, card: next.card }
-    for (const f of config.topFields) patch[f.key] = next[f.key]
+    for (const f of config.topFields) {
+      patch[f.key] = next[f.key]
+      if (f.legacyKey) patch[f.legacyKey] = next[f.legacyKey]
+    }
     return patch
   }
   function save(next) {
@@ -269,6 +287,52 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
                   </option>
                 ))}
               </select>
+            ) : f.type === 'region' ? (
+              // Regions dropdown (stored as region_id). A legacy free-text value
+              // stays visible below until a region is picked.
+              <>
+                <select
+                  value={draft[f.key] || ''}
+                  onChange={(e) => setTop(f.key, e.target.value || null)}
+                >
+                  <option value="">— Region wählen —</option>
+                  {regions.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+                {!draft[f.key] && draft[f.legacyKey] && (
+                  <span className="hint legacy-hint">
+                    Bisheriger Eintrag (Freitext): „{draft[f.legacyKey]}“
+                  </span>
+                )}
+              </>
+            ) : f.type === 'region-or-text' ? (
+              // Regions dropdown WITH a free-text fallback: no region selected →
+              // the free-text input stays visible and editable.
+              <>
+                <select
+                  value={draft[f.key] || ''}
+                  onChange={(e) => setTop(f.key, e.target.value || null)}
+                >
+                  <option value="">— Freitext / keine Region —</option>
+                  {regions.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+                {!draft[f.key] && (
+                  <input
+                    type="text"
+                    className="legacy-text-input"
+                    value={draft[f.legacyKey] || ''}
+                    placeholder="Freitext-Herkunft …"
+                    onChange={(e) => setTop(f.legacyKey, e.target.value)}
+                  />
+                )}
+              </>
             ) : (
               <input
                 type="text"

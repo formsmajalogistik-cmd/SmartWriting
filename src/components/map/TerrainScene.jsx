@@ -454,6 +454,99 @@ function Markers({
   })
 }
 
+// Geo features: named geography (rivers/forests/…) rendered as pure TEXT
+// labels on the terrain — no marker pin, italic, styled distinctly from place
+// markers and region names. Labels respect the marker zoom-density rule (hidden
+// when zoomed out) except while editing in geo mode, where they're always on.
+// In geo mode a click on the terrain places the pending feature.
+function GeoLayer({
+  meshRef,
+  widthN,
+  heightN,
+  settings,
+  heightsRef,
+  mode,
+  features,
+  pendingGeoId,
+  onPlaceGeo,
+  structRev,
+}) {
+  const { camera, gl, raycaster, invalidate } = useThree()
+  const controls = useThree((s) => s.controls)
+  const ndc = useMemo(() => new THREE.Vector2(), [])
+
+  const gridD = Math.max(widthN, heightN) * settings.cellSize
+  const labelDist = gridD * 0.7 // same zoom gate as the place-marker labels
+  const [zoomedIn, setZoomedIn] = useState(false)
+  useEffect(() => {
+    if (!controls) return
+    const update = () => setZoomedIn(camera.position.distanceTo(controls.target) < labelDist)
+    update()
+    controls.addEventListener('change', update)
+    return () => controls.removeEventListener('change', update)
+  }, [controls, camera, labelDist])
+
+  const aimCell = useCallback(
+    (clientX, clientY) => {
+      const mesh = meshRef.current
+      if (!mesh) return null
+      const rect = gl.domElement.getBoundingClientRect()
+      ndc.x = ((clientX - rect.left) / rect.width) * 2 - 1
+      ndc.y = -((clientY - rect.top) / rect.height) * 2 + 1
+      raycaster.setFromCamera(ndc, camera)
+      const hits = raycaster.intersectObject(mesh, false)
+      if (!hits.length) return null
+      const c = worldToCell(hits[0].point.x, hits[0].point.z, widthN, heightN, settings.cellSize)
+      return inBounds(c.x, c.y, widthN, heightN) ? { col: c.x, row: c.y } : null
+    },
+    [meshRef, gl, ndc, raycaster, camera, widthN, heightN, settings.cellSize],
+  )
+
+  const live = useRef(null)
+  live.current = { mode, pendingGeoId, onPlaceGeo }
+  useEffect(() => {
+    const el = gl.domElement
+    const onDown = (e) => {
+      const L = live.current
+      if (L.mode !== 'geo' || !L.pendingGeoId || e.button !== 0) return
+      const cell = aimCell(e.clientX, e.clientY)
+      if (cell) {
+        e.preventDefault()
+        L.onPlaceGeo(L.pendingGeoId, cell)
+      }
+    }
+    el.addEventListener('pointerdown', onDown)
+    return () => el.removeEventListener('pointerdown', onDown)
+  }, [gl, aimCell])
+
+  const placed = (features || []).filter(
+    (f) => f.coords && Number.isFinite(f.coords.col) && Number.isFinite(f.coords.row),
+  )
+  const forced = mode === 'geo'
+  const show = forced || zoomedIn
+
+  useEffect(() => {
+    window.__mapGeo = { labels: placed.map((f) => f.name), visible: show }
+    invalidate()
+    return () => { if (window.__mapGeo) delete window.__mapGeo }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [features, structRev, show, invalidate])
+
+  return placed.map((f) => {
+    const { x, y, z } = markerWorldPos(f.coords.col, f.coords.row, heightsRef.current, widthN, heightN, settings)
+    return (
+      <Html key={f.id} position={[x, y, z]} center zIndexRange={[13, 0]} className="token-html">
+        <span
+          className={`geo-label size-${f.label_size || 'm'} ${show ? '' : 'zoom-hidden'}`}
+          title={f.description || f.name}
+        >
+          {f.name}
+        </span>
+      </Html>
+    )
+  })
+}
+
 // Spread tokens that share a place around a small ring so they don't overlap.
 function clusterOffset(i, n, cellSize) {
   if (n <= 1) return [0, 0]
@@ -866,6 +959,18 @@ export default function TerrainScene(props) {
         placeCoords={props.placeCoords || new Map()}
         lines={props.routeLines || []}
         rev={props.routesRev}
+        structRev={props.structRev}
+      />
+      <GeoLayer
+        meshRef={terrainMeshRef}
+        widthN={widthN}
+        heightN={heightN}
+        settings={settings}
+        heightsRef={props.heightsRef}
+        mode={mode}
+        features={props.geoFeatures || []}
+        pendingGeoId={props.pendingGeoId}
+        onPlaceGeo={props.onPlaceGeo}
         structRev={props.structRev}
       />
       <Tokens

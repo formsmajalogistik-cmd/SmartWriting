@@ -34,6 +34,7 @@ import {
   Route as RouteIcon,
   ChevronUp,
   ChevronDown,
+  Trees,
 } from 'lucide-react'
 import { useStore } from '../../state/store.jsx'
 import TerrainScene from './TerrainScene.jsx'
@@ -92,6 +93,12 @@ export default function MapBuilder({ terrain }) {
     createRoute,
     updateRoute,
     deleteRoute,
+    geoFeatures,
+    createGeoFeature,
+    updateGeoFeature,
+    deleteGeoFeature,
+    mapFocus,
+    consumeMapFocus,
   } = useStore()
   const widthN = terrain.width
   const heightN = terrain.height
@@ -175,12 +182,96 @@ export default function MapBuilder({ terrain }) {
   // effect below so it doesn't depend on markDirty being defined yet.
   const setNorth = useCallback((deg) => setNorthOffset(normalizeDeg(deg)), [])
 
-  // Switch top-level mode. Leaving markers mode cancels any pending placement so
-  // a stray terrain click in navigate/edit can never drop a marker.
+  // Switch top-level mode. Leaving markers/geo mode cancels any pending
+  // placement so a stray terrain click can never drop something.
   const setMode = useCallback((m) => {
     setModeRaw(m)
     if (m !== 'markers') setPendingPlaceId(null)
+    if (m !== 'geo') setPendingGeoId(null)
   }, [])
+
+  // --- geo features (named geography as text labels) -----------------------
+  const [pendingGeoId, setPendingGeoId] = useState(null) // feature awaiting a click-to-drop
+  const [geoMsg, setGeoMsg] = useState(null)
+  const [geoName, setGeoName] = useState('')
+  const [geoType, setGeoType] = useState('fluss')
+  const [focusGeoId, setFocusGeoId] = useState(null) // highlighted manager entry
+  const GEO_TYPES = [
+    ['fluss', 'Fluss'],
+    ['wald', 'Wald'],
+    ['gebirge', 'Gebirge'],
+    ['see', 'See'],
+    ['sonstiges', 'Sonstiges'],
+  ]
+  const placedGeo = useMemo(
+    () => geoFeatures.filter((f) => f.coords && Number.isFinite(f.coords.col) && Number.isFinite(f.coords.row)),
+    [geoFeatures],
+  )
+  const unplacedGeo = useMemo(
+    () => geoFeatures.filter((f) => !(f.coords && Number.isFinite(f.coords.col) && Number.isFinite(f.coords.row))),
+    [geoFeatures],
+  )
+  const addGeoFeature = useCallback(async () => {
+    const name = geoName.trim()
+    if (!name) return
+    setGeoMsg(null)
+    try {
+      const f = await createGeoFeature({ name, feature_type: geoType })
+      setGeoName('')
+      setPendingGeoId(f.id) // freshly created → next map click places it
+    } catch {
+      setGeoMsg('Merkmal konnte nicht angelegt werden.')
+    }
+  }, [geoName, geoType, createGeoFeature])
+  const placeGeo = useCallback(
+    async (id, cell) => {
+      setGeoMsg(null)
+      try {
+        await updateGeoFeature(id, { coords: { col: cell.col, row: cell.row } })
+        setPendingGeoId((cur) => (cur === id ? null : cur))
+      } catch {
+        setGeoMsg('Position konnte nicht gespeichert werden.')
+      }
+    },
+    [updateGeoFeature],
+  )
+  const removeGeoFromMap = useCallback(
+    async (id) => {
+      setGeoMsg(null)
+      try {
+        await updateGeoFeature(id, { coords: null })
+      } catch {
+        setGeoMsg('Merkmal konnte nicht von der Karte entfernt werden.')
+      }
+    },
+    [updateGeoFeature],
+  )
+  const removeGeoEntirely = useCallback(
+    async (id, name) => {
+      if (!window.confirm(`Geografie-Merkmal „${name}“ löschen?`)) return
+      setGeoMsg(null)
+      try {
+        await deleteGeoFeature(id)
+      } catch {
+        setGeoMsg('Merkmal konnte nicht gelöscht werden.')
+      }
+    },
+    [deleteGeoFeature],
+  )
+
+  // A "#Region / #GeoFeature → Auf der Karte zeigen" jump lands here: open the
+  // right mode and highlight/select the entity in its manager.
+  useEffect(() => {
+    if (!mapFocus) return
+    if (mapFocus.kind === 'region') {
+      setMode('regions')
+      setActiveRegionId(mapFocus.id)
+    } else if (mapFocus.kind === 'geo') {
+      setMode('geo')
+      setFocusGeoId(mapFocus.id)
+    }
+    consumeMapFocus()
+  }, [mapFocus, setMode, consumeMapFocus])
 
   // --- markers ------------------------------------------------------------
   // Markers ARE this project's place cards: a place with grid coords is on the
@@ -824,6 +915,17 @@ export default function MapBuilder({ terrain }) {
     },
     [updateRegion],
   )
+  const saveRegionDescription = useCallback(
+    async (id, description) => {
+      setRegionMsg(null)
+      try {
+        await updateRegion(id, { description: description.trim() })
+      } catch {
+        setRegionMsg('Beschreibung konnte nicht gespeichert werden.')
+      }
+    },
+    [updateRegion],
+  )
   const renameRegion = useCallback(
     async (region) => {
       const name = window.prompt('Name der Region:', region.name)
@@ -972,6 +1074,13 @@ export default function MapBuilder({ terrain }) {
             title="Routen: benannte Wege als Linien anlegen"
           >
             <RouteIcon size={15} /> Routen
+          </button>
+          <button
+            className={`seg-btn ${mode === 'geo' ? 'on' : ''}`}
+            onClick={() => setMode('geo')}
+            title="Geografie: Flüsse, Wälder, Gebirge … als Text auf der Karte"
+          >
+            <Trees size={15} /> Geografie
           </button>
         </div>
 
@@ -1193,6 +1302,13 @@ export default function MapBuilder({ terrain }) {
             Karte gezeichnet. Figuren-Reiserouten erscheinen in der Zeitleiste.
           </div>
         )}
+        {mode === 'geo' && (
+          <div className="map-mode-hint" role="status">
+            {pendingGeoId
+              ? 'Klicke auf eine Zelle, um das Merkmal dort zu platzieren.'
+              : 'Geografie — lege links ein Merkmal an oder wähle eines und klicke aufs Raster. Es erscheint als Text-Beschriftung.'}
+          </div>
+        )}
         <TerrainScene
           widthN={widthN}
           heightN={heightN}
@@ -1229,6 +1345,9 @@ export default function MapBuilder({ terrain }) {
           routeLines={routeLines}
           placeCoords={placeCoords}
           routesRev={structRev}
+          geoFeatures={geoFeatures}
+          pendingGeoId={pendingGeoId}
+          onPlaceGeo={placeGeo}
         />
         {/* Compass: rotates with the camera heading so North is always obvious;
             click it to snap the view back to the default (looking North). */}
@@ -1250,7 +1369,7 @@ export default function MapBuilder({ terrain }) {
         {/* The legend IS the paint palette: each colour is a selectable override
             paint; the eraser clears a cell back to its height-based auto-colour.
             Hidden in marker / timeline modes, where their own panels take over. */}
-        {mode !== 'markers' && mode !== 'timeline' && mode !== 'regions' && (
+        {mode !== 'markers' && mode !== 'timeline' && mode !== 'regions' && mode !== 'geo' && (
           <div className="map-palette" role="group" aria-label="Farbpalette zum Malen">
             {PAINT_TYPES.map((t) => (
               <button
@@ -1327,6 +1446,100 @@ export default function MapBuilder({ terrain }) {
                         onClick={() => removeMarker(m.placeId)}
                         title="Vom Karte entfernen (Ort-Karte bleibt erhalten)"
                         aria-label={`${m.name || 'Ort'} von der Karte entfernen`}
+                      >
+                        <X size={13} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Geo panel: create named geography, place it with a click, move /
+            remove / delete via the manager list. Labels are pure text. */}
+        {mode === 'geo' && (
+          <div className="marker-panel geo-panel" aria-label="Geografie">
+            <div className="marker-panel-head">
+              <Trees size={14} /> Geografie
+            </div>
+            {geoMsg && <div className="marker-msg err" role="alert">{geoMsg}</div>}
+
+            <div className="geo-create">
+              <input
+                type="text"
+                value={geoName}
+                placeholder="z. B. Norta Markal"
+                aria-label="Name des Merkmals"
+                onChange={(e) => setGeoName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') addGeoFeature() }}
+              />
+              <select value={geoType} onChange={(e) => setGeoType(e.target.value)} aria-label="Art">
+                {GEO_TYPES.map(([k, label]) => (
+                  <option key={k} value={k}>{label}</option>
+                ))}
+              </select>
+              <button type="button" className="toggle primary" onClick={addGeoFeature} disabled={!geoName.trim()} title="Merkmal anlegen">
+                <Plus size={14} />
+              </button>
+            </div>
+
+            <div className="marker-section-title">Nicht auf der Karte ({unplacedGeo.length})</div>
+            {geoFeatures.length === 0 ? (
+              <p className="hint marker-empty">Noch keine Geografie — lege oben ein Merkmal an.</p>
+            ) : unplacedGeo.length === 0 ? (
+              <p className="hint marker-empty">Alle Merkmale sind platziert.</p>
+            ) : (
+              <ul className="marker-list">
+                {unplacedGeo.map((f) => (
+                  <li key={f.id}>
+                    <button
+                      type="button"
+                      className={`marker-pick ${pendingGeoId === f.id ? 'on' : ''} ${focusGeoId === f.id ? 'focus' : ''}`}
+                      onClick={() => setPendingGeoId((cur) => (cur === f.id ? null : f.id))}
+                      title={pendingGeoId === f.id ? 'Klicke aufs Raster zum Platzieren' : 'Zum Platzieren wählen'}
+                    >
+                      <Trees size={13} />
+                      <span>{f.name}</span>
+                      <em className="geo-type-tag">{GEO_TYPES.find(([k]) => k === f.feature_type)?.[1] || f.feature_type}</em>
+                    </button>
+                    <button
+                      type="button"
+                      className="marker-remove"
+                      onClick={() => removeGeoEntirely(f.id, f.name)}
+                      title="Merkmal löschen"
+                      aria-label={`${f.name} löschen`}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {placedGeo.length > 0 && (
+              <>
+                <div className="marker-section-title">Auf der Karte ({placedGeo.length})</div>
+                <ul className="marker-list">
+                  {placedGeo.map((f) => (
+                    <li key={f.id}>
+                      <button
+                        type="button"
+                        className={`marker-pick placed ${pendingGeoId === f.id ? 'on' : ''} ${focusGeoId === f.id ? 'focus' : ''}`}
+                        onClick={() => setPendingGeoId((cur) => (cur === f.id ? null : f.id))}
+                        title={pendingGeoId === f.id ? 'Klicke aufs Raster für die neue Position' : 'Verschieben: wählen, dann aufs Raster klicken'}
+                      >
+                        <Trees size={13} />
+                        <span>{f.name}</span>
+                        <em className="geo-type-tag">{GEO_TYPES.find(([k]) => k === f.feature_type)?.[1] || f.feature_type}</em>
+                      </button>
+                      <button
+                        type="button"
+                        className="marker-remove"
+                        onClick={() => removeGeoFromMap(f.id)}
+                        title="Von der Karte entfernen (Merkmal bleibt erhalten)"
+                        aria-label={`${f.name} von der Karte entfernen`}
                       >
                         <X size={13} />
                       </button>
@@ -1518,6 +1731,18 @@ export default function MapBuilder({ terrain }) {
                   </li>
                 ))}
               </ul>
+            )}
+            {activeRegion && (
+              <label className="field region-desc">
+                <span>Beschreibung — „{activeRegion.name}“ (für die #Link-Vorschau)</span>
+                <textarea
+                  key={activeRegion.id}
+                  rows={2}
+                  defaultValue={activeRegion.description || ''}
+                  placeholder="Kurzbeschreibung …"
+                  onBlur={(e) => saveRegionDescription(activeRegion.id, e.target.value)}
+                />
+              </label>
             )}
             {!showRegions && (
               <div className="region-hint warn">Ebene ausgeblendet — mit dem Auge-Symbol wieder einblenden.</div>

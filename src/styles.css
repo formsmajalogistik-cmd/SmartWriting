@@ -1404,6 +1404,41 @@ select:focus, input:focus, textarea:focus {
 .icon-btn.on { color: var(--accent); }
 .icon-btn.sm { padding: 3px; }
 
+/* ---- Geo features: italic text labels on the terrain + manager panel ---- */
+.geo-label {
+  display: inline-block; font-style: italic; font-weight: 500; white-space: nowrap;
+  color: #cfe3d8; letter-spacing: 0.8px; font-size: 11px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,0.6);
+  pointer-events: none;
+}
+.geo-label.size-s { font-size: 9px; }
+.geo-label.size-l { font-size: 14px; letter-spacing: 1.2px; }
+.geo-label.zoom-hidden { display: none; }
+.geo-create { display: flex; gap: 6px; }
+.geo-create input { flex: 1; min-width: 0; font-size: 13px; padding: 5px 8px; }
+.geo-create select { font-size: 12px; padding: 5px 4px; }
+.geo-type-tag { font-size: 10px; color: var(--text-dim); font-style: italic; margin-left: auto; flex-shrink: 0; }
+.marker-pick.focus { outline: 2px solid var(--accent-2); }
+
+/* ---- Region / geo #link preview popover ---- */
+.entity-preview {
+  width: 240px; background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 6px;
+  box-shadow: 0 10px 32px rgba(0,0,0,0.5);
+}
+.entity-preview-head { display: flex; align-items: center; gap: 7px; font-size: 14px; }
+.entity-preview-head b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.entity-kind { font-size: 11px; color: var(--text-dim); border: 1px solid var(--border); border-radius: 999px; padding: 0 7px; }
+.entity-preview .region-swatch { cursor: default; width: 16px; height: 16px; }
+.entity-preview-desc { margin: 0; font-size: 12px; color: var(--text-dim); }
+.entity-preview .link-btn { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; cursor: pointer; }
+
+/* legacy free-text shown under region dropdowns until a region is picked */
+.legacy-hint { font-size: 11px; margin-top: 3px; }
+.legacy-text-input { margin-top: 5px; }
+.hash-ac-icon.kind-region { color: #e0b341; }
+.hash-ac-icon.kind-geo { color: #7fbf9a; }
+
 .region-panel {
   position: absolute; top: 10px; left: 10px; z-index: 3;
   width: 250px; max-height: calc(100% - 20px); overflow-y: auto;

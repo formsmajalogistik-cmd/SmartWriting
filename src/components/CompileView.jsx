@@ -11,10 +11,10 @@ import EmptyState from './EmptyState.jsx'
 // order, from each chapter's ACTIVE prose version (chapters.body mirrors it, so
 // this matches the export engine exactly). Read per book or the whole project.
 export default function CompileView() {
-  const { activeProject, chapters, characters, places } = useStore()
+  const { activeProject, chapters, characters, places, regions, geoFeatures } = useStore()
   const [scope, setScope] = useState('all') // 'all' | book id
 
-  const resolver = useMemo(() => makeResolver(characters, places), [characters, places])
+  const resolver = useMemo(() => makeResolver(characters, places, regions, geoFeatures), [characters, places, regions, geoFeatures])
   const marked = useMemo(() => {
     const m = new Marked({ breaks: true })
     m.use(noBlockquote)

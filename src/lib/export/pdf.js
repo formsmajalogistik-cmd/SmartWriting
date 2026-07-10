@@ -117,7 +117,7 @@ function chapterMeta(ch) {
 // ---- Public: single chapter ----------------------------------------------
 export async function exportChapterPdf(chapter, snapshot, filename, onStage) {
   const pdfMake = await getPdfMake(onStage)
-  const resolver = makeResolver(snapshot.characters, snapshot.places)
+  const resolver = makeResolver(snapshot.characters, snapshot.places, snapshot.regions, snapshot.geoFeatures)
   const content = [
     { text: chapter.title, style: 'h1' },
     ...(chapterMeta(chapter) ? [{ text: chapterMeta(chapter), style: 'meta' }] : []),
@@ -131,7 +131,7 @@ export async function exportChapterPdf(chapter, snapshot, filename, onStage) {
 // ---- Public: whole manuscript (active versions, book order) ---------------
 export async function exportManuscriptPdf(snapshot, filename, onStage) {
   const pdfMake = await getPdfMake(onStage)
-  const resolver = makeResolver(snapshot.characters, snapshot.places)
+  const resolver = makeResolver(snapshot.characters, snapshot.places, snapshot.regions, snapshot.geoFeatures)
   const groups = groupChaptersByBook(snapshot.project, snapshot.chapters)
   const content = [{ text: snapshot.project?.name || 'Manuskript', style: 'title' }]
   let first = true

@@ -20,12 +20,14 @@ import { getDb } from './db.js'
 // Parent → child, so a referenced row always exists before its referrer.
 const UPSERT_ORDER = [
   'projects',
+  // regions BEFORE characters/places: both carry region-id FKs to it.
+  'regions',
   'characters',
   'places',
   'events',
-  'regions',
   'routes',
   'ideas',
+  'geo_features',
   'terrains',
   'custom_lexicon_entries',
   'saved_phrases',
