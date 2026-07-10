@@ -1,66 +1,77 @@
-import { useEffect, useRef, useState } from 'react'
-import { User, AlertTriangle } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { User, AlertTriangle, Star, Trash2, Plus, X } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 import { downscaleImage } from '../lib/image.js'
 
-// Portrait image for a character card. Uploads from device (downscaled +
-// compressed first), previews via a signed/object URL, and supports replace /
-// remove. Only the storage path is persisted (onChange); the bytes live in the
-// private bucket. Loading and error states are explicit — no silent failures.
+// Image GALLERY for a character card (grew out of the single portrait).
+// Multiple images live in the private bucket; the card jsonb stores the path
+// list (`gallery`) plus the PRIMARY portrait (`portrait_path`) — the primary is
+// what every other consumer (previews, autocomplete, timeline tokens, exports)
+// already reads, so setting a new primary updates all of them automatically.
 //
 // Props:
 //   characterId
-//   path             — current storage path (or '' / null)
-//   onChange(path)   — persist the new path (or null) onto the card
-export default function PortraitField({ characterId, path, onChange }) {
+//   path                 — primary portrait path ('' / null = none)
+//   gallery              — array of storage paths (may be empty for old cards)
+//   onChange(patch)      — persist { gallery, portrait_path } onto the card
+export default function PortraitField({ characterId, path, gallery, onChange }) {
   const { uploadPortrait, getPortraitUrl, deletePortrait } = useStore()
-  const [url, setUrl] = useState(null)
-  const [urlLoading, setUrlLoading] = useState(false)
+  const [urls, setUrls] = useState({}) // path → viewable URL
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
+  const [viewPath, setViewPath] = useState(null) // lightbox
   const inputRef = useRef(null)
 
-  // Resolve a viewable URL whenever the stored path changes.
+  // Old cards carry only portrait_path — treat it as a one-image gallery.
+  const paths = useMemo(() => {
+    const list = Array.isArray(gallery) && gallery.length ? [...gallery] : path ? [path] : []
+    if (path && !list.includes(path)) list.unshift(path)
+    return list
+  }, [gallery, path])
+  const primary = path && paths.includes(path) ? path : paths[0] || ''
+
+  // Resolve viewable URLs for every gallery path.
   useEffect(() => {
     let cancelled = false
-    let objectUrl = null
-    if (!path) {
-      setUrl(null)
-      return
-    }
-    setUrlLoading(true)
-    getPortraitUrl(path)
-      .then((u) => {
-        if (cancelled) return
-        if (u && u.startsWith('blob:')) objectUrl = u
-        setUrl(u)
-      })
-      .catch(() => !cancelled && setError('Bild konnte nicht geladen werden.'))
-      .finally(() => !cancelled && setUrlLoading(false))
+    const objectUrls = []
+    ;(async () => {
+      const next = {}
+      for (const p of paths) {
+        try {
+          const u = await getPortraitUrl(p)
+          if (u && u.startsWith('blob:')) objectUrls.push(u)
+          next[p] = u
+        } catch {
+          next[p] = null
+        }
+      }
+      if (!cancelled) setUrls(next)
+    })()
     return () => {
       cancelled = true
-      if (objectUrl) URL.revokeObjectURL(objectUrl)
+      for (const u of objectUrls) URL.revokeObjectURL(u)
     }
-  }, [path, getPortraitUrl])
+  }, [paths.join('|'), getPortraitUrl]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function onPick(e) {
-    const file = e.target.files?.[0]
-    e.target.value = '' // allow re-picking the same file
-    if (!file) return
+    const files = [...(e.target.files || [])]
+    e.target.value = ''
+    if (!files.length) return
     setError(null)
-    if (!file.type?.startsWith('image/')) {
-      setError('Bitte eine Bilddatei wählen (JPG, PNG oder WebP).')
-      return
-    }
     setUploading(true)
-    const previous = path
     try {
-      const { blob, ext, contentType } = await downscaleImage(file, 800)
-      const newPath = await uploadPortrait(characterId, blob, { ext, contentType })
-      onChange(newPath)
-      // Best-effort cleanup of the replaced image.
-      if (previous && previous !== newPath) {
-        deletePortrait(previous).catch(() => {})
+      const added = []
+      for (const file of files) {
+        if (!file.type?.startsWith('image/')) {
+          setError('Bitte nur Bilddateien wählen (JPG, PNG oder WebP).')
+          continue
+        }
+        const { blob, ext, contentType } = await downscaleImage(file, 800)
+        added.push(await uploadPortrait(characterId, blob, { ext, contentType }))
+      }
+      if (added.length) {
+        const nextGallery = [...paths, ...added]
+        onChange({ gallery: nextGallery, portrait_path: primary || added[0] })
       }
     } catch (err) {
       setError(err?.message || 'Upload fehlgeschlagen.')
@@ -69,28 +80,37 @@ export default function PortraitField({ characterId, path, onChange }) {
     }
   }
 
-  async function onRemove() {
-    const previous = path
+  function setPrimary(p) {
+    onChange({ gallery: paths, portrait_path: p })
+  }
+
+  async function removeImage(p) {
     setError(null)
-    onChange(null)
-    if (previous) {
-      try {
-        await deletePortrait(previous)
-      } catch (err) {
-        setError(err?.message || 'Bild konnte nicht entfernt werden.')
-      }
+    const nextGallery = paths.filter((x) => x !== p)
+    const nextPrimary = p === primary ? nextGallery[0] || '' : primary
+    onChange({ gallery: nextGallery, portrait_path: nextPrimary })
+    if (viewPath === p) setViewPath(null)
+    try {
+      await deletePortrait(p)
+    } catch (err) {
+      setError(err?.message || 'Bild konnte nicht gelöscht werden.')
     }
   }
 
   return (
-    <div className="portrait-field">
-      <div className="portrait-frame">
-        {uploading || urlLoading ? (
+    <div className="portrait-field gallery">
+      <div className="portrait-frame" title={primary ? 'Hauptbild' : ''}>
+        {uploading ? (
           <div className="portrait-placeholder loading">
-            <span className="spinner" /> {uploading ? 'Lädt hoch …' : 'Lädt …'}
+            <span className="spinner" /> Lädt hoch …
           </div>
-        ) : url ? (
-          <img className="portrait-img" src={url} alt="Porträt" />
+        ) : primary && urls[primary] ? (
+          <img
+            className="portrait-img"
+            src={urls[primary]}
+            alt="Porträt (Hauptbild)"
+            onClick={() => setViewPath(primary)}
+          />
         ) : (
           <div className="portrait-placeholder">
             <User size={40} className="portrait-glyph" />
@@ -99,6 +119,41 @@ export default function PortraitField({ characterId, path, onChange }) {
         )}
       </div>
 
+      {paths.length > 0 && (
+        <div className="gallery-strip" role="list" aria-label="Bildergalerie">
+          {paths.map((p) => (
+            <div key={p} className={`gallery-thumb ${p === primary ? 'primary' : ''}`} role="listitem">
+              {urls[p] ? (
+                <img src={urls[p]} alt="" onClick={() => setViewPath(p)} title="Größer ansehen" />
+              ) : (
+                <span className="gallery-thumb-empty"><User size={16} /></span>
+              )}
+              <div className="gallery-thumb-actions">
+                <button
+                  type="button"
+                  className={`icon-btn sm ${p === primary ? 'on' : ''}`}
+                  title={p === primary ? 'Hauptbild' : 'Als Hauptbild verwenden'}
+                  aria-label={p === primary ? 'Hauptbild' : 'Als Hauptbild verwenden'}
+                  disabled={p === primary}
+                  onClick={() => setPrimary(p)}
+                >
+                  <Star size={12} />
+                </button>
+                <button
+                  type="button"
+                  className="icon-btn sm danger"
+                  title="Bild löschen"
+                  aria-label="Bild löschen"
+                  onClick={() => removeImage(p)}
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="portrait-actions">
         <button
           type="button"
@@ -106,17 +161,13 @@ export default function PortraitField({ characterId, path, onChange }) {
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
         >
-          {path ? 'Ersetzen' : 'Bild hochladen'}
+          <Plus size={14} /> {paths.length ? 'Bilder hinzufügen' : 'Bild hochladen'}
         </button>
-        {path && !uploading && (
-          <button type="button" className="toggle danger-text" onClick={onRemove}>
-            Entfernen
-          </button>
-        )}
         <input
           ref={inputRef}
           type="file"
           accept="image/png,image/jpeg,image/webp"
+          multiple
           hidden
           onChange={onPick}
         />
@@ -125,6 +176,25 @@ export default function PortraitField({ characterId, path, onChange }) {
       {error && (
         <div className="portrait-error">
           <AlertTriangle size={14} /> {error}
+        </div>
+      )}
+
+      {viewPath && urls[viewPath] && (
+        <div className="gallery-lightbox" onClick={() => setViewPath(null)} role="dialog" aria-label="Bildansicht">
+          <img src={urls[viewPath]} alt="Bild in groß" onClick={(e) => e.stopPropagation()} />
+          <div className="gallery-lightbox-bar" onClick={(e) => e.stopPropagation()}>
+            {viewPath !== primary && (
+              <button type="button" className="toggle" onClick={() => { setPrimary(viewPath); }}>
+                <Star size={14} /> Als Hauptbild
+              </button>
+            )}
+            <button type="button" className="toggle danger-text" onClick={() => removeImage(viewPath)}>
+              <Trash2 size={14} /> Löschen
+            </button>
+            <button type="button" className="toggle" onClick={() => setViewPath(null)}>
+              <X size={14} /> Schließen
+            </button>
+          </div>
         </div>
       )}
     </div>

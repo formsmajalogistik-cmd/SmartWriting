@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
 import { User, MapPin, ArrowRight } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
+import { ROLE_LABELS } from '../data/types.js'
+import { deriveCharacterStatus } from '../lib/characterStatus.js'
 
 // Compact preview of a character or place card, shown when hovering/tapping a
-// resolved #link. Character: portrait + key details. Place: short description.
+// resolved #link. Character: PRIMARY portrait + key details incl. Geschlecht
+// and the derived per-book status. Place: short description.
 export default function CardPreview({ kind, card, onOpen }) {
-  const { getPortraitUrl } = useStore()
+  const { getPortraitUrl, activeProject } = useStore()
   const [url, setUrl] = useState(null)
   const portraitPath = kind === 'character' ? card.card?.portrait_path : null
 
@@ -29,9 +32,15 @@ export default function CardPreview({ kind, card, onOpen }) {
     }
   }, [portraitPath, getPortraitUrl])
 
+  const derived =
+    kind === 'character'
+      ? deriveCharacterStatus(card, activeProject?.settings?.books ?? [])
+      : ''
   const details =
     kind === 'character'
-      ? [card.role, card.card?.species, card.card?.age].filter(Boolean).join(' · ')
+      ? [ROLE_LABELS[card.role] || card.role, card.card?.sex, card.card?.species, card.card?.age, derived]
+          .filter(Boolean)
+          .join(' · ')
       : [card.place_type, card.region].filter(Boolean).join(' · ')
   const desc = kind === 'place' ? card.card?.description : card.card?.who
 

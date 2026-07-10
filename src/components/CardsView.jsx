@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
+import { ROLE_LABELS } from '../data/types.js'
+import { BOOK_STATUSES, deriveCharacterStatus } from '../lib/characterStatus.js'
 import PortraitField from './PortraitField.jsx'
 import ListField from './ListField.jsx'
 
@@ -19,15 +21,22 @@ import ListField from './ListField.jsx'
 const REGION_LEGACY = { region_id: 'region', origin_region_id: 'origin' }
 
 export default function CardsView({ config, items, onCreate, onUpdate, onDelete, focusId, onFocusConsumed }) {
-  const { regions } = useStore()
+  const { regions, activeProject } = useStore()
+  const books = activeProject?.settings?.books ?? []
   const [selectedId, setSelectedId] = useState(null)
   const [search, setSearch] = useState('')
   const [onlyProvisional, setOnlyProvisional] = useState(false)
+  // Subtabs (characters: Hauptliste / Randfiguren / Pantheon) + filters. Both
+  // organise THIS view only — every other consumer sees all items.
+  const [subtab, setSubtab] = useState(config.subtabs?.[0]?.key || null)
+  const [roleFilter, setRoleFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
 
   const subtitleValue = (it, key) => {
     if (key in REGION_LEGACY) {
       return regions.find((r) => r.id === it[key])?.name || it[REGION_LEGACY[key]] || ''
     }
+    if (key === 'role') return ROLE_LABELS[it.role] || it.role
     return it[key]
   }
 
@@ -39,14 +48,18 @@ export default function CardsView({ config, items, onCreate, onUpdate, onDelete,
     }
   }, [focusId, onFocusConsumed])
 
+  const activeTab = config.subtabs?.find((t) => t.key === subtab) || null
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase()
     return items.filter((it) => {
+      if (activeTab && !activeTab.match(it)) return false
+      if (roleFilter && it.role !== roleFilter) return false
+      if (statusFilter && deriveCharacterStatus(it, books) !== statusFilter) return false
       if (onlyProvisional && it.name_final) return false
       if (q && !it.name.toLowerCase().includes(q)) return false
       return true
     })
-  }, [items, search, onlyProvisional])
+  }, [items, search, onlyProvisional, activeTab, roleFilter, statusFilter, books])
 
   const selected = items.find((it) => it.id === selectedId) || null
 
@@ -70,6 +83,36 @@ export default function CardsView({ config, items, onCreate, onUpdate, onDelete,
             <Plus size={15} /> Neu
           </button>
         </div>
+        {config.subtabs && (
+          <nav className="seg cards-subtabs" aria-label="Figuren-Gruppen">
+            {config.subtabs.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                className={`seg-btn ${subtab === t.key ? 'on' : ''}`}
+                onClick={() => setSubtab(t.key)}
+              >
+                {t.label} ({items.filter((it) => t.match(it)).length})
+              </button>
+            ))}
+          </nav>
+        )}
+        {config.filters && (
+          <div className="cards-filter-row">
+            <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} aria-label="Nach Rolle filtern">
+              <option value="">Alle Rollen</option>
+              {(config.topFields.find((f) => f.key === 'role')?.options || []).map((r) => (
+                <option key={r} value={r}>{ROLE_LABELS[r] || r}</option>
+              ))}
+            </select>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} aria-label="Nach Status filtern">
+              <option value="">Alle Status</option>
+              {BOOK_STATUSES.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+        )}
         <label className="cards-filter">
           <input
             type="checkbox"
@@ -96,6 +139,10 @@ export default function CardsView({ config, items, onCreate, onUpdate, onDelete,
                 <div className="card-item-main">
                   <span className="card-item-name">{it.name || '(ohne Namen)'}</span>
                   {!it.name_final && <span className="badge provisional">provisorisch</span>}
+                  {config.bookStatus && (() => {
+                    const st = deriveCharacterStatus(it, books)
+                    return st ? <span className={`char-status st-${st}`}>{st}</span> : null
+                  })()}
                 </div>
                 <span className="card-item-sub">
                   {config.subtitleKeys
@@ -147,12 +194,17 @@ function buildDraft(config, card) {
   for (const f of config.listFields ?? []) {
     cardObj[f.key] = Array.isArray(card.card?.[f.key]) ? card.card[f.key] : []
   }
-  if (config.portrait) cardObj.portrait_path = card.card?.portrait_path ?? ''
+  if (config.portrait) {
+    cardObj.portrait_path = card.card?.portrait_path ?? ''
+    cardObj.gallery = Array.isArray(card.card?.gallery) ? card.card.gallery : []
+  }
+  if (config.bookStatus) cardObj.book_status = card.card?.book_status ?? {}
   return { ...top, card: cardObj }
 }
 
 function CardEditor({ config, card, onUpdate, onDelete }) {
-  const { findReferences, renameReferences, regions } = useStore()
+  const { findReferences, renameReferences, regions, activeProject } = useStore()
+  const books = activeProject?.settings?.books ?? []
   const [draft, setDraft] = useState(() => buildDraft(config, card))
   const saveTimer = useRef(null)
   // The name as it was when this card was opened — to detect renames on blur.
@@ -224,9 +276,11 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
       return next
     })
   }
-  function setPortrait(p) {
+  // Gallery patch: { gallery, portrait_path } — saved immediately (never lose
+  // an uploaded path to a pending debounce).
+  function setGallery(patch) {
     setDraft((d) => {
-      const next = { ...d, card: { ...d.card, portrait_path: p || '' } }
+      const next = { ...d, card: { ...d.card, ...patch } }
       persistNow(next)
       return next
     })
@@ -270,8 +324,50 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
         <PortraitField
           characterId={card.id}
           path={draft.card.portrait_path}
-          onChange={setPortrait}
+          gallery={draft.card.gallery}
+          onChange={setGallery}
         />
+      )}
+
+      {config.bookStatus && (
+        <div className="book-status-block">
+          <div className="book-status-head">
+            <span className="book-status-title">Status pro Buch</span>
+            {(() => {
+              const st = deriveCharacterStatus({ status: card.status, card: draft.card }, books)
+              return st ? <span className={`char-status st-${st}`}>Aktuell: {st}</span> : null
+            })()}
+          </div>
+          {books.length === 0 ? (
+            <p className="hint">Noch keine Bücher im Projekt — lege in der Übersicht eines an.</p>
+          ) : (
+            <ul className="book-status-list">
+              {books.map((b) => (
+                <li key={b.id}>
+                  <span className="bs-book" title={b.title}>{b.title}</span>
+                  <select
+                    aria-label={`Status in ${b.title}`}
+                    value={draft.card.book_status?.[b.id] || ''}
+                    onChange={(e) => {
+                      const next = { ...(draft.card.book_status || {}) }
+                      if (e.target.value) next[b.id] = e.target.value
+                      else delete next[b.id]
+                      setCardField('book_status', next)
+                    }}
+                  >
+                    <option value="">— kein Eintrag —</option>
+                    {BOOK_STATUSES.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </li>
+              ))}
+            </ul>
+          )}
+          {Object.keys(draft.card.book_status || {}).length === 0 && card.status && (
+            <p className="hint">Übernommen vom bisherigen Status: „{card.status}“ — gilt, bis ein Buch einen Eintrag hat.</p>
+          )}
+        </div>
       )}
 
       <div className="card-top-grid">
@@ -283,7 +379,7 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
                 <option value="">{f.placeholder || '—'}</option>
                 {f.options.map((o) => (
                   <option key={o} value={o}>
-                    {o}
+                    {f.labels?.[o] || o}
                   </option>
                 ))}
               </select>
@@ -355,8 +451,17 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
                     type="text"
                     value={draft.card[f.key] || ''}
                     placeholder={f.placeholder}
+                    list={f.suggestions ? `dl-${config.kind}-${f.key}` : undefined}
                     onChange={(e) => setCardField(f.key, e.target.value)}
                   />
+                  {f.suggestions && (
+                    // Dropdown suggestions + free text in one control (datalist).
+                    <datalist id={`dl-${config.kind}-${f.key}`}>
+                      {f.suggestions.map((s) => (
+                        <option key={s} value={s} />
+                      ))}
+                    </datalist>
+                  )}
                 </label>
               ))}
             </div>

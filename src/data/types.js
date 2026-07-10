@@ -11,8 +11,22 @@ export const LOCAL_USER_ID = 'local-user'
 export const CHAPTER_STATUSES = ['entwurf', 'aktiv', 'überarbeitung', 'final']
 
 // Worldbuilding card vocabularies (Phase 2).
-export const CHARACTER_ROLES = ['protagonist', 'antagonist', 'companion', 'minor', 'deity']
+// Roles are stored as stable keys; the UI shows the German labels. 'randfigur'
+// is the lowest tier (very minor characters), below 'minor' (Nebenfigur).
+export const CHARACTER_ROLES = ['protagonist', 'antagonist', 'companion', 'minor', 'randfigur', 'deity']
+export const ROLE_LABELS = {
+  protagonist: 'Protagonist',
+  antagonist: 'Antagonist',
+  companion: 'Begleiter',
+  minor: 'Nebenfigur',
+  randfigur: 'Randfigur',
+  deity: 'Gottheit',
+}
+// Legacy single life status (characters.status column). Superseded by the
+// per-book status in card.book_status; kept as the derived-status fallback.
 export const CHARACTER_LIFE_STATUSES = ['lebt', 'tot', 'unbekannt']
+// Suggested values for the free-text Geschlecht field (datalist).
+export const SEX_SUGGESTIONS = ['männlich', 'weiblich', 'divers/sonstiges', 'unbekannt']
 
 // Collision-resistant id without external deps.
 export function newId() {
