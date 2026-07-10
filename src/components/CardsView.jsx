@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Star } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 import { ROLE_LABELS } from '../data/types.js'
 import { BOOK_STATUSES, deriveCharacterStatus } from '../lib/characterStatus.js'
@@ -21,7 +21,7 @@ import ListField from './ListField.jsx'
 const REGION_LEGACY = { region_id: 'region', origin_region_id: 'origin' }
 
 export default function CardsView({ config, items, onCreate, onUpdate, onDelete, focusId, onFocusConsumed }) {
-  const { regions, activeProject } = useStore()
+  const { regions, activeProject, activeBookId } = useStore()
   const books = activeProject?.settings?.books ?? []
   const [selectedId, setSelectedId] = useState(null)
   const [search, setSearch] = useState('')
@@ -31,6 +31,10 @@ export default function CardsView({ config, items, onCreate, onUpdate, onDelete,
   const [subtab, setSubtab] = useState(config.subtabs?.[0]?.key || null)
   const [roleFilter, setRoleFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  // Book filter: default = the ACTIVE book (top-bar dropdown), or a specific
+  // book, or all. Characters without appearance data are always shown.
+  const [bookFilter, setBookFilter] = useState('__active__')
+  const bookFilterId = bookFilter === '__active__' ? activeBookId : bookFilter || null
 
   const subtitleValue = (it, key) => {
     if (key in REGION_LEGACY) {
@@ -54,12 +58,16 @@ export default function CardsView({ config, items, onCreate, onUpdate, onDelete,
     return items.filter((it) => {
       if (activeTab && !activeTab.match(it)) return false
       if (roleFilter && it.role !== roleFilter) return false
-      if (statusFilter && deriveCharacterStatus(it, books) !== statusFilter) return false
+      if (statusFilter && deriveCharacterStatus(it, books, activeBookId) !== statusFilter) return false
+      if (config.filters && bookFilterId) {
+        const appears = it.card?.books
+        if (Array.isArray(appears) && appears.length && !appears.includes(bookFilterId)) return false
+      }
       if (onlyProvisional && it.name_final) return false
       if (q && !it.name.toLowerCase().includes(q)) return false
       return true
     })
-  }, [items, search, onlyProvisional, activeTab, roleFilter, statusFilter, books])
+  }, [items, search, onlyProvisional, activeTab, roleFilter, statusFilter, books, activeBookId, bookFilterId, config.filters])
 
   const selected = items.find((it) => it.id === selectedId) || null
 
@@ -99,6 +107,13 @@ export default function CardsView({ config, items, onCreate, onUpdate, onDelete,
         )}
         {config.filters && (
           <div className="cards-filter-row">
+            <select value={bookFilter} onChange={(e) => setBookFilter(e.target.value)} aria-label="Nach Buch filtern">
+              <option value="__active__">Aktives Buch</option>
+              {books.map((b) => (
+                <option key={b.id} value={b.id}>{b.title}</option>
+              ))}
+              <option value="">Alle Bücher</option>
+            </select>
             <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} aria-label="Nach Rolle filtern">
               <option value="">Alle Rollen</option>
               {(config.topFields.find((f) => f.key === 'role')?.options || []).map((r) => (
@@ -140,7 +155,7 @@ export default function CardsView({ config, items, onCreate, onUpdate, onDelete,
                   <span className="card-item-name">{it.name || '(ohne Namen)'}</span>
                   {!it.name_final && <span className="badge provisional">provisorisch</span>}
                   {config.bookStatus && (() => {
-                    const st = deriveCharacterStatus(it, books)
+                    const st = deriveCharacterStatus(it, books, activeBookId)
                     return st ? <span className={`char-status st-${st}`}>{st}</span> : null
                   })()}
                 </div>
@@ -196,14 +211,24 @@ function buildDraft(config, card) {
   }
   if (config.portrait) {
     cardObj.portrait_path = card.card?.portrait_path ?? ''
-    cardObj.gallery = Array.isArray(card.card?.gallery) ? card.card.gallery : []
+    // Old single-portrait cards (no gallery list yet) normalize to a
+    // one-image gallery so no draft save can drop the existing image.
+    cardObj.gallery = Array.isArray(card.card?.gallery)
+      ? card.card.gallery
+      : cardObj.portrait_path
+        ? [cardObj.portrait_path]
+        : []
   }
-  if (config.bookStatus) cardObj.book_status = card.card?.book_status ?? {}
+  if (config.bookStatus) {
+    cardObj.book_status = card.card?.book_status ?? {}
+    cardObj.books = Array.isArray(card.card?.books) ? card.card.books : []
+    cardObj.introduced_in = card.card?.introduced_in ?? ''
+  }
   return { ...top, card: cardObj }
 }
 
 function CardEditor({ config, card, onUpdate, onDelete }) {
-  const { findReferences, renameReferences, regions, activeProject } = useStore()
+  const { findReferences, renameReferences, regions, activeProject, activeBookId } = useStore()
   const books = activeProject?.settings?.books ?? []
   const [draft, setDraft] = useState(() => buildDraft(config, card))
   const saveTimer = useRef(null)
@@ -215,6 +240,17 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
   useEffect(() => {
     setDraft(buildDraft(config, card))
     originalNameRef.current = card.name
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [card.id])
+
+  // One-time migration: pre-gallery cards (portrait_path set, no gallery list)
+  // persist the normalized structure on open so every device/row carries it.
+  useEffect(() => {
+    if (!config.portrait) return
+    const c = card.card || {}
+    if (c.portrait_path && !Array.isArray(c.gallery)) {
+      onUpdate(card.id, { card: { ...c, gallery: [c.portrait_path] } }).catch(() => {})
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card.id])
 
@@ -242,6 +278,12 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
     for (const f of config.topFields) {
       patch[f.key] = next[f.key]
       if (f.legacyKey) patch[f.legacyKey] = next[f.legacyKey]
+    }
+    if (config.bookStatus) {
+      // The legacy top-level column mirrors the FULL-RANGE derived status
+      // (latest per-book entry over all books; the column has no constraint) so
+      // exports/queries and older readers keep a meaningful single value.
+      patch.status = deriveCharacterStatus({ status: card.status, card: next.card }, books)
     }
     return patch
   }
@@ -272,6 +314,14 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
   function setCardField(key, value) {
     setDraft((d) => {
       const next = { ...d, card: { ...d.card, [key]: value } }
+      persist(next)
+      return next
+    })
+  }
+  // Replace several card keys at once (per-book appearance + introduced-in).
+  function setCardPatch(patch) {
+    setDraft((d) => {
+      const next = { ...d, card: { ...d.card, ...patch } }
       persist(next)
       return next
     })
@@ -332,37 +382,73 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
       {config.bookStatus && (
         <div className="book-status-block">
           <div className="book-status-head">
-            <span className="book-status-title">Status pro Buch</span>
+            <span className="book-status-title">Bücher</span>
             {(() => {
-              const st = deriveCharacterStatus({ status: card.status, card: draft.card }, books)
+              // As of the ACTIVE book (top-bar dropdown) — same as lists/filters.
+              const st = deriveCharacterStatus({ status: card.status, card: draft.card }, books, activeBookId)
               return st ? <span className={`char-status st-${st}`}>Aktuell: {st}</span> : null
             })()}
           </div>
           {books.length === 0 ? (
             <p className="hint">Noch keine Bücher im Projekt — lege in der Übersicht eines an.</p>
           ) : (
-            <ul className="book-status-list">
-              {books.map((b) => (
-                <li key={b.id}>
-                  <span className="bs-book" title={b.title}>{b.title}</span>
-                  <select
-                    aria-label={`Status in ${b.title}`}
-                    value={draft.card.book_status?.[b.id] || ''}
-                    onChange={(e) => {
-                      const next = { ...(draft.card.book_status || {}) }
-                      if (e.target.value) next[b.id] = e.target.value
-                      else delete next[b.id]
-                      setCardField('book_status', next)
-                    }}
-                  >
-                    <option value="">— kein Eintrag —</option>
-                    {BOOK_STATUSES.map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                </li>
-              ))}
-            </ul>
+            <>
+              <p className="hint bs-legend">Häkchen = tritt auf · Stern = wird eingeführt · Auswahl = Status im Buch</p>
+              <ul className="book-status-list">
+                {books.map((b) => {
+                  const appears = (draft.card.books || []).includes(b.id)
+                  const introduced = draft.card.introduced_in === b.id
+                  return (
+                    <li key={b.id} className={activeBookId === b.id ? 'active-book' : ''}>
+                      <label className="bs-appear" title={appears ? 'Tritt in diesem Buch auf' : 'Tritt (noch) nicht auf'}>
+                        <input
+                          type="checkbox"
+                          aria-label={`Tritt auf in ${b.title}`}
+                          checked={appears}
+                          onChange={(e) => {
+                            const set = new Set(draft.card.books || [])
+                            if (e.target.checked) set.add(b.id)
+                            else set.delete(b.id)
+                            const patch = { books: [...set] }
+                            if (!e.target.checked && introduced) patch.introduced_in = ''
+                            setCardPatch(patch)
+                          }}
+                        />
+                      </label>
+                      <span className="bs-book" title={b.title}>{b.title}</span>
+                      <button
+                        type="button"
+                        className={`icon-btn sm bs-intro ${introduced ? 'on' : ''}`}
+                        title={introduced ? 'Wird in diesem Buch eingeführt (Klick entfernt die Markierung)' : 'Als Einführungsbuch markieren'}
+                        aria-label={`Eingeführt in ${b.title}`}
+                        onClick={() => {
+                          const patch = { introduced_in: introduced ? '' : b.id }
+                          if (!introduced) patch.books = [...new Set([...(draft.card.books || []), b.id])]
+                          setCardPatch(patch)
+                        }}
+                      >
+                        <Star size={12} />
+                      </button>
+                      <select
+                        aria-label={`Status in ${b.title}`}
+                        value={draft.card.book_status?.[b.id] || ''}
+                        onChange={(e) => {
+                          const next = { ...(draft.card.book_status || {}) }
+                          if (e.target.value) next[b.id] = e.target.value
+                          else delete next[b.id]
+                          setCardField('book_status', next)
+                        }}
+                      >
+                        <option value="">— kein Eintrag —</option>
+                        {BOOK_STATUSES.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    </li>
+                  )
+                })}
+              </ul>
+            </>
           )}
           {Object.keys(draft.card.book_status || {}).length === 0 && card.status && (
             <p className="hint">Übernommen vom bisherigen Status: „{card.status}“ — gilt, bis ein Buch einen Eintrag hat.</p>

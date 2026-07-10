@@ -249,6 +249,21 @@ export function StoreProvider({ children }) {
     [chapters, activeChapterId],
   )
 
+  // ACTIVE BOOK — the top-bar book dropdown IS this context (no extra
+  // setting). An explicit pick wins until a chapter switch re-derives it;
+  // otherwise the active chapter's book, else the first book. '__none__'
+  // (loose chapters) is a valid selection for the dropdown but resolves to no
+  // book for status derivation.
+  const [activeBookSel, setActiveBookSel] = useState(null)
+  useEffect(() => setActiveBookSel(null), [activeChapterId, activeProjectId])
+  const activeBookId = useMemo(() => {
+    const books = activeProject?.settings?.books ?? []
+    if (activeBookSel && books.some((b) => b.id === activeBookSel)) return activeBookSel
+    if (activeBookSel === '__none__') return null
+    if (activeChapter?.book && books.some((b) => b.id === activeChapter.book)) return activeChapter.book
+    return books[0]?.id ?? null
+  }, [activeBookSel, activeChapter, activeProject])
+
   // --- project actions -------------------------------------------------
   const createProject = useCallback(
     async (name) => {
@@ -803,6 +818,9 @@ export function StoreProvider({ children }) {
     // navigation
     view,
     setView,
+    activeBookId,
+    activeBookSel,
+    setActiveBookSel,
     editorGuillemets,
     setEditorGuillemets,
     focusCard,

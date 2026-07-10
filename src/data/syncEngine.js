@@ -70,8 +70,29 @@ let state = {
   syncing: false, // a pull/push cycle is in flight
   hydrating: false,
   error: null, // last sync error message (cleared on success)
+  // Detailed per-record push failures: [{ key, table, id, op, label, message }]
+  // — the status UI shows WHAT failed and WHY, never a bare "Fehler".
+  errors: [],
   conflicts: [], // unresolved conflict notices (persisted in sync_meta)
   lastSyncedAt: null,
+}
+
+// German labels for the synced tables (error display).
+export const TABLE_LABELS = {
+  projects: 'Projekt',
+  chapters: 'Kapitel',
+  chapter_versions: 'Kapitel-Version',
+  characters: 'Figur',
+  places: 'Ort',
+  character_locations: 'Verortung',
+  events: 'Ereignis',
+  regions: 'Region',
+  routes: 'Route',
+  ideas: 'Idee',
+  geo_features: 'Geografie',
+  terrains: 'Terrain',
+  custom_lexicon_entries: 'Wörterbuch-Eintrag',
+  saved_phrases: 'Phrase',
 }
 const listeners = new Set()
 function setState(patch) {
@@ -447,6 +468,12 @@ async function pushQueued() {
     setState({ error: e?.message || 'Synchronisierung fehlgeschlagen.', pending: ops.length })
     return false
   }
+  // Resolve a human label for a failed record (name/title/… from the local row).
+  const labelFor = async (op) => {
+    if (op.op === 'delete') return ''
+    const row = await db.get(op.table, op.id).catch(() => null)
+    return row?.name || row?.title || row?.label || row?.praemali || ''
+  }
   const done = new Set(result?.done || [])
   const failed = result?.failed || []
   const stamps = result?.stamps || {}
@@ -464,10 +491,25 @@ async function pushQueued() {
     if (o.op === 'delete') await clearBase(db, o.table, o.id)
     else if (stamps[o.key]) await setBase(db, o.table, o.id, stamps[o.key])
   }
+  // Detailed, user-facing failure list (record + operation + server cause).
+  const errors = []
+  for (const f of failed) {
+    const op = ops.find((o) => o.key === f.key)
+    if (!op) continue
+    errors.push({
+      key: f.key,
+      table: op.table,
+      id: op.id,
+      op: op.op,
+      label: await labelFor(op),
+      message: f.error || 'Unbekannter Fehler',
+    })
+  }
   const pending = await countPending()
   setState({
     pending,
     error: failed.length ? failed[0].error || 'Synchronisierung fehlgeschlagen.' : null,
+    errors,
     lastSyncedAt: pending === 0 ? new Date().toISOString() : state.lastSyncedAt,
   })
   return failed.length === 0

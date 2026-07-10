@@ -115,6 +115,30 @@ export function createSupabaseRemote() {
         for (const o of tableOps) if (byId.has(o.id)) stamps[o.key] = byId.get(o.id)
       }
 
+      // Per-op error causes (key → Supabase message) so the status UI can say
+      // WHICH record failed and WHY — never a bare "Fehler".
+      const rowErrors = new Map()
+      // Batch upsert; if the batch is rejected, retry each row individually so
+      // ONE bad row neither blocks the others nor hides its exact cause.
+      const upsertIsolated = async (t, rows, mapRow) => {
+        const payload = rows.map((o) => (mapRow ? mapRow(o.row) : o.row))
+        const { data, error } = await supabase.from(t).upsert(payload).select('id, updated_at')
+        if (!error) {
+          recordStamps(rows, data)
+          return rows
+        }
+        const ok = []
+        for (let i = 0; i < rows.length; i++) {
+          const single = await supabase.from(t).upsert(payload[i]).select('id, updated_at')
+          if (single.error) rowErrors.set(rows[i].key, single.error.message)
+          else {
+            recordStamps([rows[i]], single.data)
+            ok.push(rows[i])
+          }
+        }
+        return ok
+      }
+
       try {
         for (const t of UPSERT_ORDER) {
           const rows = upsertsOf(t)
@@ -122,30 +146,18 @@ export function createSupabaseRemote() {
           if (t === 'chapters') {
             // Phase 1: satisfy chapter_versions.chapter_id without tripping
             // chapters.active_version_id (its version may not be pushed yet).
-            const phase1 = rows.map((o) => ({ ...o.row, active_version_id: null }))
-            const { error } = await supabase.from('chapters').upsert(phase1)
-            if (error) throw new Error(error.message)
+            await upsertIsolated('chapters', rows, (r) => ({ ...r, active_version_id: null }))
             // marked done (and stamped) in phase 2
           } else {
-            const { data, error } = await supabase
-              .from(t)
-              .upsert(rows.map((o) => o.row))
-              .select('id, updated_at')
-            if (error) throw new Error(error.message)
-            recordStamps(rows, data)
-            rows.forEach((o) => done.add(o.key))
+            const ok = await upsertIsolated(t, rows)
+            ok.forEach((o) => done.add(o.key))
           }
         }
         // Phase 2: now that versions exist, set chapters.active_version_id.
         const chapters = upsertsOf('chapters')
         if (chapters.length) {
-          const { data, error } = await supabase
-            .from('chapters')
-            .upsert(chapters.map((o) => o.row))
-            .select('id, updated_at')
-          if (error) throw new Error(error.message)
-          recordStamps(chapters, data)
-          chapters.forEach((o) => done.add(o.key))
+          const ok = await upsertIsolated('chapters', chapters)
+          ok.forEach((o) => done.add(o.key))
         }
         // Deletes: children before parents (also safe under ON DELETE CASCADE).
         // Each delete also records a tombstone so other devices see it on pull.
@@ -172,10 +184,16 @@ export function createSupabaseRemote() {
           stamps,
           failed: ops
             .filter((o) => !done.has(o.key))
-            .map((o) => ({ key: o.key, error: e?.message || 'Sync-Fehler' })),
+            .map((o) => ({ key: o.key, error: rowErrors.get(o.key) || e?.message || 'Sync-Fehler' })),
         }
       }
-      return { done: [...done], stamps, failed: [] }
+      return {
+        done: [...done],
+        stamps,
+        failed: ops
+          .filter((o) => !done.has(o.key))
+          .map((o) => ({ key: o.key, error: rowErrors.get(o.key) || 'Sync-Fehler' })),
+      }
     },
   }
 }

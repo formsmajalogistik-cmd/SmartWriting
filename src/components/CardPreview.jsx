@@ -8,7 +8,7 @@ import { deriveCharacterStatus } from '../lib/characterStatus.js'
 // resolved #link. Character: PRIMARY portrait + key details incl. Geschlecht
 // and the derived per-book status. Place: short description.
 export default function CardPreview({ kind, card, onOpen }) {
-  const { getPortraitUrl, activeProject } = useStore()
+  const { getPortraitUrl, activeProject, activeBookId } = useStore()
   const [url, setUrl] = useState(null)
   const portraitPath = kind === 'character' ? card.card?.portrait_path : null
 
@@ -34,7 +34,7 @@ export default function CardPreview({ kind, card, onOpen }) {
 
   const derived =
     kind === 'character'
-      ? deriveCharacterStatus(card, activeProject?.settings?.books ?? [])
+      ? deriveCharacterStatus(card, activeProject?.settings?.books ?? [], activeBookId)
       : ''
   const details =
     kind === 'character'

@@ -44,19 +44,18 @@ const TOP_VIEWS = [
 const NAV_OPEN_KEY = 'smartwriting.navOpen'
 const isNarrow = () => window.matchMedia('(max-width: 820px)').matches
 
-// Book + chapter dropdowns in the top bar. The shown book follows the active
-// chapter; picking a different book only re-scopes the chapter dropdown until
-// a chapter is actually opened.
+// Book + chapter dropdowns in the top bar. The selected book IS the app's
+// ACTIVE BOOK (store.activeBookId — e.g. the as-of point for derived character
+// statuses). It follows the active chapter; picking a different book re-scopes
+// the chapter dropdown AND the active-book context until a chapter is opened.
 function ManuscriptSelectors() {
-  const { activeProject, chapters, activeChapter, setActiveChapterId, setView } = useStore()
-  const [bookPick, setBookPick] = useState(null)
-  useEffect(() => setBookPick(null), [activeChapter?.id, activeProject?.id])
+  const { activeProject, chapters, activeChapter, setActiveChapterId, setView, activeBookSel, setActiveBookSel } = useStore()
   if (!activeProject) return null
 
   const books = activeProject.settings?.books ?? []
   const loose = chapters.filter((c) => c.book == null)
   const currentBook =
-    bookPick ??
+    activeBookSel ??
     (activeChapter
       ? activeChapter.book ?? '__none__'
       : books[0]?.id ?? (loose.length ? '__none__' : ''))
@@ -71,7 +70,7 @@ function ManuscriptSelectors() {
       <select
         aria-label="Buch"
         value={currentBook}
-        onChange={(e) => setBookPick(e.target.value)}
+        onChange={(e) => setActiveBookSel(e.target.value)}
         disabled={books.length === 0 && loose.length === 0}
       >
         {books.length === 0 && loose.length === 0 && <option value="">— kein Buch —</option>}

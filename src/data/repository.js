@@ -155,7 +155,52 @@ export function getRepository() {
     const remote = DATA_BACKEND === 'localfirst-test' ? createFakeRemote() : createSupabaseRemote()
     const getUserId = DATA_BACKEND === 'localfirst-test' ? async () => 'test-user' : currentUserId
     initSync({ remote, getUserId })
-    _repo = createLocalRepository()
+    const local = createLocalRepository()
+    if (DATA_BACKEND === 'localfirst') {
+      // PORTRAIT IMAGES are binary and don't ride the row-sync queue. In
+      // local-first mode Supabase Storage stays the source of truth:
+      //   read  — local blob first (offline-fast), else a signed URL from the
+      //           bucket, best-effort caching the bytes locally for later
+      //           offline use (this is what makes PRE-local-first portraits
+      //           reappear on every device);
+      //   write — upload to Storage first (other devices can see it), mirror
+      //           locally; offline falls back to a local-only path;
+      //   delete — both stores, each best-effort.
+      const storageRepo = createSupabaseRepository()
+      _repo = {
+        ...local,
+        async uploadPortrait(characterId, blob, opts) {
+          try {
+            const path = await storageRepo.uploadPortrait(characterId, blob, opts)
+            await local.cachePortrait(path, blob).catch(() => {})
+            return path
+          } catch {
+            return local.uploadPortrait(characterId, blob, opts) // offline: local-only
+          }
+        },
+        async getPortraitUrl(path) {
+          const localUrl = await local.getPortraitUrl(path).catch(() => null)
+          if (localUrl) return localUrl
+          if (!path || path.startsWith('local/')) return null // never uploaded
+          const url = await storageRepo.getPortraitUrl(path)
+          if (url) {
+            fetch(url)
+              .then((r) => (r.ok ? r.blob() : null))
+              .then((b) => b && local.cachePortrait(path, b))
+              .catch(() => {})
+          }
+          return url
+        },
+        async deletePortrait(path) {
+          await local.deletePortrait(path).catch(() => {})
+          if (path && !path.startsWith('local/')) {
+            await storageRepo.deletePortrait(path).catch(() => {})
+          }
+        },
+      }
+    } else {
+      _repo = local
+    }
   }
   return _repo
 }

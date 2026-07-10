@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Cloud, CloudOff, RefreshCw, Check, AlertTriangle, GitMerge, X } from 'lucide-react'
 import { SYNC_ENABLED } from '../data/repository.js'
-import { useSyncStatus, flush, dismissConflict } from '../data/syncEngine.js'
+import { useSyncStatus, flush, dismissConflict, TABLE_LABELS } from '../data/syncEngine.js'
 import { useStore } from '../state/store.jsx'
 
 // Truthful local-first status: online/offline, unsynced count, syncing, errors
@@ -9,7 +9,7 @@ import { useStore } from '../state/store.jsx'
 // queued or conflicts await review. Chapter conflicts link straight to the
 // chapter (whose conflict version sits in the version bar for comparing).
 export default function SyncStatus() {
-  const { online, pending, syncing, error, conflicts } = useSyncStatus()
+  const { online, pending, syncing, error, errors, conflicts } = useSyncStatus()
   const { openChapterAt } = useStore()
   const [open, setOpen] = useState(false)
   const popRef = useRef(null)
@@ -26,6 +26,8 @@ export default function SyncStatus() {
 
   if (!SYNC_ENABLED) return null
   const hasConflicts = conflicts.length > 0
+  const errorList = errors || []
+  const hasErrors = !!error || errorList.length > 0
 
   let cls, Icon, spin, text
   if (!online) {
@@ -70,7 +72,7 @@ export default function SyncStatus() {
         className={`sync-status ${cls}`}
         title={title}
         onClick={() => {
-          if (hasConflicts) setOpen((v) => !v)
+          if (hasConflicts || hasErrors) setOpen((v) => !v)
           else if (online && !syncing) flush()
         }}
         aria-label={text}
@@ -79,7 +81,43 @@ export default function SyncStatus() {
         <span className="sync-status-text">{text}</span>
       </button>
 
-      {open && hasConflicts && (
+      {open && hasErrors && (
+        <div className="sync-pop" role="dialog" aria-label="Sync-Fehler">
+          <div className="sync-pop-head">Sync-Fehler</div>
+          <ul className="sync-pop-list">
+            {errorList.length > 0 ? (
+              errorList.map((e) => (
+                <li key={e.key} className="sync-pop-item">
+                  <div className="sync-pop-label">
+                    {TABLE_LABELS[e.table] || e.table}
+                    {e.label ? `: „${e.label}“` : ''}
+                    <span className="sync-pop-version">
+                      {e.op === 'delete' ? 'Löschen fehlgeschlagen' : 'Speichern fehlgeschlagen'}
+                    </span>
+                  </div>
+                  <div className="sync-pop-msg sync-err-msg">{e.message}</div>
+                </li>
+              ))
+            ) : (
+              <li className="sync-pop-item">
+                <div className="sync-pop-msg sync-err-msg">{error}</div>
+              </li>
+            )}
+          </ul>
+          <div className="sync-pop-actions sync-pop-retry">
+            <button
+              type="button"
+              className="toggle primary"
+              disabled={!online || syncing}
+              onClick={() => flush()}
+            >
+              <RefreshCw size={13} className={syncing ? 'spin' : ''} /> Erneut versuchen
+            </button>
+          </div>
+        </div>
+      )}
+
+      {open && !hasErrors && hasConflicts && (
         <div className="sync-pop" role="dialog" aria-label="Sync-Konflikte">
           <div className="sync-pop-head">Konflikte</div>
           <ul className="sync-pop-list">

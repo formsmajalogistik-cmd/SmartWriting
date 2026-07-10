@@ -638,6 +638,13 @@ export function createLocalRepository() {
       return path
     },
 
+    // Mirror a remote image blob into the local store under ITS OWN path (used
+    // by the local-first read-through fallback so images work offline later).
+    async cachePortrait(path, blob) {
+      const db = await getDb()
+      await db.put(STORES.portraits, { path, blob })
+    },
+
     async getPortraitUrl(path) {
       if (!path) return null
       const db = await getDb()
