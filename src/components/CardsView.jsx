@@ -199,7 +199,10 @@ export default function CardsView({ config, items, onCreate, onUpdate, onDelete,
 function buildDraft(config, card) {
   const top = { name: card.name ?? '', name_final: !!card.name_final }
   for (const f of config.topFields) {
-    top[f.key] = card[f.key] ?? ''
+    // uuid reference fields (region pickers) round-trip as NULL when unset —
+    // the '' text-field default here is what once leaked "" into uuid columns.
+    const isRef = f.type === 'region' || f.type === 'region-or-text'
+    top[f.key] = isRef ? card[f.key] || null : card[f.key] ?? ''
     if (f.legacyKey) top[f.legacyKey] = card[f.legacyKey] ?? ''
   }
   const cardObj = {}

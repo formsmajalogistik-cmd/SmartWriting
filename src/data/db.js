@@ -60,6 +60,39 @@ export const SYNCED_STORES = new Set([
   STORES.saved_phrases,
 ])
 
+// --- reference-field sanitisation -------------------------------------------
+// Postgres uuid columns accept a real id or NULL — never ''. UI form state can
+// produce '' for "no selection", so EVERY write of a synced row coerces empty
+// strings to null on `id`/`*_id` keys. Applied at the lowest write layer
+// (instrumented put below) and again at push time (remoteSupabase), so the
+// database can never see "" regardless of UI state.
+export function nullifyEmptyRefs(row) {
+  if (!row || typeof row !== 'object' || Array.isArray(row)) return row
+  let out = row
+  for (const [k, v] of Object.entries(row)) {
+    if (v === '' && (k === 'id' || k.endsWith('_id'))) {
+      if (out === row) out = { ...row }
+      out[k] = null
+    }
+  }
+  return out
+}
+
+// One-time repair at app start: rows written BEFORE this guard may still carry
+// '' in reference fields. Re-putting the cleaned row goes through the
+// instrumented put, so it also (re)queues the row — stuck pushes then retry
+// with valid data and drain. Safe to run repeatedly (no-op once clean).
+export async function repairEmptyRefs() {
+  const db = await getDb()
+  for (const store of SYNCED_STORES) {
+    const rows = await db.getAll(store).catch(() => [])
+    for (const r of rows) {
+      const clean = nullifyEmptyRefs(r)
+      if (clean !== r) await db.put(store, clean)
+    }
+  }
+}
+
 // --- outgoing-mutation recorder --------------------------------------------
 // A registered sink is called after every successful db.put / db.delete on a
 // SYNCED store, so the local-first layer can queue the change for Supabase.
@@ -214,8 +247,10 @@ function instrument(db) {
     get(target, prop) {
       if (prop === 'put') {
         return async (store, val, key) => {
-          const res = await target.put(store, val, key)
-          record(store, val?.id ?? key ?? res, 'upsert', val)
+          // '' in uuid reference fields must never reach storage (→ NULL).
+          const clean = SYNCED_STORES.has(store) ? nullifyEmptyRefs(val) : val
+          const res = await target.put(store, clean, key)
+          record(store, clean?.id ?? key ?? res, 'upsert', clean)
           return res
         }
       }

@@ -115,6 +115,7 @@
 
 import { createSupabaseRepository } from './supabaseRepository.js'
 import { createLocalRepository } from './localRepository.js'
+import { repairEmptyRefs } from './db.js'
 import { createSupabaseRemote } from './remoteSupabase.js'
 import { createFakeRemote } from './remoteFake.js'
 import { initSync } from './syncEngine.js'
@@ -144,6 +145,11 @@ let _repo = null
 
 export function getRepository() {
   if (_repo) return _repo
+  // One-time start-up repair: '' in uuid reference fields (written before the
+  // ''→null write guard) becomes NULL; re-queued rows then push successfully.
+  if (DATA_BACKEND !== 'supabase') {
+    repairEmptyRefs().catch(() => {})
+  }
   if (DATA_BACKEND === 'local') {
     _repo = createLocalRepository()
   } else if (DATA_BACKEND === 'supabase') {

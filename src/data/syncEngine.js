@@ -182,11 +182,14 @@ async function enqueue(rec) {
     const key = `${rec.table}:${rec.id}`
     // Coalesce: one entry per row holding the LATEST intent; the row's current
     // local state is read at push time, so repeated edits collapse to one push.
+    // `rev` marks THIS write: pushQueued may only delete/overwrite the entry if
+    // the rev still matches its snapshot — an edit queued mid-push survives.
     await db.put(STORES.sync_queue, {
       key,
       table: rec.table,
       id: rec.id,
       op: rec.op,
+      rev: crypto.randomUUID(),
       project_id: rec.project_id ?? null,
       updated_at: rec.updated_at || null,
       attempts: 0,
@@ -477,11 +480,26 @@ async function pushQueued() {
   const done = new Set(result?.done || [])
   const failed = result?.failed || []
   const stamps = result?.stamps || {}
+  // Clear pushed entries — but a same-key entry re-queued while the push was
+  // in flight carries a NEWER rev (edit made after our row snapshot): leave it
+  // for the next flush instead of deleting the edit unpushed.
   const tx = db.transaction(STORES.sync_queue, 'readwrite')
-  for (const key of done) tx.store.delete(key)
+  let requeued = 0
+  for (const key of done) {
+    const snap = ops.find((o) => o.key === key)
+    const cur = await tx.store.get(key)
+    if (cur && cur.rev !== snap?.rev) {
+      requeued++
+      continue
+    }
+    tx.store.delete(key)
+  }
   for (const f of failed) {
     const row = ops.find((o) => o.key === f.key)
-    if (row) tx.store.put({ ...row, attempts: (row.attempts || 0) + 1, error: f.error || 'Fehler' })
+    if (!row) continue
+    const cur = await tx.store.get(f.key)
+    if (cur && cur.rev !== row.rev) continue // newer re-queue wins over the error stamp
+    tx.store.put({ ...row, attempts: (row.attempts || 0) + 1, error: f.error || 'Fehler' })
   }
   await tx.done
   // Record the server's resulting updated_at as the new BASE for every pushed
@@ -512,6 +530,9 @@ async function pushQueued() {
     errors,
     lastSyncedAt: pending === 0 ? new Date().toISOString() : state.lastSyncedAt,
   })
+  // Entries kept because they were re-queued mid-push aren't failures — push
+  // them promptly (their own enqueue flush likely no-oped against busy=true).
+  if (requeued > 0 && failed.length === 0) scheduleFlush()
   return failed.length === 0
 }
 

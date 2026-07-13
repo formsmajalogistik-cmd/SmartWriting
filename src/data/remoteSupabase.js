@@ -15,7 +15,7 @@
 // new conflict-detection bases. Every delete also writes a TOMBSTONE row so
 // other devices learn about it on pull.
 import { supabase } from './supabaseClient.js'
-import { getDb } from './db.js'
+import { getDb, nullifyEmptyRefs } from './db.js'
 
 // Parent → child, so a referenced row always exists before its referrer.
 const UPSERT_ORDER = [
@@ -107,7 +107,9 @@ export function createSupabaseRemote() {
           done.add(o.key) // gone locally; nothing to push
           continue
         }
-        upserts.push({ ...o, row: { ...row, user_id: userId ?? row.user_id } })
+        // Belt-and-braces: rows written before the ''→null guard existed must
+        // still push cleanly ('' in a uuid column is a Postgres type error).
+        upserts.push({ ...o, row: nullifyEmptyRefs({ ...row, user_id: userId ?? row.user_id }) })
       }
       const upsertsOf = (t) => upserts.filter((o) => o.table === t)
       const recordStamps = (tableOps, data) => {

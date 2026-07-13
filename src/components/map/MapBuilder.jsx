@@ -1740,7 +1740,12 @@ export default function MapBuilder({ terrain }) {
                   rows={2}
                   defaultValue={activeRegion.description || ''}
                   placeholder="Kurzbeschreibung …"
-                  onBlur={(e) => saveRegionDescription(activeRegion.id, e.target.value)}
+                  onBlur={(e) => {
+                    // save only real changes — a stale blur must never clobber
+                    if (e.target.value.trim() !== (activeRegion.description || '')) {
+                      saveRegionDescription(activeRegion.id, e.target.value)
+                    }
+                  }}
                 />
               </label>
             )}

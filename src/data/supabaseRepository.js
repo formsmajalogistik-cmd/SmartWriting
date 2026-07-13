@@ -6,6 +6,7 @@
 // current user server-side). Writes set user_id = auth.uid() and the
 // appropriate project_id. Books still live in projects.settings.books.
 import { supabase, currentUserId } from './supabaseClient.js'
+import { nullifyEmptyRefs } from './db.js'
 
 // Private Storage bucket for character portraits. Access is governed by the
 // bucket's RLS policies (user-scoped by path); images are served via short-
@@ -44,7 +45,7 @@ export function createSupabaseRepository() {
 
     async updateProject(id, patch) {
       return unwrap(
-        await supabase.from('projects').update(patch).eq('id', id).select().single(),
+        await supabase.from('projects').update(nullifyEmptyRefs(patch)).eq('id', id).select().single(),
       )
     },
 
@@ -147,7 +148,7 @@ export function createSupabaseRepository() {
 
     async updateChapter(id, patch) {
       return unwrap(
-        await supabase.from('chapters').update(patch).eq('id', id).select().single(),
+        await supabase.from('chapters').update(nullifyEmptyRefs(patch)).eq('id', id).select().single(),
       )
     },
 
@@ -192,7 +193,7 @@ export function createSupabaseRepository() {
 
     async updateChapterVersion(id, patch) {
       const version = unwrap(
-        await supabase.from('chapter_versions').update(patch).eq('id', id).select().single(),
+        await supabase.from('chapter_versions').update(nullifyEmptyRefs(patch)).eq('id', id).select().single(),
       )
       // Keep the chapter body mirror in sync if this is the active version.
       if (patch.body != null) {
@@ -322,7 +323,7 @@ export function createSupabaseRepository() {
 
     async updateCharacter(id, patch) {
       return unwrap(
-        await supabase.from('characters').update(patch).eq('id', id).select().single(),
+        await supabase.from('characters').update(nullifyEmptyRefs(patch)).eq('id', id).select().single(),
       )
     },
 
@@ -351,7 +352,7 @@ export function createSupabaseRepository() {
 
     async updatePlace(id, patch) {
       return unwrap(
-        await supabase.from('places').update(patch).eq('id', id).select().single(),
+        await supabase.from('places').update(nullifyEmptyRefs(patch)).eq('id', id).select().single(),
       )
     },
 
@@ -475,7 +476,7 @@ export function createSupabaseRepository() {
       return unwrap(await supabase.from('regions').insert(insert).select().single())
     },
     async updateRegion(id, patch) {
-      return unwrap(await supabase.from('regions').update(patch).eq('id', id).select().single())
+      return unwrap(await supabase.from('regions').update(nullifyEmptyRefs(patch)).eq('id', id).select().single())
     },
     async deleteRegion(id) {
       unwrap(await supabase.from('regions').delete().eq('id', id))
@@ -501,7 +502,7 @@ export function createSupabaseRepository() {
       return unwrap(await supabase.from('routes').insert(insert).select().single())
     },
     async updateRoute(id, patch) {
-      return unwrap(await supabase.from('routes').update(patch).eq('id', id).select().single())
+      return unwrap(await supabase.from('routes').update(nullifyEmptyRefs(patch)).eq('id', id).select().single())
     },
     async deleteRoute(id) {
       unwrap(await supabase.from('routes').delete().eq('id', id))
@@ -528,7 +529,7 @@ export function createSupabaseRepository() {
       return unwrap(await supabase.from('geo_features').insert(insert).select().single())
     },
     async updateGeoFeature(id, patch) {
-      return unwrap(await supabase.from('geo_features').update(patch).eq('id', id).select().single())
+      return unwrap(await supabase.from('geo_features').update(nullifyEmptyRefs(patch)).eq('id', id).select().single())
     },
     async deleteGeoFeature(id) {
       unwrap(await supabase.from('geo_features').delete().eq('id', id))
@@ -554,7 +555,7 @@ export function createSupabaseRepository() {
       return unwrap(await supabase.from('ideas').insert(insert).select().single())
     },
     async updateIdea(id, patch) {
-      return unwrap(await supabase.from('ideas').update(patch).eq('id', id).select().single())
+      return unwrap(await supabase.from('ideas').update(nullifyEmptyRefs(patch)).eq('id', id).select().single())
     },
     async deleteIdea(id) {
       unwrap(await supabase.from('ideas').delete().eq('id', id))
@@ -583,7 +584,7 @@ export function createSupabaseRepository() {
     },
     async updateCustomLexicon(id, patch) {
       return unwrap(
-        await supabase.from('custom_lexicon_entries').update(patch).eq('id', id).select().single(),
+        await supabase.from('custom_lexicon_entries').update(nullifyEmptyRefs(patch)).eq('id', id).select().single(),
       )
     },
     async deleteCustomLexicon(id) {
@@ -615,7 +616,7 @@ export function createSupabaseRepository() {
       return unwrap(await supabase.from('saved_phrases').insert(insert).select().single())
     },
     async updateSavedPhrase(id, patch) {
-      return unwrap(await supabase.from('saved_phrases').update(patch).eq('id', id).select().single())
+      return unwrap(await supabase.from('saved_phrases').update(nullifyEmptyRefs(patch)).eq('id', id).select().single())
     },
     async deleteSavedPhrase(id) {
       unwrap(
@@ -650,7 +651,7 @@ export function createSupabaseRepository() {
     },
 
     async updateEvent(id, patch) {
-      return unwrap(await supabase.from('events').update(patch).eq('id', id).select().single())
+      return unwrap(await supabase.from('events').update(nullifyEmptyRefs(patch)).eq('id', id).select().single())
     },
 
     async deleteEvent(id) {
