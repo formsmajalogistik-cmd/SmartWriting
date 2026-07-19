@@ -800,6 +800,14 @@ select:focus, input:focus, textarea:focus {
   text-underline-offset: 2px;
   cursor: help;
 }
+/* Several cards share the typed name — surfaced, never guessed. */
+.hashlink.ambiguous {
+  color: #d8b4fe;
+  background: rgba(168,85,247,0.14);
+  text-decoration: underline double;
+  text-underline-offset: 2px;
+  cursor: help;
+}
 .hashlink.static { cursor: default; }
 .hashlink.as-button { border: none; font: inherit; cursor: pointer; }
 
@@ -829,6 +837,9 @@ select:focus, input:focus, textarea:focus {
 .hash-ac-item.active { background: var(--accent); color: #fff; }
 .hash-ac-icon { width: 18px; text-align: center; }
 .hash-ac-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Alias suggestions show the card's main name so the target is unmistakable. */
+.hash-ac-main { color: var(--text-dim); font-size: 12.5px; }
+.hash-ac-item.active .hash-ac-main { color: rgba(255,255,255,0.75); }
 
 /* ---- # hover/tap card preview ---- */
 .hash-popover { position: fixed; z-index: 60; }
@@ -852,6 +863,7 @@ select:focus, input:focus, textarea:focus {
 .card-preview-kind { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
 .card-preview-title strong { display: flex; align-items: center; gap: 6px; }
 .card-preview-sub { font-size: 12px; color: var(--text-dim); }
+.card-preview-aliases { font-style: italic; }
 .card-preview-desc {
   margin: 10px 0 8px; font-size: 13px; line-height: 1.5; color: var(--text);
   max-height: 84px; overflow: hidden;
@@ -903,6 +915,12 @@ select:focus, input:focus, textarea:focus {
 .hash-ac-icon { display: inline-flex; align-items: center; justify-content: center; }
 .hashlink.as-button { display: inline-flex; align-items: center; gap: 4px; }
 .names-clear { display: inline-flex; align-items: center; gap: 6px; }
+/* Ambiguous rows: the candidate cards a duplicate name matches. */
+.names-matches { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.names-match { font-style: italic; }
+/* Alias list on the card sits compactly under the name head. */
+.alias-block .list-field { margin: 2px 0 6px; }
+.alias-block .list-hint { margin-top: 0; }
 
 /* ---- Editor format toolbar + pane wrapper ---- */
 .editor-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; }

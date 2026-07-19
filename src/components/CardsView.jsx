@@ -227,11 +227,14 @@ function buildDraft(config, card) {
     cardObj.books = Array.isArray(card.card?.books) ? card.card.books : []
     cardObj.introduced_in = card.card?.introduced_in ?? ''
   }
+  if (config.aliases) {
+    cardObj.aliases = Array.isArray(card.card?.aliases) ? card.card.aliases : []
+  }
   return { ...top, card: cardObj }
 }
 
 function CardEditor({ config, card, onUpdate, onDelete }) {
-  const { findReferences, renameReferences, regions, activeProject, activeBookId } = useStore()
+  const { findReferences, renameReferences, regions, geoFeatures, characters, places, activeProject, activeBookId } = useStore()
   const books = activeProject?.settings?.books ?? []
   const [draft, setDraft] = useState(() => buildDraft(config, card))
   const saveTimer = useRef(null)
@@ -274,6 +277,33 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
         `Diese Referenzen auf „#${newName}“ aktualisieren?`,
     )
     if (ok) await renameReferences(oldName, newName)
+  }
+
+  // Duplicate check for a new alias: any card's main name or alias, region or
+  // geo-feature name, or an alias already on THIS card. Duplicates are allowed
+  // (the reference just becomes ambiguous) — but never silently.
+  function aliasWarning(value) {
+    const v = value.trim().toLowerCase()
+    const hits = []
+    const scanCards = (rows, kindLabel) => {
+      for (const r of rows) {
+        if ((r.name || '').trim().toLowerCase() === v) hits.push(`${kindLabel} „${r.name}“`)
+        const al = Array.isArray(r.card?.aliases) ? r.card.aliases : []
+        if (r.id !== card.id && al.some((a) => (a || '').trim().toLowerCase() === v))
+          hits.push(`Alias von ${kindLabel} „${r.name}“`)
+      }
+    }
+    scanCards(characters, 'Figur')
+    scanCards(places, 'Ort')
+    for (const r of regions) if ((r.name || '').trim().toLowerCase() === v) hits.push(`Region „${r.name}“`)
+    for (const g of geoFeatures) if ((g.name || '').trim().toLowerCase() === v) hits.push(`Geografie „${g.name}“`)
+    if ((draft.card.aliases || []).some((a) => (a || '').trim().toLowerCase() === v))
+      hits.push('bereits Alias dieser Karte')
+    if (!hits.length) return null
+    return (
+      `„${value.trim()}“ wird bereits verwendet: ${hits.join(', ')}. ` +
+      `#Referenzen mit diesem Namen werden dadurch mehrdeutig. Trotzdem hinzufügen?`
+    )
   }
 
   function buildPatch(next) {
@@ -370,6 +400,19 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
       {!draft.name_final && (
         <div className="provisional-note">
           <span className="badge provisional">provisorisch</span> Name noch nicht festgelegt.
+        </div>
+      )}
+
+      {config.aliases && (
+        <div className="alias-block">
+          <ListField
+            label="Aliase / weitere Namen"
+            placeholder="z. B. Beiname, Praemali-Name …"
+            hint="Auch unter diesen Namen per #Name auffindbar (z. B. #Bambam). Entfernen ändert keine Kapiteltexte — Referenzen darauf erscheinen dann unter „Namen“."
+            value={draft.card.aliases}
+            onChange={(arr) => setCardField('aliases', arr)}
+            warnOnAdd={aliasWarning}
+          />
         </div>
       )}
 

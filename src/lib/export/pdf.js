@@ -73,6 +73,7 @@ const HASH_CLASS_STYLES = {
   resolved: { color: '#4f46e5' },
   provisional: { color: '#b45309' },
   unresolved: { color: '#b91c1c' },
+  ambiguous: { color: '#7e22ce' },
 }
 
 function baseDoc(content, info = {}) {

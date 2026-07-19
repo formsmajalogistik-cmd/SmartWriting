@@ -8,13 +8,17 @@ import { Plus, X } from 'lucide-react'
 //   label, placeholder, hint
 //   value    — string[]
 //   onChange(nextArray)
-export default function ListField({ label, placeholder, hint, value, onChange }) {
+//   warnOnAdd(value) — optional; returns a confirm() message to show before
+//                      adding (null/undefined = add without asking)
+export default function ListField({ label, placeholder, hint, value, onChange, warnOnAdd }) {
   const [draft, setDraft] = useState('')
   const items = Array.isArray(value) ? value : []
 
   function add() {
     const v = draft.trim()
     if (!v) return
+    const warning = warnOnAdd?.(v)
+    if (warning && !window.confirm(warning)) return
     onChange([...items, v])
     setDraft('')
   }

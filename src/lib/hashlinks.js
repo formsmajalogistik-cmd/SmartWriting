@@ -21,26 +21,42 @@ export function escapeHtml(s) {
   )
 }
 
+// Card aliases ("weitere Namen") live in the card jsonb; a card is findable
+// under its main name AND every alias.
+export function cardAliases(row) {
+  return Array.isArray(row?.card?.aliases) ? row.card.aliases.filter(Boolean) : []
+}
+
+// German kind labels (ambiguity tooltips, Open-Names listing).
+export const KIND_LABELS_DE = { character: 'Figur', place: 'Ort', region: 'Region', geo: 'Geografie' }
+
 // Build a resolver over the current characters + places (+ regions and geo
-// features — both always name-final). Collision priority (later insertion
-// wins): geo feature < region < place < character.
+// features — both always name-final). Every name (main or alias) maps to ALL
+// entities carrying it; more than one match is AMBIGUOUS and is surfaced,
+// never silently guessed. Entries always carry the card's MAIN name (and the
+// matched alias as `_alias`), so styling/labels follow the card.
 export function makeResolver(characters = [], places = [], regions = [], geoFeatures = []) {
-  const byLowerName = new Map()
-  for (const g of geoFeatures) {
-    const key = (g.name || '').trim().toLowerCase()
-    if (key) byLowerName.set(key, { id: g.id, name: g.name, name_final: true, _kind: 'geo', _card: g })
+  const byLowerName = new Map() // lower name → [entry, …]
+  const add = (name, entry) => {
+    const key = (name || '').trim().toLowerCase()
+    if (!key) return
+    const list = byLowerName.get(key) || []
+    // The same card under the same name twice (alias === main name) is one entry.
+    if (list.some((e) => e._kind === entry._kind && e.id === entry.id)) return
+    list.push(entry)
+    byLowerName.set(key, list)
   }
-  for (const r of regions) {
-    const key = (r.name || '').trim().toLowerCase()
-    if (key) byLowerName.set(key, { id: r.id, name: r.name, name_final: true, _kind: 'region', _card: r })
-  }
+  for (const g of geoFeatures) add(g.name, { id: g.id, name: g.name, name_final: true, _kind: 'geo', _card: g })
+  for (const r of regions) add(r.name, { id: r.id, name: r.name, name_final: true, _kind: 'region', _card: r })
   for (const p of places) {
-    const key = (p.name || '').trim().toLowerCase()
-    if (key) byLowerName.set(key, { id: p.id, name: p.name, name_final: p.name_final, _kind: 'place', _card: p })
+    const entry = { id: p.id, name: p.name, name_final: p.name_final, _kind: 'place', _card: p }
+    add(p.name, entry)
+    for (const a of cardAliases(p)) add(a, { ...entry, _alias: a })
   }
   for (const c of characters) {
-    const key = (c.name || '').trim().toLowerCase()
-    if (key) byLowerName.set(key, { id: c.id, name: c.name, name_final: c.name_final, _kind: 'character', _card: c })
+    const entry = { id: c.id, name: c.name, name_final: c.name_final, _kind: 'character', _card: c }
+    add(c.name, entry)
+    for (const a of cardAliases(c)) add(a, { ...entry, _alias: a })
   }
   // Longest names first so "#Santal Porsiran" beats a hypothetical "#Santal".
   const names = [...byLowerName.keys()].sort((a, b) => b.length - a.length)
@@ -55,14 +71,22 @@ export function makeResolver(characters = [], places = [], regions = [], geoFeat
     }
     return null
   }
-  function lookup(name) {
-    return byLowerName.get((name || '').trim().toLowerCase()) || null
+  // All entities a typed name matches (empty = unresolved, 2+ = ambiguous).
+  function lookupAll(name) {
+    return byLowerName.get((name || '').trim().toLowerCase()) || []
   }
-  return { matchName, lookup, byLowerName, names }
+  // The unique match, or null when unresolved OR ambiguous.
+  function lookup(name) {
+    const list = lookupAll(name)
+    return list.length === 1 ? list[0] : null
+  }
+  return { matchName, lookup, lookupAll, byLowerName, names }
 }
 
 // Parse every "#Name" token out of a text. Returns
-// [{ index, name, card|null, resolved, provisional }].
+// [{ index, name, card|null, matches, resolved, ambiguous, provisional }].
+// resolved = exactly one match; ambiguous = several (surfaced, not guessed);
+// provisional follows the CARD's name_final, whichever name was typed.
 export function extractHashRefs(text, resolver) {
   const refs = []
   if (!text) return refs
@@ -77,12 +101,15 @@ export function extractHashRefs(text, resolver) {
       if (!m) continue
       name = m[0]
     }
-    const card = resolver.lookup(name)
+    const matches = resolver.lookupAll(name)
+    const card = matches.length === 1 ? matches[0] : null
     refs.push({
       index: i,
       name,
       card,
+      matches,
       resolved: !!card,
+      ambiguous: matches.length > 1,
       provisional: card ? !card.name_final : false,
     })
     i += name.length // skip the matched name (loop's i++ also skips the '#')
@@ -92,14 +119,22 @@ export function extractHashRefs(text, resolver) {
 
 // Render one "#Name" as an HTML span (used by the marked extension).
 export function renderHashlink(resolver, name) {
-  const card = resolver.lookup(name)
+  const matches = resolver.lookupAll(name)
   const label = escapeHtml('#' + name)
-  if (!card) {
+  if (!matches.length) {
     return `<span class="hashlink unresolved" data-name="${escapeHtml(name)}" title="Kein Eintrag — Tippfehler oder noch nicht angelegt">${label}</span>`
   }
+  if (matches.length > 1) {
+    // Several cards carry this name → do NOT guess. Distinct style, listed in
+    // the Open-Names view; the tooltip names every candidate.
+    const who = matches.map((m) => `${m.name} (${KIND_LABELS_DE[m._kind] || m._kind})`).join(' · ')
+    return `<span class="hashlink ambiguous" data-name="${escapeHtml(name)}" title="Mehrdeutig — passt auf: ${escapeHtml(who)}">${label}</span>`
+  }
+  const card = matches[0]
   const prov = card.name_final ? '' : ' provisional'
-  const tip = escapeHtml(card.name) + (card.name_final ? '' : ' (provisorisch)')
-  return `<span class="hashlink resolved${prov}" data-kind="${card._kind}" data-id="${escapeHtml(card.id)}" title="${tip}">${label}</span>`
+  // Alias matches tip with the card's MAIN name so it's clear what resolves.
+  const tip = (card._alias ? `${card.name} (Alias)` : card.name) + (card.name_final ? '' : ' (provisorisch)')
+  return `<span class="hashlink resolved${prov}" data-kind="${card._kind}" data-id="${escapeHtml(card.id)}" title="${escapeHtml(tip)}">${label}</span>`
 }
 
 // A marked extension object that renders inline "#Name" tokens.

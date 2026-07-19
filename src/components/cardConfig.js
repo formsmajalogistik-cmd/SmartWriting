@@ -15,6 +15,8 @@ export const CHARACTER_CONFIG = {
   portrait: true,
   // Per-book life status (card.book_status) + derived current status.
   bookStatus: true,
+  // "Aliase / weitere Namen" (card.aliases): the card resolves via #Alias too.
+  aliases: true,
   // Subtabs organise the CARDS VIEW only — # autocomplete and metadata
   // selectors always see every character regardless of tier.
   subtabs: [
@@ -74,6 +76,7 @@ export const PLACE_CONFIG = {
   plural: 'Orte',
   newName: 'Neuer Ort',
   subtitleKeys: ['place_type', 'region_id'],
+  aliases: true,
   topFields: [
     // Dropdown over this project's regions (stored as region_id). Any legacy
     // free-text `region` value stays visible until a region is picked.

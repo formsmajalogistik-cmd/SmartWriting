@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Marked } from 'marked'
 import { Bold, Italic, User, MapPin, Flag, Mountain, Map as MapIcon } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
-import { makeResolver, hashlinkExtension } from '../lib/hashlinks.js'
+import { makeResolver, hashlinkExtension, cardAliases } from '../lib/hashlinks.js'
 import { noBlockquote, GUILLEMET_MAP } from '../lib/markdown.js'
 import { getCaretCoordinates } from '../lib/caret.js'
 import CardPreview from './CardPreview.jsx'
@@ -90,16 +90,26 @@ export default function Editor({ value, onChange, preview, focusSelection, onFoc
     const prev = tokenStart > 0 ? before[tokenStart - 1] : ''
     if (prev && NAME_CHAR.test(prev)) return setAc(null) // mid-word like "C#"
     const q = m[1].toLowerCase()
+    // Cards appear once per findable name: the main name plus one entry per
+    // alias (alias entries insert the ALIAS but always show the main name).
+    // Duplicate names each stay listed — picking the right card is the
+    // author's call, never a silent guess.
+    const withAliases = (rows, kind) =>
+      rows.flatMap((r) => {
+        const base = { id: r.id, name: r.name, kind, name_final: r.name_final }
+        return [base, ...cardAliases(r).map((a) => ({ ...base, alias: a }))]
+      })
+    const label = (o) => o.alias || o.name
     const all = [
-      ...characters.map((c) => ({ id: c.id, name: c.name, kind: 'character', name_final: c.name_final })),
-      ...places.map((p) => ({ id: p.id, name: p.name, kind: 'place', name_final: p.name_final })),
+      ...withAliases(characters, 'character'),
+      ...withAliases(places, 'place'),
       ...regions.map((r) => ({ id: r.id, name: r.name, kind: 'region', name_final: true })),
       ...geoFeatures.map((g) => ({ id: g.id, name: g.name, kind: 'geo', name_final: true })),
-    ].filter((o) => o.name && o.name.toLowerCase().includes(q))
+    ].filter((o) => label(o) && label(o).toLowerCase().includes(q))
     all.sort((a, b) => {
-      const as = a.name.toLowerCase().startsWith(q) ? 0 : 1
-      const bs = b.name.toLowerCase().startsWith(q) ? 0 : 1
-      return as - bs || a.name.localeCompare(b.name)
+      const as = label(a).toLowerCase().startsWith(q) ? 0 : 1
+      const bs = label(b).toLowerCase().startsWith(q) ? 0 : 1
+      return as - bs || label(a).localeCompare(label(b))
     })
     const items = all.slice(0, 8)
     if (!items.length) return setAc(null)
@@ -120,7 +130,7 @@ export default function Editor({ value, onChange, preview, focusSelection, onFoc
     if (!ta || !ac) return
     const before = ta.value.slice(0, ac.tokenStart)
     const after = ta.value.slice(ac.caret)
-    const inserted = before + '#' + item.name
+    const inserted = before + '#' + (item.alias || item.name)
     onChange(inserted + after)
     setAc(null)
     const pos = inserted.length
@@ -306,7 +316,7 @@ export default function Editor({ value, onChange, preview, focusSelection, onFoc
         <ul className="hash-ac" style={{ top: ac.top, left: ac.left }}>
           {ac.items.map((it, i) => (
             <li
-              key={it.kind + it.id}
+              key={it.kind + it.id + (it.alias || '')}
               className={`hash-ac-item ${i === ac.index ? 'active' : ''}`}
               onMouseDown={(e) => {
                 e.preventDefault()
@@ -320,7 +330,15 @@ export default function Editor({ value, onChange, preview, focusSelection, onFoc
                   return <Icon size={15} />
                 })()}
               </span>
-              <span className="hash-ac-name">{it.name}</span>
+              <span className="hash-ac-name">
+                {it.alias ? (
+                  <>
+                    {it.alias} <span className="hash-ac-main">— {it.name}</span>
+                  </>
+                ) : (
+                  it.name
+                )}
+              </span>
               {!it.name_final && <span className="badge provisional small">prov.</span>}
             </li>
           ))}

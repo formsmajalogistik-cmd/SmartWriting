@@ -3,6 +3,7 @@ import { User, MapPin, ArrowRight } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 import { ROLE_LABELS } from '../data/types.js'
 import { deriveCharacterStatus } from '../lib/characterStatus.js'
+import { cardAliases } from '../lib/hashlinks.js'
 
 // Compact preview of a character or place card, shown when hovering/tapping a
 // resolved #link. Character: PRIMARY portrait + key details incl. Geschlecht
@@ -61,6 +62,11 @@ export default function CardPreview({ kind, card, onOpen }) {
             {card.name}
             {!card.name_final && <span className="badge provisional small">prov.</span>}
           </strong>
+          {cardAliases(card).length > 0 && (
+            <span className="card-preview-sub card-preview-aliases">
+              auch: {cardAliases(card).join(', ')}
+            </span>
+          )}
           {details && <span className="card-preview-sub">{details}</span>}
         </div>
       </div>

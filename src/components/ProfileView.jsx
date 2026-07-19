@@ -314,7 +314,8 @@ function SyntaxGuide() {
           <div className="syntax-meaning">
             <span className="syntax-title">Karten-Link</span>
             <span className="syntax-desc">
-              Verlinkt eine Figur oder einen Ort. Tippe „#“, um Karten vorzuschlagen. In der Vorschau
+              Verlinkt eine Figur oder einen Ort. Tippe „#“, um Karten vorzuschlagen. Auch Aliase
+              („weitere Namen“ auf der Karte, z. B. #Bambam für Valkorin) lösen auf. In der Vorschau
               zeigt ein Klick/Hover eine Vorschau der Karte.
             </span>
           </div>
@@ -341,7 +342,20 @@ function SyntaxGuide() {
             </span>
           </div>
           <div className="syntax-sample">
-            <span className="hashlink unresolved static">#Bambam</span>
+            <span className="hashlink unresolved static">#Bambom</span>
+          </div>
+        </div>
+        <div className="syntax-row">
+          <code className="syntax-code">#Name</code>
+          <div className="syntax-meaning">
+            <span className="syntax-title">Mehrdeutig</span>
+            <span className="syntax-desc">
+              Mehrere Karten tragen diesen Namen (doppelter Alias oder Namenskollision) — unter
+              „Namen“ auflösen.
+            </span>
+          </div>
+          <div className="syntax-sample">
+            <span className="hashlink ambiguous static">#Santal</span>
           </div>
         </div>
       </div>
