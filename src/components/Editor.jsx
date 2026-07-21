@@ -303,13 +303,16 @@ export default function Editor({ value, onChange, preview, focusSelection, onFoc
         />
       </div>
       {preview && (
+        // Scroll container fills the pane; the inner .editor-preview is the
+        // fixed-measure page column (same width as the writing column).
         <div
-          className="editor-preview markdown"
+          className="editor-preview-scroll"
           onMouseOver={onPreviewOver}
           onMouseOut={onPreviewOut}
           onClick={onPreviewClick}
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        >
+          <div className="editor-preview markdown" dangerouslySetInnerHTML={{ __html: html }} />
+        </div>
       )}
 
       {ac && (
