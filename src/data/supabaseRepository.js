@@ -376,7 +376,9 @@ export function createSupabaseRepository() {
       return unwrap(await q)
     },
 
-    async setCharacterLocation(projectId, { chapterId, characterId, placeId }) {
+    // placeId = START; endPlaceId = optional END. `undefined` leaves a field
+    // unchanged on an existing row; null clears it.
+    async setCharacterLocation(projectId, { chapterId, characterId, placeId, endPlaceId }) {
       const rows = unwrap(
         await supabase
           .from('character_locations')
@@ -385,10 +387,13 @@ export function createSupabaseRepository() {
           .eq('character_id', characterId),
       )
       if (rows.length) {
+        const patch = {}
+        if (placeId !== undefined) patch.place_id = placeId ?? null
+        if (endPlaceId !== undefined) patch.end_place_id = endPlaceId ?? null
         return unwrap(
           await supabase
             .from('character_locations')
-            .update({ place_id: placeId ?? null })
+            .update(patch)
             .eq('id', rows[0].id)
             .select()
             .single(),
@@ -404,6 +409,7 @@ export function createSupabaseRepository() {
             chapter_id: chapterId,
             character_id: characterId,
             place_id: placeId ?? null,
+            end_place_id: endPlaceId ?? null,
           })
           .select()
           .single(),

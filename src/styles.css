@@ -388,7 +388,13 @@ select:focus, input:focus, textarea:focus {
 .present-item:last-child { border-bottom: none; }
 .checkbox { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
 .checkbox input { width: auto; }
-.loc-select { width: 100%; margin-left: 24px; max-width: calc(100% - 24px); }
+/* Start ("von") + optional end ("bis") location per character per chapter. */
+.loc-range { display: flex; flex-direction: column; gap: 4px; margin-left: 24px; }
+.loc-part { display: flex; align-items: center; gap: 6px; }
+.loc-label { width: 26px; flex-shrink: 0; font-size: 11px; color: var(--text-dim); text-align: right; }
+.loc-select { flex: 1; width: 100%; min-width: 0; }
+/* Auto-growing chapter summary (height driven from JS, bounded + scrollable). */
+.summary-textarea { resize: none; overflow-y: auto; max-height: 220px; line-height: 1.5; }
 
 /* ---- Markdown preview ---- */
 .markdown { line-height: 1.7; }
@@ -1379,6 +1385,13 @@ select:focus, input:focus, textarea:focus {
   border-radius: 5px; padding: 1px 6px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);
 }
 .char-token .token-label.provisional { font-style: italic; color: #fbbf24; border-color: rgba(245,158,11,0.5); }
+/* Within-chapter movement badge: token stays at the start, badge names the end. */
+.char-token .token-move {
+  max-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 10px; font-style: italic; color: #a5f3fc;
+  background: rgba(8,47,58,0.88); border: 1px solid rgba(76,201,240,0.5);
+  border-radius: 5px; padding: 0 5px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
 .char-token:hover .token-portrait { border-color: #fff; }
 .event-indicator {
   display: inline-flex; align-items: center; gap: 3px;

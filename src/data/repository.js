@@ -89,9 +89,11 @@
 //     updatePlace(id, patch)               -> Place
 //     deletePlace(id)                      -> void   (cascades character_locations)
 //
-//   Character locations
+//   Character locations (placeId = START of the chapter; endPlaceId = optional
+//   END for within-chapter movement — undefined leaves a field unchanged,
+//   null clears it)
 //     listCharacterLocations(projectId, { chapterId? }) -> CharacterLocation[]
-//     setCharacterLocation(projectId, { chapterId, characterId, placeId })
+//     setCharacterLocation(projectId, { chapterId, characterId, placeId?, endPlaceId? })
 //                                          -> CharacterLocation (upsert by chapter+character)
 //     removeCharacterLocation(projectId, { chapterId, characterId }) -> void
 //     setPlacePresent(projectId, { chapterId, placeId })  -> CharacterLocation

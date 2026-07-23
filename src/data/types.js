@@ -270,18 +270,22 @@ export function makePlace({ project_id, name }) {
   }
 }
 
-// character_locations — id, project_id, character_id, chapter_id, place_id
+// character_locations — id, project_id, character_id, chapter_id, place_id,
+//                       end_place_id
 // Timeline backbone. Meaning of a row:
 //   character_id set, place_id null  -> character present, location unset
-//   character_id set, place_id set   -> character present at place
+//   character_id set, place_id set   -> character present, STARTS at place
 //   character_id null, place_id set  -> place present in chapter (no character)
-export function makeCharacterLocation({ project_id, character_id, chapter_id, place_id }) {
+// end_place_id (optional) = where the character ENDS the chapter; null means
+// they did not move. Legacy rows (no end) keep their single place as the start.
+export function makeCharacterLocation({ project_id, character_id, chapter_id, place_id, end_place_id }) {
   return {
     id: newId(),
     project_id,
     character_id: character_id ?? null,
     chapter_id,
     place_id: place_id ?? null,
+    end_place_id: end_place_id ?? null,
   }
 }
 

@@ -1,14 +1,14 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { X } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 import { CHAPTER_STATUSES } from '../data/types.js'
 import { countWords } from '../lib/progress.js'
 import AddCombo from './AddCombo.jsx'
 
-// Per-chapter metadata. Characters and places present are now SELECTED from the
+// Per-chapter metadata. Characters and places present are SELECTED from the
 // project's cards (storing ids, never names). Each present character gets a
-// place dropdown (limited to present places) that writes a character_locations
-// row (project_id, character_id, chapter_id, place_id).
+// START place ("von") and an optional END place ("bis") — both written to its
+// character_locations row (place_id / end_place_id). Empty end = no movement.
 export default function MetadataPanel({ chapter }) {
   const {
     characters,
@@ -23,21 +23,35 @@ export default function MetadataPanel({ chapter }) {
     openCard,
     setCharacterPresent,
     setCharacterPlace,
+    setCharacterEndPlace,
     setPlacePresent,
   } = useStore()
+
+  // Auto-growing summary: match the height to the content (bounded; scrolls
+  // beyond the max) so the whole text stays visible while writing.
+  const summaryRef = useRef(null)
+  useEffect(() => {
+    const el = summaryRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight + 2, 220)}px`
+  }, [chapter.summary, chapter.id])
 
   const chapterLocs = useMemo(
     () => locations.filter((l) => l.chapter_id === chapter.id),
     [locations, chapter.id],
   )
   const presentCharIds = chapterLocs.filter((l) => l.character_id).map((l) => l.character_id)
-  const presentPlaceIds = chapterLocs.filter((l) => l.place_id).map((l) => l.place_id)
+  // A place counts as present when anything references it — as a plain present
+  // place, a character's start place, or a character's END place.
+  const presentPlaceIds = chapterLocs.flatMap((l) => [l.place_id, l.end_place_id]).filter(Boolean)
   const presentCharSet = new Set(presentCharIds)
   const presentPlaceSet = new Set(presentPlaceIds)
 
   const byId = (list, id) => list.find((x) => x.id === id)
-  const charPlaceId = (charId) =>
-    chapterLocs.find((l) => l.character_id === charId)?.place_id || ''
+  const charLoc = (charId) => chapterLocs.find((l) => l.character_id === charId)
+  const charPlaceId = (charId) => charLoc(charId)?.place_id || ''
+  const charEndPlaceId = (charId) => charLoc(charId)?.end_place_id || ''
 
   // Present characters as full card objects, in name order.
   const presentCharacters = presentCharIds
@@ -53,14 +67,15 @@ export default function MetadataPanel({ chapter }) {
   const unselectedCharacters = characters.filter((c) => !presentCharSet.has(c.id))
   const unselectedPlaces = places.filter((p) => !presentPlaceSet.has(p.id))
 
-  // Place options for a character's location dropdown: the present places, plus
-  // the character's current place if it is no longer marked present.
+  // Place options for a character's location dropdowns: the present places,
+  // plus the character's current start/end places if no longer marked present.
   function placeOptionsFor(charId) {
     const opts = [...presentPlaces]
-    const cur = charPlaceId(charId)
-    if (cur && !presentPlaceSet.has(cur)) {
-      const p = byId(places, cur)
-      if (p) opts.push(p)
+    for (const cur of [charPlaceId(charId), charEndPlaceId(charId)]) {
+      if (cur && !opts.some((p) => p.id === cur)) {
+        const p = byId(places, cur)
+        if (p) opts.push(p)
+      }
     }
     return opts
   }
@@ -99,6 +114,7 @@ export default function MetadataPanel({ chapter }) {
   async function removePlace(placeId) {
     for (const c of presentCharacters) {
       if (charPlaceId(c.id) === placeId) await setCharacterPlace(chapter.id, c.id, null)
+      if (charEndPlaceId(c.id) === placeId) await setCharacterEndPlace(chapter.id, c.id, null)
     }
     await setPlacePresent(chapter.id, placeId, false)
   }
@@ -137,9 +153,11 @@ export default function MetadataPanel({ chapter }) {
       </label>
 
       <label className="field">
-        <span>Zusammenfassung (eine Zeile)</span>
-        <input
-          type="text"
+        <span>Zusammenfassung</span>
+        <textarea
+          ref={summaryRef}
+          className="summary-textarea"
+          rows={2}
           value={chapter.summary}
           placeholder="Worum geht es in diesem Kapitel?"
           onChange={(e) => updateChapter(chapter.id, { summary: e.target.value })}
@@ -176,19 +194,40 @@ export default function MetadataPanel({ chapter }) {
                     <X size={15} />
                   </button>
                 </div>
-                <select
-                  className="loc-select"
-                  value={charPlaceId(c.id)}
-                  onChange={(e) => setCharacterPlace(chapter.id, c.id, e.target.value || null)}
-                  title="Wo ist die Figur in diesem Kapitel?"
-                >
-                  <option value="">— Ort wählen —</option>
-                  {placeOptionsFor(c.id).map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="loc-range">
+                  <label className="loc-part">
+                    <span className="loc-label">von</span>
+                    <select
+                      className="loc-select"
+                      value={charPlaceId(c.id)}
+                      onChange={(e) => setCharacterPlace(chapter.id, c.id, e.target.value || null)}
+                      title="Startort in diesem Kapitel"
+                    >
+                      <option value="">— Ort wählen —</option>
+                      {placeOptionsFor(c.id).map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="loc-part">
+                    <span className="loc-label">bis</span>
+                    <select
+                      className="loc-select loc-end"
+                      value={charEndPlaceId(c.id)}
+                      onChange={(e) => setCharacterEndPlace(chapter.id, c.id, e.target.value || null)}
+                      title="Optionaler Zielort — leer lassen, wenn die Figur sich nicht bewegt"
+                    >
+                      <option value="">— kein Ortswechsel —</option>
+                      {placeOptionsFor(c.id).map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
               </li>
             ))}
           </ul>

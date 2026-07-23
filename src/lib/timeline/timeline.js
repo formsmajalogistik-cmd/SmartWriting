@@ -21,10 +21,12 @@ export function orderedChapters(chapters, books = []) {
 }
 
 // Where every character is during the chapter at orderedChapterIds[index].
-// Returns a Map character_id → place_id with CARRY-FORWARD: if a character has
-// no location-defining row for this chapter, they keep their most recent prior
-// placement (they stay where they last were). A character never placed up to
-// and including this chapter is absent from the map (don't show them).
+// Returns a Map character_id → { placeId, endPlaceId } with CARRY-FORWARD:
+//   • a row AT the selected chapter → the character is at its START place;
+//     endPlaceId is set iff the row has a DIFFERENT end (within-chapter move).
+//   • a row from an earlier chapter → they stay where they last ENDED
+//     (end_place_id if set, else place_id); endPlaceId is null (no live move).
+// A character never placed up to and including this chapter is absent.
 //
 // Only rows with BOTH character_id and place_id set define a location; a
 // present-but-unplaced row (place_id null) doesn't move or clear the carry.
@@ -32,16 +34,38 @@ export function placementsForChapterIndex(locations, orderedChapterIds, index) {
   const result = new Map()
   if (index < 0 || index >= orderedChapterIds.length) return result
   const pos = new Map(orderedChapterIds.map((id, i) => [id, i]))
-  const best = new Map() // character_id → { pos, place_id } at the latest pos ≤ index
+  const best = new Map() // character_id → { pos, loc } at the latest pos ≤ index
   for (const loc of locations) {
     if (!loc.character_id || !loc.place_id) continue
     const p = pos.get(loc.chapter_id)
     if (p === undefined || p > index) continue // unknown chapter, or in the future
     const cur = best.get(loc.character_id)
-    if (!cur || p >= cur.pos) best.set(loc.character_id, { pos: p, place_id: loc.place_id })
+    if (!cur || p >= cur.pos) best.set(loc.character_id, { pos: p, loc })
   }
-  for (const [cid, v] of best) result.set(cid, v.place_id)
+  for (const [cid, v] of best) {
+    if (v.pos === index) {
+      const moving = v.loc.end_place_id && v.loc.end_place_id !== v.loc.place_id
+      result.set(cid, { placeId: v.loc.place_id, endPlaceId: moving ? v.loc.end_place_id : null })
+    } else {
+      result.set(cid, { placeId: v.loc.end_place_id || v.loc.place_id, endPlaceId: null })
+    }
+  }
   return result
+}
+
+// The place a character last ENDED at strictly BEFORE orderedChapterIds[index]
+// (most recent end_place_id, else place_id). Used to PREFILL the start place
+// when adding a character to a chapter; null when they have no prior location.
+export function lastKnownPlaceBefore(locations, orderedChapterIds, index, characterId) {
+  const pos = new Map(orderedChapterIds.map((id, i) => [id, i]))
+  let best = null
+  for (const loc of locations) {
+    if (loc.character_id !== characterId || !loc.place_id) continue
+    const p = pos.get(loc.chapter_id)
+    if (p === undefined || p >= index) continue
+    if (!best || p >= best.p) best = { p, placeId: loc.end_place_id || loc.place_id }
+  }
+  return best ? best.placeId : null
 }
 
 // Events linked to a chapter via their card.chapter_ids list.
@@ -64,6 +88,10 @@ export const JOURNEY_COLORS = [
 // place_id define a waypoint; carry-forward means staying put adds no waypoint,
 // so the LAST waypoint is exactly the scrubber's carried-forward current place.
 // Returns [{ placeId, index }] in travel order (index = chapter position).
+// Within-chapter movement (an end_place_id) contributes start → end for every
+// PAST chapter, then the path continues to the next chapter's start. For the
+// selected chapter itself only the START counts — the live move is drawn
+// separately by the scrubber — keeping the last waypoint = the token position.
 export function journeyWaypoints(locations, orderedChapterIds, upToIndex, characterId) {
   if (upToIndex < 0) return []
   const pos = new Map(orderedChapterIds.map((id, i) => [id, i]))
@@ -72,9 +100,10 @@ export function journeyWaypoints(locations, orderedChapterIds, upToIndex, charac
     if (loc.character_id !== characterId || !loc.place_id) continue
     const p = pos.get(loc.chapter_id)
     if (p === undefined || p > upToIndex) continue
-    rows.push({ p, placeId: loc.place_id })
+    rows.push({ p, seq: 0, placeId: loc.place_id })
+    if (loc.end_place_id && p < upToIndex) rows.push({ p, seq: 1, placeId: loc.end_place_id })
   }
-  rows.sort((a, b) => a.p - b.p)
+  rows.sort((a, b) => a.p - b.p || a.seq - b.seq)
   const out = []
   for (const r of rows) {
     if (!out.length || out[out.length - 1].placeId !== r.placeId) {

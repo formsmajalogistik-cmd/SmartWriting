@@ -351,7 +351,7 @@ export default function MapBuilder({ terrain }) {
   const charById = useMemo(() => new Map(characters.map((c) => [c.id, c])), [characters])
 
   const timeline = useMemo(() => {
-    if (!selectedChapter) return { tokens: [], offMap: [], chapterEvents: [], eventPlaces: [] }
+    if (!selectedChapter) return { tokens: [], offMap: [], moves: [], chapterEvents: [], eventPlaces: [] }
     const placements = placementsForChapterIndex(
       locations,
       orderedChs.map((c) => c.id),
@@ -359,17 +359,23 @@ export default function MapBuilder({ terrain }) {
     )
     const onByPlace = new Map() // placeId → tokens (for clustering)
     const offMap = []
-    for (const [characterId, placeId] of placements) {
+    const moves = [] // within-chapter movement (start → end), drawn as dashed lines
+    for (const [characterId, pl] of placements) {
+      const { placeId, endPlaceId } = pl
       const ch = charById.get(characterId)
       if (!ch) continue // character deleted; skip
       const place = placeById.get(placeId)
       const coords = place?.coords
+      // Token sits at the START; a set end place marks the move (badge + line).
+      const endPlace = endPlaceId ? placeById.get(endPlaceId) : null
       const base = {
         characterId,
         name: ch.name,
         name_final: ch.name_final,
         portrait_path: ch.card?.portrait_path || null,
+        movesTo: endPlace?.name || null,
       }
+      if (endPlaceId) moves.push({ characterId, placeIds: [placeId, endPlaceId] })
       if (place && coords && Number.isFinite(coords.col) && Number.isFinite(coords.row)) {
         const arr = onByPlace.get(placeId) || []
         arr.push({ ...base, col: coords.col, row: coords.row })
@@ -394,7 +400,7 @@ export default function MapBuilder({ terrain }) {
         evByPlace.set(place.id, cur)
       }
     }
-    return { tokens, offMap, chapterEvents, eventPlaces: [...evByPlace.values()] }
+    return { tokens, offMap, moves, chapterEvents, eventPlaces: [...evByPlace.values()] }
   }, [selectedChapter, locations, orderedChs, chIdx, charById, placeById, events])
 
   const chapterLabel = useMemo(() => {
@@ -461,9 +467,14 @@ export default function MapBuilder({ terrain }) {
       for (const j of journeyInfo) {
         out.push({ key: `journey-${j.characterId}`, colour: j.colour, placeIds: j.waypoints, dashed: false, emphasize: true })
       }
+      // Within-chapter movement: a DASHED line from the character's start to
+      // their end place (token stays at the start, badge names the target).
+      for (const m of timeline.moves) {
+        out.push({ key: `move-${m.characterId}`, colour: journeyColour(m.characterId), placeIds: m.placeIds, dashed: true, emphasize: true })
+      }
     }
     return out
-  }, [mode, showRoutes, routes, journeyInfo])
+  }, [mode, showRoutes, routes, journeyInfo, timeline.moves, journeyColour])
 
   const toggleJourney = useCallback((charId) => {
     setJourneyIds((prev) => {
@@ -1673,7 +1684,10 @@ export default function MapBuilder({ terrain }) {
                             title="Figur-Karte öffnen"
                           >
                             <span className={o.name_final ? '' : 'prov'}>{o.name || '(ohne Namen)'}</span>
-                            <span className="timeline-sub">@ {o.placeName}</span>
+                            <span className="timeline-sub">
+                              @ {o.placeName}
+                              {o.movesTo ? ` → ${o.movesTo}` : ''}
+                            </span>
                           </button>
                         </li>
                       ))}

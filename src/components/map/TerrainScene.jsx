@@ -664,6 +664,13 @@ function Tokens({
               <span className={`token-label ${t.name_final ? '' : 'provisional'}`}>
                 {t.name || '(ohne Namen)'}
               </span>
+              {t.movesTo && (
+                // Within-chapter movement: the token stays at the START place;
+                // the badge names the end place (dashed line drawn separately).
+                <span className="token-move" title={`Bewegt sich in diesem Kapitel nach ${t.movesTo}`}>
+                  → {t.movesTo}
+                </span>
+              )}
             </button>
           </Html>
         )

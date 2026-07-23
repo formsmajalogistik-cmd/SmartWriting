@@ -363,12 +363,17 @@ export function createLocalRepository() {
       return chapterId ? rows.filter((r) => r.chapter_id === chapterId) : rows
     },
 
-    async setCharacterLocation(projectId, { chapterId, characterId, placeId }) {
+    // placeId = START of the chapter; endPlaceId = optional END (movement).
+    // Pass `undefined` for a field to leave it unchanged on an existing row;
+    // pass null to clear it.
+    async setCharacterLocation(projectId, { chapterId, characterId, placeId, endPlaceId }) {
       const db = await getDb()
       const rows = await db.getAllFromIndex(STORES.character_locations, 'chapter_id', chapterId)
       const existing = rows.find((r) => r.character_id === characterId)
       if (existing) {
-        const updated = { ...existing, place_id: placeId ?? null }
+        const updated = { ...existing }
+        if (placeId !== undefined) updated.place_id = placeId ?? null
+        if (endPlaceId !== undefined) updated.end_place_id = endPlaceId ?? null
         await db.put(STORES.character_locations, updated)
         return updated
       }
@@ -377,6 +382,7 @@ export function createLocalRepository() {
         chapter_id: chapterId,
         character_id: characterId,
         place_id: placeId ?? null,
+        end_place_id: endPlaceId ?? null,
       })
       await db.put(STORES.character_locations, row)
       return row

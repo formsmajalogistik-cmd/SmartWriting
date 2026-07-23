@@ -10,6 +10,7 @@ import {
   onPullApplied,
 } from '../data/syncEngine.js'
 import { findNameOccurrences, replaceNameReferences } from '../lib/hashlinks.js'
+import { orderedChapters, lastKnownPlaceBefore } from '../lib/timeline/timeline.js'
 
 const ACTIVE_PROJECT_KEY = 'smartwriting.activeProjectId'
 const ACTIVE_CHAPTER_KEY = 'smartwriting.activeChapterId'
@@ -764,17 +765,31 @@ export function StoreProvider({ children }) {
   const setCharacterPresent = useCallback(
     async (chapterId, characterId, present) => {
       if (present) {
-        await repo.setCharacterLocation(activeProjectId, { chapterId, characterId, placeId: null })
+        // PREFILL the start place with where the character ENDED the previous
+        // chapter (their most recent end, else start) — freely editable after.
+        const ordered = orderedChapters(chapters, activeProject?.settings?.books ?? []).map((c) => c.id)
+        const idx = ordered.indexOf(chapterId)
+        const prefill = idx >= 0 ? lastKnownPlaceBefore(locations, ordered, idx, characterId) : null
+        await repo.setCharacterLocation(activeProjectId, { chapterId, characterId, placeId: prefill })
       } else {
         await repo.removeCharacterLocation(activeProjectId, { chapterId, characterId })
       }
       await refreshLocations(activeProjectId)
     },
-    [activeProjectId, refreshLocations],
+    [activeProjectId, refreshLocations, chapters, activeProject, locations],
   )
+  // Start place ("von") of the chapter. Leaves the end place untouched.
   const setCharacterPlace = useCallback(
     async (chapterId, characterId, placeId) => {
       await repo.setCharacterLocation(activeProjectId, { chapterId, characterId, placeId })
+      await refreshLocations(activeProjectId)
+    },
+    [activeProjectId, refreshLocations],
+  )
+  // Optional end place ("bis"): null = the character does not move this chapter.
+  const setCharacterEndPlace = useCallback(
+    async (chapterId, characterId, endPlaceId) => {
+      await repo.setCharacterLocation(activeProjectId, { chapterId, characterId, endPlaceId })
       await refreshLocations(activeProjectId)
     },
     [activeProjectId, refreshLocations],
@@ -886,6 +901,7 @@ export function StoreProvider({ children }) {
     setEventInChapter,
     setCharacterPresent,
     setCharacterPlace,
+    setCharacterEndPlace,
     setPlacePresent,
     findReferences,
     renameReferences,
