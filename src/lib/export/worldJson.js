@@ -5,14 +5,30 @@
 // places, events, character_locations, and lexicon. The per-chapter Markdown
 // files are the human-readable mirror; this JSON is the source of truth for a
 // programmatic rebuild. Portrait bytes ship as separate files; each character
-// carries both its storage `portrait_path` and the bundle-relative
-// `portrait_file` so a rebuild can re-link images.
-import { slugify, extFromPath } from './util.js'
+// carries its storage paths plus `portrait_file` (the primary) and
+// `portrait_files` (every image, storage path → bundle file) so a rebuild can
+// re-link the whole gallery, not just the cover image.
+import { characterImagePaths, primaryImagePath, portraitBundleName } from '../portraits.js'
 
+// The bundle file for a character's PRIMARY image (kept for compatibility with
+// existing backups and rebuild tooling).
 export function portraitFileName(c) {
-  if (!c.card?.portrait_path) return null
-  const ext = extFromPath(c.card.portrait_path, 'img')
-  return `portraits/${slugify(c.name, 'figur')}-${c.id}.${ext}`
+  const primary = primaryImagePath(c)
+  if (!primary) return null
+  const index = characterImagePaths(c).indexOf(primary)
+  return portraitBundleName(c, primary, Math.max(0, index))
+}
+
+// EVERY image of a character: storage path → bundle file, in gallery order,
+// flagged so a rebuild knows which one is the primary. Secondary images used
+// to be dropped from backups entirely; this is the map that recovers them.
+export function portraitFileList(c) {
+  const primary = primaryImagePath(c)
+  return characterImagePaths(c).map((path, i) => ({
+    path,
+    file: portraitBundleName(c, path, i),
+    primary: path === primary,
+  }))
 }
 
 export function buildWorldJson(snapshot, exportedAt = new Date().toISOString()) {
@@ -44,7 +60,8 @@ export function buildWorldJson(snapshot, exportedAt = new Date().toISOString()) 
     })),
     characters: (snapshot.characters ?? []).map((c) => ({
       ...c,
-      portrait_file: portraitFileName(c),
+      portrait_file: portraitFileName(c), // primary image (bundle-relative)
+      portrait_files: portraitFileList(c), // ALL images: storage path → file
     })),
     places: snapshot.places ?? [],
     events: snapshot.events ?? [],

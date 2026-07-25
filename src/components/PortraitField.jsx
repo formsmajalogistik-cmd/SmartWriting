@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { User, AlertTriangle, Star, Trash2, Plus, X } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 import { downscaleImage } from '../lib/image.js'
+import { characterImagePaths, primaryImagePath } from '../lib/portraits.js'
 
 // Image GALLERY for a character card (grew out of the single portrait).
 // Multiple images live in the private bucket; the card jsonb stores the path
@@ -22,13 +23,11 @@ export default function PortraitField({ characterId, path, gallery, onChange }) 
   const [viewPath, setViewPath] = useState(null) // lightbox
   const inputRef = useRef(null)
 
-  // Old cards carry only portrait_path — treat it as a one-image gallery.
-  const paths = useMemo(() => {
-    const list = Array.isArray(gallery) && gallery.length ? [...gallery] : path ? [path] : []
-    if (path && !list.includes(path)) list.unshift(path)
-    return list
-  }, [gallery, path])
-  const primary = path && paths.includes(path) ? path : paths[0] || ''
+  // Shared resolution (lib/portraits.js) — the same rules the previews, the
+  // PDF export and the Drive backup use, so all of them show the same images.
+  const asCard = useMemo(() => ({ card: { portrait_path: path, gallery } }), [path, gallery])
+  const paths = useMemo(() => characterImagePaths(asCard), [asCard])
+  const primary = useMemo(() => primaryImagePath(asCard), [asCard])
 
   // Resolve viewable URLs for every gallery path.
   useEffect(() => {

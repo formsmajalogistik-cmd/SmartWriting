@@ -1,8 +1,9 @@
 // Central app store: wraps the repository, holds loaded data for the active
 // project, and exposes actions. Components never touch the repository directly;
 // they call these actions, which mutate via the repo and refresh local state.
-import { createContext, useContext, useCallback, useEffect, useMemo, useState } from 'react'
-import { getRepository } from '../data/repository.js'
+import { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { getRepository, DATA_BACKEND } from '../data/repository.js'
+import { characterImagePaths, primaryImagePath, isLocalOnlyPath } from '../lib/portraits.js'
 import {
   hydrateProject,
   bootstrapProjects,
@@ -573,6 +574,56 @@ export function StoreProvider({ children }) {
     repo.uploadPortrait(characterId, blob, opts), [])
   const getPortraitUrl = useCallback((path) => repo.getPortraitUrl(path), [])
   const deletePortrait = useCallback((path) => repo.deletePortrait(path), [])
+
+  // Lift images that were only ever written to THIS browser's blob store
+  // ("local/…" paths, from before uploads went to Storage or from an offline
+  // upload) into Supabase Storage, and rewrite the card to the new paths.
+  // Until this runs those images are invisible to every other device — and to
+  // the Drive backup, which is where their absence was first noticed. Runs
+  // best-effort before an export/backup; a failure just leaves the image local.
+  // Read through a ref, so this callback keeps a STABLE identity: the Drive
+  // provider debounces auto-backup on it, and a changing identity would reset
+  // that timer on every refresh (auto-backup would never fire).
+  const charactersRef = useRef([])
+  charactersRef.current = characters
+  const healLocalPortraits = useCallback(async () => {
+    if (DATA_BACKEND !== 'localfirst') return { healed: 0, failed: 0 }
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return { healed: 0, failed: 0 }
+    let healed = 0
+    let failed = 0
+    for (const c of charactersRef.current) {
+      const paths = characterImagePaths(c)
+      const localPaths = paths.filter(isLocalOnlyPath)
+      if (!localPaths.length) continue
+      const moved = new Map()
+      for (const path of localPaths) {
+        try {
+          const blob = await repo.getPortraitBlob?.(path)
+          if (!blob) { failed += 1; continue } // bytes live on another device
+          const ext = path.split('.').pop() || 'webp'
+          const next = await repo.uploadPortrait(c.id, blob, { ext, contentType: blob.type })
+          if (!next || isLocalOnlyPath(next)) { failed += 1; continue } // still offline
+          moved.set(path, next)
+          healed += 1
+        } catch {
+          failed += 1
+        }
+      }
+      if (!moved.size) continue
+      const card = c.card || {}
+      const nextGallery = paths.map((p) => moved.get(p) || p)
+      const nextPrimary = moved.get(primaryImagePath(c)) || primaryImagePath(c)
+      try {
+        await repo.updateCharacter(c.id, {
+          card: { ...card, gallery: nextGallery, portrait_path: nextPrimary },
+        })
+      } catch {
+        failed += moved.size
+      }
+    }
+    if (healed) await refreshCharacters(activeProjectId)
+    return { healed, failed }
+  }, [activeProjectId, refreshCharacters])
   const createPlace = useCallback(
     async (name) => {
       const p = await repo.createPlace(activeProjectId, { name })
@@ -882,6 +933,7 @@ export function StoreProvider({ children }) {
     deleteCharacter,
     uploadPortrait,
     getPortraitUrl,
+    healLocalPortraits,
     deletePortrait,
     createPlace,
     updatePlace,

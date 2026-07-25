@@ -109,6 +109,7 @@
 //   path is kept on the character card jsonb)
 //     uploadPortrait(characterId, blob, { ext, contentType }) -> path
 //     getPortraitUrl(path)                 -> signed/object URL (or null)
+//     getPortraitBlob(path)                -> Blob (local bytes) or null
 //     deletePortrait(path)                 -> void
 //
 //   Drive backup linkage (per-user; opt-in flag + folder/file IDs, NO tokens)

@@ -10,6 +10,9 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // We register the worker ourselves (src/pwa/updates.js) so the app can
+      // detect a new deploy and OFFER a reload instead of breaking silently.
+      injectRegister: null,
       includeAssets: [
         'favicon-32.png',
         'apple-touch-icon.png',
@@ -40,7 +43,26 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
-        navigateFallback: '/index.html',
+        // A new deploy renames every hashed asset. If the shell (index.html)
+        // were served from the precache, an old shell would ask for asset
+        // filenames that no longer exist → "Failed to fetch dynamically
+        // imported module". So the shell must never come from the cache while
+        // the network is reachable. That needs BOTH of these:
+        //   • no navigateFallback — it binds navigations to the precached shell;
+        //   • directoryIndex/cleanUrls off — otherwise Workbox's precache route
+        //     answers "/" with the precached "index.html" BEFORE any runtime
+        //     route runs (this was the actual cause of the stale shell).
+        // Navigations then hit the NetworkFirst route below, which falls back
+        // to the precached shell only when the network is genuinely gone.
+        navigateFallback: null,
+        directoryIndex: null,
+        // Drop precaches from previous deploys instead of letting them pile up.
+        cleanupOutdatedCaches: true,
+        // Activate the new worker immediately and take over open tabs; the app
+        // then shows a "neue Version verfügbar" prompt rather than reloading
+        // under the author's fingers.
+        skipWaiting: true,
+        clientsClaim: true,
         // The heavy PDF library + fonts (pdfmake / vfs_fonts) and the 3D map
         // builder (three.js / react-three-fiber, in the MapBuilder chunk) are
         // loaded on demand — only when the user triggers a PDF export or opens
@@ -54,6 +76,21 @@ export default defineConfig({
           '**/NewFavIcon.png',
         ],
         runtimeCaching: [
+          {
+            // The app shell: always ask the network first so a fresh deploy's
+            // index.html (with its new asset hashes) wins. Offline — or when
+            // the network stalls — fall back to the last good copy, and to the
+            // precached shell if this browser has never loaded one.
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'app-shell',
+              networkTimeoutSeconds: 4,
+              expiration: { maxEntries: 4 },
+              cacheableResponse: { statuses: [0, 200] },
+              precacheFallback: { fallbackURL: '/index.html' },
+            },
+          },
           {
             urlPattern: /\/assets\/(pdfmake\.min|vfs_fonts)-[^/]*\.js$/,
             handler: 'CacheFirst',

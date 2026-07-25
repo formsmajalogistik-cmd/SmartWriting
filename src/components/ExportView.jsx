@@ -5,7 +5,8 @@ import { slugify, triggerDownload } from '../lib/export/util.js'
 
 // Export hub: recoverable ZIP (Markdown + JSON) and readable PDFs.
 export default function ExportView() {
-  const { activeProject, chapters, characters, places, exportSnapshot, getPortraitUrl } = useStore()
+  const { activeProject, chapters, characters, places, exportSnapshot, getPortraitUrl, healLocalPortraits } =
+    useStore()
 
   // Per-action status: { busy, msg, type } keyed by action id.
   const [status, setStatus] = useState({})
@@ -30,6 +31,9 @@ export default function ExportView() {
   async function exportZip() {
     setWarnings([])
     await run('zip', 'Sammle Projektdaten …', async () => {
+      // Same pre-step as the Drive backup: images stored only in this browser
+      // move into Storage first so the ZIP can actually contain them.
+      await healLocalPortraits?.().catch(() => {})
       const snapshot = await exportSnapshot()
       const { buildRecoverableBundle, bundleToZip } = await import('../lib/export/bundle.js')
       setS('zip', { busy: true, msg: 'Erzeuge Backup …', type: 'info' })

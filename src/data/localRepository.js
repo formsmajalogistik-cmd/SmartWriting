@@ -659,6 +659,15 @@ export function createLocalRepository() {
       return URL.createObjectURL(row.blob)
     },
 
+    // Raw bytes (no object URL). Used to lift images that were only ever
+    // stored locally into Supabase Storage, so other devices and the Drive
+    // backup can see them.
+    async getPortraitBlob(path) {
+      if (!path) return null
+      const db = await getDb()
+      return (await db.get(STORES.portraits, path))?.blob ?? null
+    },
+
     async deletePortrait(path) {
       if (!path) return
       const db = await getDb()

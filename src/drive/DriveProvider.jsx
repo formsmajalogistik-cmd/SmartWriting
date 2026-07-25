@@ -22,6 +22,7 @@ export function DriveProvider({ children }) {
     activeProjectId,
     exportSnapshot,
     getPortraitUrl,
+    healLocalPortraits,
     getDriveLink,
     saveDriveLink,
     chapters,
@@ -119,6 +120,10 @@ export function DriveProvider({ children }) {
           return
         }
         setStatus({ state: 'backing-up', msg: 'Sicherung wird vorbereitet …' })
+        // Images that only ever existed in this browser's blob store can't be
+        // fetched by the bundle (or by any other device). Lift them into
+        // Storage first, so the backup contains them instead of warning.
+        await healLocalPortraits?.().catch(() => {})
         const snapshot = await exportSnapshot()
         const { buildRecoverableBundle } = await import('../lib/export/bundle.js')
         const bundle = await buildRecoverableBundle(snapshot, {
@@ -164,7 +169,7 @@ export function DriveProvider({ children }) {
         inFlightRef.current = false
       }
     },
-    [connected, activeProjectId, exportSnapshot, getPortraitUrl, saveDriveLink, dataSig],
+    [connected, activeProjectId, exportSnapshot, getPortraitUrl, healLocalPortraits, saveDriveLink, dataSig],
   )
 
   // Auto-backup: debounce after a real change, while connected. The first

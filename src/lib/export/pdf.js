@@ -14,6 +14,7 @@ import { Marked } from 'marked'
 import pdfMakeUrl from 'pdfmake/build/pdfmake.min.js?url'
 import vfsUrl from 'pdfmake/build/vfs_fonts.js?url'
 import { makeResolver, hashlinkExtension } from '../hashlinks.js'
+import { primaryImagePath } from '../portraits.js'
 import { noBlockquote } from '../markdown.js'
 import { groupChaptersByBook } from './markdown.js'
 import { triggerDownload } from './util.js'
@@ -158,8 +159,9 @@ export async function exportManuscriptPdf(snapshot, filename, onStage) {
 
 // ---- Public: a character or place card (one page) -------------------------
 async function portraitToJpegDataUrl(card, getPortraitUrl) {
-  if (!card.card?.portrait_path || !getPortraitUrl) return null
-  const url = await getPortraitUrl(card.card.portrait_path)
+  const path = primaryImagePath(card)
+  if (!path || !getPortraitUrl) return null
+  const url = await getPortraitUrl(path)
   if (!url) return null
   const resp = await fetch(url)
   if (!resp.ok) return null

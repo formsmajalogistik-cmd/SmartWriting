@@ -5,8 +5,15 @@ import { StoreProvider } from './state/store.jsx'
 import { AuthProvider, useAuth } from './auth/AuthProvider.jsx'
 import { DriveProvider } from './drive/DriveProvider.jsx'
 import AuthScreen from './components/AuthScreen.jsx'
+import UpdateBanner from './components/UpdateBanner.jsx'
 import { AUTH_GATED } from './data/repository.js'
+import { initPwaUpdates } from './pwa/updates.js'
 import './styles.css'
+
+// Service worker + new-deploy detection. Registered before render so a stale
+// tab can report a failed chunk import as "neue Version verfügbar" instead of
+// a raw technical error.
+initPwaUpdates()
 
 // The app shell: store + (per-user, opt-in) Drive backup orchestrator.
 function Shell() {
@@ -34,6 +41,7 @@ function Root() {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
+    <UpdateBanner />
     <AuthProvider>
       <Root />
     </AuthProvider>

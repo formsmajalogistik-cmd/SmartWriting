@@ -1935,3 +1935,31 @@ select:focus, input:focus, textarea:focus {
 .pr-ok-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: #5fbf7f; }
 .pr-bad-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: #d66; }
 .pr-problem { font-size: 12px; color: #d66; margin-top: 3px; }
+
+/* ---- New-deploy prompt (service-worker update / stale chunk recovery) ---- */
+.update-banner {
+  position: fixed; z-index: 200; left: 50%; transform: translateX(-50%); bottom: 16px;
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-2); border: 1px solid var(--accent); border-radius: 999px;
+  padding: 7px 8px 7px 14px; font-size: 13px; color: var(--text);
+  box-shadow: 0 10px 32px rgba(0,0,0,0.55);
+}
+.update-banner .toggle.sm { padding: 3px 10px; font-size: 12px; }
+.update-later {
+  background: none; border: none; color: var(--text-dim); font: inherit;
+  font-size: 12px; cursor: pointer; padding: 3px 8px;
+}
+.update-later:hover { color: var(--text); }
+/* Chunk load failed: this tab cannot keep working, so block with a clear ask. */
+.update-blocker {
+  position: fixed; inset: 0; z-index: 300; display: grid; place-items: center;
+  background: rgba(8,10,15,0.82); padding: 20px;
+}
+.update-dialog {
+  width: min(440px, 100%); background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.update-dialog-head { display: flex; align-items: center; gap: 8px; color: #fbbf24; }
+.update-dialog-head h2 { margin: 0; font-size: 17px; color: var(--text); }
+.update-dialog p { color: var(--text-dim); font-size: 14px; line-height: 1.55; margin: 10px 0 16px; }
+.update-dialog .toggle { display: inline-flex; align-items: center; gap: 7px; }

@@ -4,6 +4,7 @@ import { useStore } from '../state/store.jsx'
 import { ROLE_LABELS } from '../data/types.js'
 import { deriveCharacterStatus } from '../lib/characterStatus.js'
 import { cardAliases } from '../lib/hashlinks.js'
+import { primaryImagePath } from '../lib/portraits.js'
 
 // Compact preview of a character or place card, shown when hovering/tapping a
 // resolved #link. Character: PRIMARY portrait + key details incl. Geschlecht
@@ -11,7 +12,7 @@ import { cardAliases } from '../lib/hashlinks.js'
 export default function CardPreview({ kind, card, onOpen }) {
   const { getPortraitUrl, activeProject, activeBookId } = useStore()
   const [url, setUrl] = useState(null)
-  const portraitPath = kind === 'character' ? card.card?.portrait_path : null
+  const portraitPath = kind === 'character' ? primaryImagePath(card) : null
 
   useEffect(() => {
     let cancelled = false
