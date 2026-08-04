@@ -2,7 +2,7 @@
   "meta": {
     "language": "Praemali",
     "version": "2.0",
-    "total_roots": 124,
+    "total_roots": 138,
     "description": "Complete bilingual (EN/DE -> Praemali) lexicon with grammar rules for Die Lichter von Ilema translator",
     "registers": [
       "proto-divine",
@@ -681,7 +681,7 @@
         "imperfective": "gariv",
         "causative": "tagarav",
         "intensive": "garrav",
-        "negated_adj": "fagarvi",
+        "negated_adj": "fangarvi",
         "plural": "girav"
       },
       "translations": {
@@ -692,7 +692,7 @@
         "feared": "garav",
         "fears": "gariv",
         "frighten": "tagarav",
-        "fearless": "fagarvi",
+        "fearless": "fangarvi",
         "fears_plural": "girav"
       },
       "translations_de": {
@@ -703,7 +703,7 @@
         "fürchtete": "garav",
         "fürchtet": "gariv",
         "erschrecken": "tagarav",
-        "furchtlos": "fagarvi",
+        "furchtlos": "fangarvi",
         "Ängste": "girav"
       }
     },
@@ -727,7 +727,7 @@
         "perfective": "kanal",
         "imperfective": "kanil",
         "causative": "takanal",
-        "negated": "fakonl",
+        "negated": "fankonl",
         "plural": "kinal"
       },
       "translations": {
@@ -738,7 +738,7 @@
         "learned": "kanal",
         "learns": "kanil",
         "teach": "takanal",
-        "ignorance": "fakonl",
+        "ignorance": "fankonl",
         "school": "kanlal",
         "library": "kanlal"
       },
@@ -750,7 +750,7 @@
         "lernte": "kanal",
         "lernt": "kanil",
         "lehren": "takanal",
-        "Unwissenheit": "fakonl",
+        "Unwissenheit": "fankonl",
         "Schule": "kanlal",
         "Bibliothek": "kanlal"
       }
@@ -1654,7 +1654,7 @@
         "perfective": "karam",
         "imperfective": "karim",
         "causative": "takaram",
-        "negated_adj": "fakarmi",
+        "negated_adj": "fankarmi",
         "plural": "kiram"
       },
       "translations": {
@@ -1664,7 +1664,7 @@
         "gracious": "karmi",
         "showed mercy": "karam",
         "is merciful": "karim",
-        "merciless": "fakarmi"
+        "merciless": "fankarmi"
       },
       "translations_de": {
         "Gnade": "korm",
@@ -1672,7 +1672,7 @@
         "gnädig": "karmi",
         "zeigte Gnade": "karam",
         "ist gnädig": "karim",
-        "gnadenlos": "fakarmi"
+        "gnadenlos": "fankarmi"
       }
     },
     {
@@ -2093,18 +2093,18 @@
         "adjective": "kabri",
         "perfective": "kabar",
         "imperfective": "kabir",
-        "negated": "fakobr",
+        "negated": "fankobr",
         "plural": "kibar"
       },
       "translations": {
         "pride": "kobr",
         "proud": "kabri",
-        "humility": "fakobr"
+        "humility": "fankobr"
       },
       "translations_de": {
         "Stolz": "kobr",
         "stolz": "kabri",
-        "Demut": "fakobr"
+        "Demut": "fankobr"
       }
     },
     {
@@ -2312,7 +2312,7 @@
         "perfective": "kalat",
         "imperfective": "kalit",
         "causative": "takalat",
-        "negated": "fakalat",
+        "negated": "fankalat",
         "plural": "kilata"
       },
       "translations": {
@@ -2322,7 +2322,7 @@
         "spoke": "kalat",
         "speaks": "kalit",
         "compel testimony": "takalat",
-        "silence": "fakalat"
+        "silence": "fankalat"
       },
       "translations_de": {
         "Rede": "kalat",
@@ -2331,7 +2331,7 @@
         "sprach": "kalat",
         "spricht": "kalit",
         "Aussage erzwingen": "takalat",
-        "Stille": "fakalat"
+        "Stille": "fankalat"
       }
     },
     {
@@ -3909,7 +3909,7 @@
         "perfective": "karal",
         "imperfective": "karil",
         "causative": "takaral",
-        "negated": "fakarla",
+        "negated": "fankarla",
         "plural": "kirala"
       },
       "translations": {
@@ -3918,8 +3918,8 @@
         "time-bound": "karli",
         "passed": "karal",
         "passes": "karil",
-        "eternity": "fakarla",
-        "timelessness": "fakarla"
+        "eternity": "fankarla",
+        "timelessness": "fankarla"
       },
       "translations_de": {
         "Zeit": "karla",
@@ -3927,8 +3927,8 @@
         "zeitgebunden": "karli",
         "verging": "karal",
         "vergeht": "karil",
-        "Ewigkeit": "fakarla",
-        "Zeitlosigkeit": "fakarla"
+        "Ewigkeit": "fankarla",
+        "Zeitlosigkeit": "fankarla"
       }
     },
     {
@@ -4088,7 +4088,7 @@
         "adjective": "kanvi",
         "perfective": "kanav",
         "imperfective": "kaniv",
-        "negated": "fakonv",
+        "negated": "fankonv",
         "plural": "kinav"
       },
       "translations": {
@@ -4097,8 +4097,8 @@
         "known": "kanvi",
         "knew": "kanav",
         "knows": "kaniv",
-        "stranger": "fakonv",
-        "unknown": "fakonv"
+        "stranger": "fankonv",
+        "unknown": "fankonv"
       },
       "translations_de": {
         "Kennen": "konv",
@@ -4106,8 +4106,8 @@
         "bekannt": "kanvi",
         "kannte": "kanav",
         "kennt": "kaniv",
-        "Fremder": "fakonv",
-        "unbekannt": "fakonv"
+        "Fremder": "fankonv",
+        "unbekannt": "fankonv"
       }
     },
     {
@@ -4521,6 +4521,473 @@
         "hilft": "nadir",
         "Verlassen": "fanodr"
       }
+    },
+    {
+      "root": "K-V-N",
+      "consonants": [
+        "k",
+        "v",
+        "n"
+      ],
+      "meaning": "emptiness, hollowness",
+      "domain": "abstract",
+      "register": "all",
+      "forms": {
+        "noun": "kovna",
+        "adjective": "kavni",
+        "perfective": "kavan",
+        "imperfective": "kavin",
+        "negated": "fankovna",
+        "plural": "kivana"
+      },
+      "translations": {
+        "emptiness": "kovna",
+        "hollow": "kavni",
+        "empty": "kavni",
+        "was emptied": "kavan",
+        "empties": "kavin",
+        "fullness": "fankovna"
+      },
+      "translations_de": {
+        "Leere": "kovna",
+        "hohl": "kavni",
+        "leer": "kavni",
+        "wurde geleert": "kavan",
+        "leert": "kavin",
+        "Fülle": "fankovna"
+      }
+    },
+    {
+      "root": "K-R-V",
+      "consonants": [
+        "k",
+        "r",
+        "v"
+      ],
+      "meaning": "claw, talon",
+      "domain": "body",
+      "register": "all",
+      "forms": {
+        "noun": "korv",
+        "adjective": "karvi",
+        "perfective": "karav",
+        "imperfective": "kariv",
+        "plural": "kirav"
+      },
+      "translations": {
+        "claw": "korv",
+        "talon": "korv",
+        "clawed": "karvi",
+        "raked": "karav",
+        "claws_verb": "kariv",
+        "claws": "kirav"
+      },
+      "translations_de": {
+        "Klaue": "korv",
+        "Kralle": "korv",
+        "bekrallt": "karvi",
+        "krallte": "karav",
+        "krallt": "kariv",
+        "Klauen": "kirav"
+      }
+    },
+    {
+      "root": "W-L-N",
+      "consonants": [
+        "w",
+        "l",
+        "n"
+      ],
+      "meaning": "wave, swell",
+      "domain": "nature",
+      "register": "all",
+      "forms": {
+        "noun": "walna",
+        "adjective": "walni",
+        "perfective": "walan",
+        "imperfective": "walin",
+        "plural": "wilana"
+      },
+      "translations": {
+        "wave": "walna",
+        "wavy": "walni",
+        "surged": "walan",
+        "swells": "walin",
+        "waves": "wilana"
+      },
+      "translations_de": {
+        "Welle": "walna",
+        "wellig": "walni",
+        "wogte": "walan",
+        "wogt": "walin",
+        "Wellen": "wilana"
+      }
+    },
+    {
+      "root": "K-L-F",
+      "consonants": [
+        "k",
+        "l",
+        "f"
+      ],
+      "meaning": "cliff, edge of stone",
+      "domain": "nature",
+      "register": "all",
+      "forms": {
+        "noun": "kolf",
+        "adjective": "kalfi",
+        "plural": "kilaf"
+      },
+      "translations": {
+        "cliff": "kolf",
+        "sheer": "kalfi",
+        "cliffs": "kilaf"
+      },
+      "translations_de": {
+        "Klippe": "kolf",
+        "steil": "kalfi",
+        "Klippen": "kilaf"
+      }
+    },
+    {
+      "root": "S-M-R",
+      "consonants": [
+        "s",
+        "m",
+        "r"
+      ],
+      "meaning": "sand",
+      "domain": "nature",
+      "register": "all",
+      "forms": {
+        "noun": "somra",
+        "adjective": "samri",
+        "plural": "simara"
+      },
+      "translations": {
+        "sand": "somra",
+        "sandy": "samri",
+        "sands": "simara"
+      },
+      "translations_de": {
+        "Sand": "somra",
+        "sandig": "samri",
+        "Sände": "simara"
+      }
+    },
+    {
+      "root": "SH-V-L",
+      "consonants": [
+        "sh",
+        "v",
+        "l"
+      ],
+      "meaning": "whisper, quiet voice",
+      "domain": "speech",
+      "register": "all",
+      "forms": {
+        "noun": "shovla",
+        "adjective": "shavli",
+        "perfective": "shaval",
+        "imperfective": "shavil",
+        "plural": "shivala"
+      },
+      "translations": {
+        "whisper": "shovla",
+        "hushed": "shavli",
+        "whispered": "shaval",
+        "whispers": "shavil",
+        "whispers_plural": "shivala"
+      },
+      "translations_de": {
+        "Flüstern": "shovla",
+        "gedämpft": "shavli",
+        "flüsterte": "shaval",
+        "flüstert": "shavil",
+        "Geflüster": "shivala"
+      }
+    },
+    {
+      "root": "D-V-N",
+      "consonants": [
+        "d",
+        "v",
+        "n"
+      ],
+      "meaning": "depth, the deep",
+      "domain": "nature",
+      "register": "all",
+      "forms": {
+        "noun": "dovna",
+        "adjective": "davni",
+        "negated_adj": "fadavni",
+        "plural": "divana"
+      },
+      "translations": {
+        "depth": "dovna",
+        "deep": "davni",
+        "shallow": "fadavni",
+        "depths": "divana"
+      },
+      "translations_de": {
+        "Tiefe": "dovna",
+        "tief": "davni",
+        "seicht": "fadavni",
+        "Tiefen": "divana"
+      }
+    },
+    {
+      "root": "K-N-S",
+      "consonants": [
+        "k",
+        "n",
+        "s"
+      ],
+      "meaning": "nest, den, refuge",
+      "domain": "nature",
+      "register": "all",
+      "forms": {
+        "noun": "kons",
+        "adjective": "kansi",
+        "plural": "kinas"
+      },
+      "translations": {
+        "nest": "kons",
+        "den": "kons",
+        "sheltered_nest": "kansi",
+        "nests": "kinas"
+      },
+      "translations_de": {
+        "Nest": "kons",
+        "Bau": "kons",
+        "genistet": "kansi",
+        "Nester": "kinas"
+      }
+    },
+    {
+      "root": "P-R-V",
+      "consonants": [
+        "p",
+        "r",
+        "v"
+      ],
+      "meaning": "trial, test, proving",
+      "domain": "abstract",
+      "register": "all",
+      "forms": {
+        "noun": "porva",
+        "agent": "parvun",
+        "adjective": "parvi",
+        "perfective": "parav",
+        "imperfective": "pariv",
+        "causative": "taparav",
+        "negated": "faporva",
+        "plural": "pirava"
+      },
+      "translations": {
+        "trial": "porva",
+        "test": "porva",
+        "candidate": "parvun",
+        "tested": "parvi",
+        "proven": "parvi",
+        "was tried": "parav",
+        "tests": "pariv",
+        "put to the test": "taparav",
+        "exemption": "faporva",
+        "trials": "pirava"
+      },
+      "translations_de": {
+        "Prüfung": "porva",
+        "Probe": "porva",
+        "Geprüfter": "parvun",
+        "erprobt": "parvi",
+        "bewährt": "parvi",
+        "wurde geprüft": "parav",
+        "prüft": "pariv",
+        "auf die Probe stellen": "taparav",
+        "Befreiung": "faporva",
+        "Prüfungen": "pirava"
+      }
+    },
+    {
+      "root": "M-L-N",
+      "consonants": [
+        "m",
+        "l",
+        "n"
+      ],
+      "meaning": "grain, milling",
+      "domain": "nature",
+      "register": "all",
+      "forms": {
+        "noun": "molna",
+        "adjective": "malni",
+        "perfective": "malan",
+        "imperfective": "malin",
+        "place": "malnal",
+        "plural": "milana"
+      },
+      "translations": {
+        "grain": "molna",
+        "grainy": "malni",
+        "milled": "malan",
+        "grinds": "malin",
+        "mill": "malnal",
+        "grains": "milana"
+      },
+      "translations_de": {
+        "Korn": "molna",
+        "körnig": "malni",
+        "gemahlen": "malan",
+        "mahlt": "malin",
+        "Mühle": "malnal",
+        "Körner": "milana"
+      }
+    },
+    {
+      "root": "L-N-D",
+      "consonants": [
+        "l",
+        "n",
+        "d"
+      ],
+      "meaning": "dream, night-vision",
+      "domain": "soul",
+      "register": "all",
+      "forms": {
+        "noun": "londa",
+        "agent": "landun",
+        "adjective": "landi",
+        "perfective": "lanad",
+        "imperfective": "lanid",
+        "negated": "falonda",
+        "plural": "linada"
+      },
+      "translations": {
+        "dream": "londa",
+        "dreamer": "landun",
+        "dreamlike": "landi",
+        "dreamed": "lanad",
+        "dreams_verb": "lanid",
+        "dreamlessness": "falonda",
+        "dreams": "linada"
+      },
+      "translations_de": {
+        "Traum": "londa",
+        "Träumer": "landun",
+        "traumhaft": "landi",
+        "träumte": "lanad",
+        "träumt": "lanid",
+        "Traumlosigkeit": "falonda",
+        "Träume": "linada"
+      }
+    },
+    {
+      "root": "H-L-M",
+      "consonants": [
+        "h",
+        "l",
+        "m"
+      ],
+      "meaning": "grass",
+      "domain": "nature",
+      "register": "all",
+      "forms": {
+        "noun": "holma",
+        "adjective": "halmi",
+        "plural": "hilama"
+      },
+      "translations": {
+        "grass": "holma",
+        "grassy": "halmi",
+        "grasses": "hilama"
+      },
+      "translations_de": {
+        "Gras": "holma",
+        "grasig": "halmi",
+        "Gräser": "hilama"
+      }
+    },
+    {
+      "root": "D-P-N",
+      "consonants": [
+        "d",
+        "p",
+        "n"
+      ],
+      "meaning": "flat, level ground",
+      "domain": "nature",
+      "register": "all",
+      "forms": {
+        "noun": "dopn",
+        "adjective": "dapni",
+        "place": "dapnal",
+        "plural": "dipan"
+      },
+      "translations": {
+        "flatness": "dopn",
+        "flat": "dapni",
+        "level": "dapni",
+        "plateau": "dapnal",
+        "plains": "dipan"
+      },
+      "translations_de": {
+        "Ebenheit": "dopn",
+        "flach": "dapni",
+        "eben": "dapni",
+        "Hochebene": "dapnal",
+        "Ebenen": "dipan"
+      }
+    },
+    {
+      "root": "R-S-M",
+      "consonants": [
+        "r",
+        "s",
+        "m"
+      ],
+      "meaning": "mark, inscribe, chart, write",
+      "domain": "speech",
+      "register": "all",
+      "forms": {
+        "noun": "rosma",
+        "agent": "rasmun",
+        "adjective": "rasmi",
+        "perfective": "rasam",
+        "imperfective": "rasim",
+        "place": "rasmal",
+        "causative": "tarasam",
+        "negated": "farosma",
+        "plural": "risama"
+      },
+      "translations": {
+        "mark": "rosma",
+        "chart": "rosma",
+        "inscription": "rosma",
+        "scribe": "rasmun",
+        "inscribed": "rasmi",
+        "wrote": "rasam",
+        "writes": "rasim",
+        "scriptorium": "rasmal",
+        "have recorded": "tarasam",
+        "unwritten": "farosma",
+        "charts": "risama",
+        "writings": "risama"
+      },
+      "translations_de": {
+        "Zeichen": "rosma",
+        "Karte": "rosma",
+        "Inschrift": "rosma",
+        "Schreiber": "rasmun",
+        "beschriftet": "rasmi",
+        "schrieb": "rasam",
+        "schreibt": "rasim",
+        "Schreibstube": "rasmal",
+        "aufzeichnen lassen": "tarasam",
+        "ungeschrieben": "farosma",
+        "Karten": "risama",
+        "Schriften": "risama"
+      }
     }
   ],
   "function_words": {
@@ -4695,7 +5162,17 @@
     "negation": {
       "no": "fa",
       "prefix": "fa-",
-      "sacred_form": "faa"
+      "sacred_form": "faa",
+      "velar_sandhi": {
+        "rule": "fa- becomes fan- before words beginning with k or g",
+        "examples": {
+          "fankalat": "silence",
+          "fangarvi": "fearless",
+          "fankarmi": "merciless",
+          "Fankolmus": "Kolmus's Absence (place)"
+        },
+        "note": "Root-internal f+velar (e.g. Lukafir) untouched; applies only at the prefix boundary"
+      }
     },
     "mood_markers": {
       "imperative": {
@@ -4959,6 +5436,64 @@
         "mirrored_realm": {
           "name": "Golsiravokh",
           "meaning": "Mirror-Ice of Souls"
+        },
+        "voltinuvaak": {
+          "name": "Voltinuvaak",
+          "meaning": "Call of Devotion (mountaintop meditation platform, Rumatia)"
+        },
+        "kornikolm": {
+          "name": "Kornikolm",
+          "meaning": "Mountain's Heart (tunnel through the mountains, Rumatia)"
+        }
+      },
+      "villages": {
+        "Agrinal": {
+          "Paramsal": "Origin's Hearth (prologue village)",
+          "Muurn": "Sea (island-accented morn — honors Wanilomnir ties)",
+          "Molnal": "Grain-Land",
+          "Satrilam": "Stormy Fields (ancient: Satri Lamral)",
+          "Lanholma": "Dream Grass (ancient: Landi Holma)",
+          "Garnisal": "Fertile/Green Hearth",
+          "Taklapnal": "Working Plateau (ancient: Takli Dapnal)",
+          "Kaldamsal": "Stony-Hands' Hearth (ancient: Kalmidamkasal)",
+          "Koswatral": "River's Break (ancient: Kosri Watral)",
+          "Komgols": "Ice Embrace (ancient: Komti Gols)",
+          "Kalvarsal": "Mountain View (ancient: Kalmi Varsal)"
+        },
+        "Adneroth": {
+          "Portimork": "Door-of-Death (at the Mirrored Realm)",
+          "Kovnakalm": "Hollow Peak",
+          "Golsolmarn": "Frostwarmth Port",
+          "Nortikorv": "Shadow of the Claw",
+          "Dornakalm": "Spike Peak",
+          "Raknakalm": "Still Peak",
+          "Horkamarn": "Expanse Port"
+        },
+        "Rumatia": {
+          "Kesramarn": "Scar Port (softened corruption)",
+          "Walnakolf": "Wave Cliff",
+          "Somramarn": "Sand Shores",
+          "Shovla Fawatri / Shovlasal": "The Waterless Whisper / Whisper Hearth",
+          "Turaakmarn": "Forest-Seat Port",
+          "Wanikalm": "Breathing Peak",
+          "Fanortmarn": "Shadow's-End Port"
+        },
+        "Dwenrih": {
+          "Fadavna": "The Shallow (safe crossing)",
+          "Vankons": "Trader's Nest",
+          "Fankolmus": "Kolmus's Absence",
+          "Shamnimarn": "Sky-colored Port",
+          "Davnidarn": "Deep Cut",
+          "Kavnidarn": "Dull Cut",
+          "Nartidarn": "Black Cut (near Norta Markal)",
+          "Garnidarn": "Green Cut"
+        },
+        "Wanilomnir": {
+          "Porvasal": "Trial's Hearth",
+          "Fonli Turaak": "End of the Forest",
+          "Soknamuun": "Friend-of-muun (Shamuun's Friends) — -muun god-kinship blend",
+          "Sarkal": "Healing-Place",
+          "Wondimuun": "Breath of Shamuun (Nature's Breath) — -muun god-kinship blend"
         }
       }
     },
@@ -4982,6 +5517,46 @@
       "Bambam": {
         "meaning": "Fool-fool (reduplication insult)",
         "type": "nickname"
+      },
+      "Aninokt": {
+        "meaning": "First-Light (the central religious book)",
+        "de": "Das Erste Licht",
+        "type": "sacred book",
+        "etymology": "ani (first) + nokt (light), fossilized compound"
+      }
+    },
+    "chapter_titles": {
+      "book_1": {
+        "1": {
+          "de": "Sturmflut",
+          "en": "Storm Surge",
+          "praemali": "Walnasotr"
+        },
+        "2": {
+          "de": "Sternkarten",
+          "en": "Star Charts",
+          "praemali": "Rosmisiran"
+        },
+        "3": {
+          "de": "Gesetzeshüter",
+          "en": "Guardians of the Law",
+          "praemali": "Gardisont"
+        },
+        "4": {
+          "de": "Spaßvogel",
+          "en": "Jester",
+          "praemali": "Bamniforp"
+        },
+        "5": {
+          "de": "Kampfbereit",
+          "en": "Battle-Ready",
+          "praemali": "Tornistom"
+        },
+        "6": {
+          "de": "Kampfnarben",
+          "en": "Battle Scars",
+          "praemali": "Kisaritorn"
+        }
       }
     }
   },
@@ -5114,7 +5689,7 @@
         "alternative": "marti (M-R-T) only when meaning morally evil"
       },
       "silence": {
-        "preferred": "fakalat (absence of speech)",
+        "preferred": "fankalat (absence of speech)",
         "alternative": "fasamka (absence of all sound)"
       },
       "see": {
@@ -5134,6 +5709,57 @@
         "purposeful_departure": "nagil (N-G-L)",
         "walking_activity": "vakit (V-K-T)"
       }
+    }
+  },
+  "colors": {
+    "note": "No dedicated color roots; colors are descriptive borrowings from nature domains",
+    "blue": {
+      "form": "shamni",
+      "literal": "sky-colored",
+      "root": "SH-M-N",
+      "de": "blau"
+    },
+    "green": {
+      "form": "garni",
+      "literal": "fertile/west-colored",
+      "root": "G-R-N",
+      "de": "grün"
+    },
+    "black": {
+      "form": "narti",
+      "literal": "shadow-colored",
+      "root": "N-R-T",
+      "de": "schwarz"
+    },
+    "dull": {
+      "form": "kavni",
+      "literal": "empty-colored",
+      "root": "K-V-N",
+      "de": "farblos/matt"
+    },
+    "red": {
+      "form": "sangi",
+      "literal": "blood-colored",
+      "root": "S-N-G",
+      "de": "rot"
+    },
+    "red_orange": {
+      "form": "nargi",
+      "literal": "fire-colored",
+      "root": "N-R-G",
+      "de": "feuerrot"
+    },
+    "white": {
+      "form": "sanvi",
+      "literal": "snow-colored",
+      "root": "S-N-V",
+      "de": "weiß"
+    },
+    "gold_yellow": {
+      "form": "savri",
+      "literal": "gold-colored",
+      "root": "S-V-R",
+      "de": "gold/gelb"
     }
   }
 }
