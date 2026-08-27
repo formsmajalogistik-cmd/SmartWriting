@@ -18,6 +18,9 @@
   --editor-page-w: 42rem;
   --editor-page-pad: 48px;
   --editor-page-bg: #12151d;
+  /* Space kept BELOW the text so the last line can still be scrolled up to a
+     comfortable reading position instead of sticking to the bottom edge. */
+  --editor-page-tail: 55vh;
 }
 
 * { box-sizing: border-box; }
@@ -331,11 +334,14 @@ select:focus, input:focus, textarea:focus {
   border-radius: 0;
   background: var(--editor-page-bg);
   color: var(--text);
-  padding: 36px var(--editor-page-pad) 48px;
+  /* The tail keeps open space under the last line (see --editor-page-tail),
+     so the end of a chapter can sit mid-screen like every other line. */
+  padding: 36px var(--editor-page-pad) var(--editor-page-tail);
   font-size: 17px;
   line-height: 1.8;
   resize: none;
   font-family: var(--sans);
+  scrollbar-width: thin;
 }
 /* Preview mirrors the exact same page column. The scroll container fills the
    pane; the .editor-preview page inside carries the fixed measure. */
@@ -835,6 +841,9 @@ select:focus, input:focus, textarea:focus {
 .hashlink.as-button { border: none; font: inherit; cursor: pointer; }
 
 /* ---- # autocomplete ---- */
+/* Rendered in a portal on <body>, positioned against the viewport in JS: it
+   flips above the caret when there is no room below and scrolls inside itself
+   when space is tight, so entries are never cut off. */
 .hash-ac {
   position: fixed;
   z-index: 60;
@@ -842,11 +851,18 @@ select:focus, input:focus, textarea:focus {
   margin: 0;
   padding: 4px;
   min-width: 200px;
-  max-width: 320px;
+  max-width: min(320px, calc(100vw - 16px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--bg-3);
   border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+}
+.hash-ac.flipped { box-shadow: 0 -12px 32px rgba(0,0,0,0.5); }
+/* Touch: roomier rows so entries are easy to hit with a thumb. */
+@media (pointer: coarse) {
+  .hash-ac-item { padding: 9px 10px; font-size: 15px; }
 }
 .hash-ac-item {
   display: flex;
