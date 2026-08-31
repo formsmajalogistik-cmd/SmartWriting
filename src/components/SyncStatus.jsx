@@ -1,18 +1,55 @@
 import { useEffect, useRef, useState } from 'react'
-import { Cloud, CloudOff, RefreshCw, Check, AlertTriangle, GitMerge, X } from 'lucide-react'
+import { Cloud, CloudOff, RefreshCw, AlertTriangle, GitMerge, X } from 'lucide-react'
 import { SYNC_ENABLED } from '../data/repository.js'
 import { useSyncStatus, flush, dismissConflict, TABLE_LABELS } from '../data/syncEngine.js'
 import { useStore } from '../state/store.jsx'
 
-// Truthful local-first status: online/offline, unsynced count, syncing, errors
-// AND unresolved conflicts. It never says "synchronisiert" while changes are
-// queued or conflicts await review. Chapter conflicts link straight to the
-// chapter (whose conflict version sits in the version bar for comparing).
+// Truthful local-first status — but QUIET.
+//
+// The engine's raw state changes with almost every keystroke (queued → pushing
+// → clear). Reporting that live made the top bar twitch and, because the labels
+// differ in length, shoved its neighbours around. So this shows the SETTLED
+// state instead, and only when it is worth the author's attention:
+//
+//   errors · conflicts · offline · changes still pending after a few seconds
+//
+// Everything else — the normal save/sync cycle — is a single dim dot. Silence
+// therefore still means "everything is safely stored": pending work is never
+// hidden, only given a moment to finish before it is announced. The badge sits
+// in a fixed-width slot (see .sync-wrap), so no state can shift the top bar.
+const PENDING_GRACE_MS = 4000 // let the normal cycle finish before complaining
+const OFFLINE_GRACE_MS = 600 // ride out a blink of connectivity loss
+
 export default function SyncStatus() {
   const { online, pending, syncing, error, errors, conflicts } = useSyncStatus()
   const { openChapterAt } = useStore()
   const [open, setOpen] = useState(false)
   const popRef = useRef(null)
+
+  // "Pending long enough to mention". The timer restarts only on the 0 → >0
+  // edge, so a burst of typing (queue rises and clears repeatedly) never trips
+  // it, while work that genuinely lingers always surfaces.
+  const idle = pending === 0
+  const [lingering, setLingering] = useState(false)
+  useEffect(() => {
+    if (idle) {
+      setLingering(false)
+      return
+    }
+    const id = setTimeout(() => setLingering(true), PENDING_GRACE_MS)
+    return () => clearTimeout(id)
+  }, [idle])
+
+  // Offline is a real state, not churn — debounced only against flapping.
+  const [offline, setOffline] = useState(!online)
+  useEffect(() => {
+    if (online) {
+      setOffline(false)
+      return
+    }
+    const id = setTimeout(() => setOffline(true), OFFLINE_GRACE_MS)
+    return () => clearTimeout(id)
+  }, [online])
 
   // Close the conflict list on outside click.
   useEffect(() => {
@@ -29,8 +66,11 @@ export default function SyncStatus() {
   const errorList = errors || []
   const hasErrors = !!error || errorList.length > 0
 
+  // Priority (unchanged from before, minus the routine states): offline first
+  // because it EXPLAINS why nothing is syncing, and its label carries the
+  // pending count, so queued or failed work is still visible while offline.
   let cls, Icon, spin, text
-  if (!online) {
+  if (offline) {
     cls = 'offline'
     Icon = CloudOff
     text = pending > 0 ? `Offline · ${pending} ausstehend` : 'Offline'
@@ -38,32 +78,31 @@ export default function SyncStatus() {
     cls = 'conflict'
     Icon = GitMerge
     text = `Konflikte (${conflicts.length})`
-  } else if (error && pending > 0) {
+  } else if (hasErrors) {
     cls = 'err'
     Icon = AlertTriangle
-    text = `Fehler · ${pending} ausstehend`
-  } else if (syncing) {
-    cls = 'syncing'
-    Icon = RefreshCw
-    spin = true
-    text = pending > 0 ? `Synchronisiert … (${pending})` : 'Synchronisiert …'
-  } else if (pending > 0) {
+    text = pending > 0 ? `Fehler · ${pending} ausstehend` : 'Fehler'
+  } else if (lingering) {
     cls = 'pending'
-    Icon = Cloud
+    Icon = syncing ? RefreshCw : Cloud
+    spin = syncing
     text = `${pending} ausstehend`
   } else {
-    cls = 'ok'
-    Icon = Check
-    text = 'Synchronisiert'
+    // Settled, or mid-cycle: a dim dot, identical in every routine state.
+    cls = 'idle'
+    Icon = null
+    text = ''
   }
 
-  const title = hasConflicts
-    ? 'Konflikte ansehen'
-    : error
-      ? `Letzter Sync-Fehler: ${error}`
-      : online
-        ? 'Online — lokale Änderungen werden zu Supabase gesichert'
-        : 'Offline — Änderungen werden lokal gespeichert und später synchronisiert'
+  const title = offline
+    ? 'Offline — Änderungen werden lokal gespeichert und später synchronisiert'
+    : hasConflicts
+      ? 'Konflikte ansehen'
+      : hasErrors
+        ? `Sync-Fehler ansehen${error ? `: ${error}` : ''}`
+        : lingering
+          ? `${pending} Änderung(en) noch nicht synchronisiert — klicken, um es erneut zu versuchen`
+          : 'Alles gespeichert und synchronisiert'
 
   return (
     <span className="sync-wrap" ref={popRef}>
@@ -75,10 +114,10 @@ export default function SyncStatus() {
           if (hasConflicts || hasErrors) setOpen((v) => !v)
           else if (online && !syncing) flush()
         }}
-        aria-label={text}
+        aria-label={text || 'Alles gespeichert und synchronisiert'}
       >
-        <Icon size={13} className={spin ? 'spin' : ''} />
-        <span className="sync-status-text">{text}</span>
+        {Icon ? <Icon size={13} className={spin ? 'spin' : ''} /> : <span className="sync-dot" />}
+        {text && <span className="sync-status-text">{text}</span>}
       </button>
 
       {open && hasErrors && (

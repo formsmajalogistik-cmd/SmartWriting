@@ -1765,9 +1765,21 @@ select:focus, input:focus, textarea:focus {
   display: inline-flex; align-items: center; gap: 5px;
   font-size: 12px; border-radius: 12px; padding: 3px 10px; cursor: pointer;
   border: 1px solid var(--border); background: var(--bg-3); color: var(--text-dim);
-  white-space: nowrap;
+  white-space: nowrap; max-width: 100%; overflow: hidden;
 }
-.sync-status .sync-status-text { line-height: 1; }
+.sync-status .sync-status-text {
+  line-height: 1; overflow: hidden; text-overflow: ellipsis;
+}
+/* Settled (and mid-cycle): just a dim dot — no text, no colour, no motion. */
+.sync-status.idle {
+  border-color: transparent; background: transparent; padding: 3px 8px;
+}
+.sync-status.idle:hover { background: var(--bg-3); border-color: var(--border); }
+.sync-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--text-dim); opacity: 0.45;
+}
+.sync-status.idle:hover .sync-dot { opacity: 0.8; }
 .sync-status.ok { color: #5fbf7f; border-color: rgba(76,175,106,0.4); }
 .sync-status.pending { color: #e0b341; border-color: rgba(224,179,65,0.5); }
 .sync-status.syncing { color: #4c9be8; border-color: rgba(76,155,232,0.5); }
@@ -1780,7 +1792,17 @@ select:focus, input:focus, textarea:focus {
 }
 
 /* Conflict state + popover for the sync status */
-.sync-wrap { position: relative; display: inline-flex; }
+/* RESERVED SLOT: fixed width, contents right-aligned. Whatever the badge
+   shows (or doesn't), nothing else in the top bar can move. */
+.sync-wrap {
+  position: relative; display: inline-flex; justify-content: flex-end;
+  width: 150px; flex: 0 0 auto;
+}
+/* Same rules on a phone, tighter slot: the icon + colour carry the state.
+   (Must come AFTER the rule above — later wins at equal specificity.) */
+@media (max-width: 720px) {
+  .sync-wrap { width: 34px; }
+}
 .sync-status.conflict { color: #f0a35e; border-color: rgba(240,163,94,0.55); background: rgba(160,90,20,0.16); }
 .sync-pop {
   position: absolute; top: calc(100% + 6px); right: 0; z-index: 60;

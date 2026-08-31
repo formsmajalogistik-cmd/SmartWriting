@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Menu, Loader2, AlertTriangle, X, LogOut, UserCog } from 'lucide-react'
+import { Menu, AlertTriangle, X, LogOut, UserCog } from 'lucide-react'
 import { useStore } from './state/store.jsx'
 import { useAuth } from './auth/AuthProvider.jsx'
 import ProjectSwitcher from './components/ProjectSwitcher.jsx'
@@ -103,7 +103,7 @@ function ManuscriptSelectors() {
 }
 
 export default function App() {
-  const { ready, activeProject, activeChapter, saving, error, clearError, view, setView } = useStore()
+  const { ready, activeProject, activeChapter, error, clearError, view, setView } = useStore()
   const { user, signOut } = useAuth()
   // Collapsible left nav sidebar; state remembered. On narrow screens it
   // overlays the content and starts closed regardless of the stored state.
@@ -189,11 +189,9 @@ export default function App() {
           </nav>
         )}
         <span className="topbar-spacer" />
-        {saving && (
-          <span className="sync-indicator" title="Speichert …">
-            <Loader2 size={13} className="spin" /> speichert …
-          </span>
-        )}
+        {/* One quiet, fixed-width status slot. The old "speichert …" flash
+            appeared and vanished with every keystroke, shifting everything
+            after it; routine saving is now silent (see SyncStatus). */}
         <SyncStatus />
         <div className="account">
           <span className="account-email" title={user?.email}>
