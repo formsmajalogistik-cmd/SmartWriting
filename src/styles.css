@@ -2001,3 +2001,33 @@ select:focus, input:focus, textarea:focus {
 .update-dialog-head h2 { margin: 0; font-size: 17px; color: var(--text); }
 .update-dialog p { color: var(--text-dim); font-size: 14px; line-height: 1.55; margin: 10px 0 16px; }
 .update-dialog .toggle { display: inline-flex; align-items: center; gap: 7px; }
+
+/* ---- Book-format PDF options + page report ---- */
+.book-options {
+  border: 1px solid var(--border); border-radius: 10px;
+  background: var(--bg-2); padding: 10px 12px; margin: 4px 0 14px;
+}
+.book-options-head {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.book-options .export-row { align-items: center; gap: 14px; }
+.inline-field { flex-direction: row; align-items: center; gap: 8px; margin: 0; }
+.inline-field > span { font-size: 12px; color: var(--text-dim); }
+.book-options .hint { margin: 8px 0 0; }
+.page-report {
+  margin-top: 14px; padding: 12px;
+  border: 1px solid var(--accent); border-radius: 10px; background: rgba(79,70,229,0.08);
+}
+.page-report-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.page-report-head strong { font-size: 16px; }
+.page-report-list { list-style: none; margin: 10px 0 0; padding: 0; font-size: 13px; }
+.page-report-list li {
+  display: flex; justify-content: space-between; gap: 12px;
+  padding: 3px 0; border-bottom: 1px solid var(--border);
+}
+.page-report-list li:last-child { border-bottom: none; }
+.pr-ch { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pr-pages { color: var(--text-dim); flex-shrink: 0; }
+.page-report .hint { margin: 10px 0 0; }

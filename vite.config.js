@@ -92,6 +92,17 @@ export default defineConfig({
             },
           },
           {
+            // Book-PDF font metrics: fetched on the first book export, then
+            // cached so exporting works offline afterwards (like the library).
+            urlPattern: /\/pdf-fonts\/[^/]*\.afm$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'pdf-metrics',
+              expiration: { maxEntries: 8 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
             urlPattern: /\/assets\/(pdfmake\.min|vfs_fonts)-[^/]*\.js$/,
             handler: 'CacheFirst',
             options: {

@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { FileArchive, FileText, IdCard, Loader2, AlertTriangle, Check, Info } from 'lucide-react'
+import { FileArchive, FileText, IdCard, Loader2, AlertTriangle, Check, Info, BookOpen } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 import { slugify, triggerDownload } from '../lib/export/util.js'
+import { TRIM_PRESETS, DEFAULT_TRIM } from '../lib/export/book.js'
 
 // Export hub: recoverable ZIP (Markdown + JSON) and readable PDFs.
 export default function ExportView() {
@@ -14,6 +15,10 @@ export default function ExportView() {
   const [warnings, setWarnings] = useState([])
   const [chapterId, setChapterId] = useState('')
   const [cardRef, setCardRef] = useState('') // "character:<id>" | "place:<id>"
+  // Book layout options for the story PDFs.
+  const [trim, setTrim] = useState(DEFAULT_TRIM)
+  const [infoPages, setInfoPages] = useState(false)
+  const [pageInfo, setPageInfo] = useState(null) // { bodyPages, totalPages, chapters }
 
   const projectSlug = slugify(activeProject?.name, 'projekt')
 
@@ -54,20 +59,33 @@ export default function ExportView() {
   const stage = (key) => (msg) => setS(key, { busy: true, msg, type: 'info' })
 
   async function exportManuscriptPdf() {
+    setPageInfo(null)
     await run('manuscript', 'Erzeuge Manuskript-PDF …', async () => {
       const snapshot = await exportSnapshot()
       const { exportManuscriptPdf } = await import('../lib/export/pdf.js')
-      await exportManuscriptPdf(snapshot, `${projectSlug}_manuskript.pdf`, stage('manuscript'))
+      const res = await exportManuscriptPdf(snapshot, `${projectSlug}_manuskript.pdf`, stage('manuscript'), {
+        trim,
+        infoPages,
+      })
+      setPageInfo({ ...res, scope: 'Manuskript' })
     })
   }
   async function exportChapterPdf() {
     if (!chapterId) return
+    setPageInfo(null)
     await run('chapter', 'Erzeuge Kapitel-PDF …', async () => {
       const snapshot = await exportSnapshot()
       const ch = snapshot.chapters.find((c) => c.id === chapterId)
       if (!ch) throw new Error('Kapitel nicht gefunden.')
       const { exportChapterPdf } = await import('../lib/export/pdf.js')
-      await exportChapterPdf(ch, snapshot, `${projectSlug}_${slugify(ch.title, 'kapitel')}.pdf`, stage('chapter'))
+      const res = await exportChapterPdf(
+        ch,
+        snapshot,
+        `${projectSlug}_${slugify(ch.title, 'kapitel')}.pdf`,
+        stage('chapter'),
+        { trim, infoPages },
+      )
+      setPageInfo({ ...res, scope: `${ch.number}. ${ch.title}` })
     })
   }
   async function exportCardPdf() {
@@ -128,6 +146,39 @@ export default function ExportView() {
             <FileText size={18} /> PDF (zum Lesen)
           </h3>
 
+          {/* Book layout: the story PDFs are set on a paperback trim, so the
+              page count is a realistic estimate instead of an A4 artefact. */}
+          <div className="book-options">
+            <div className="book-options-head">
+              <BookOpen size={15} /> Buchsatz
+            </div>
+            <div className="export-row">
+              <label className="field inline-field">
+                <span>Format</span>
+                <select value={trim} onChange={(e) => setTrim(e.target.value)} aria-label="Buchformat">
+                  {TRIM_PRESETS.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="checkbox">
+                <input
+                  type="checkbox"
+                  checked={infoPages}
+                  onChange={(e) => setInfoPages(e.target.checked)}
+                />
+                <span>mit Kapitel-Infoseiten</span>
+              </label>
+            </div>
+            <p className="hint">
+              Serifenschrift, Blocksatz, Kapitel auf neuer Seite, Kolumnentitel und Seitenzahlen.
+              Infoseiten (POV, Figuren mit Weg, Orte, Ereignisse, Wörter) stehen vor jedem Kapitel und
+              zählen <strong>nicht</strong> zur Seitenzählung des Textkörpers.
+            </p>
+          </div>
+
           <div className="export-row">
             <button
               className="toggle with-label"
@@ -184,6 +235,41 @@ export default function ExportView() {
             </button>
             <StatusLine s={status.card} inline />
           </div>
+
+          {pageInfo && (
+            <div className="page-report">
+              <div className="page-report-head">
+                <BookOpen size={15} />
+                <strong>
+                  ≈ {pageInfo.bodyPages.toLocaleString('de-DE')} Seiten
+                </strong>
+                <span className="hint">
+                  {pageInfo.scope} ·{' '}
+                  {TRIM_PRESETS.find((t) => t.id === trim)?.label}
+                  {pageInfo.infoPageCount > 0 &&
+                    ` · zzgl. ${pageInfo.infoPageCount} Infoseite(n), ${pageInfo.totalPages} Seiten gesamt`}
+                </span>
+              </div>
+              {pageInfo.chapters?.length > 1 && (
+                <ul className="page-report-list">
+                  {pageInfo.chapters.map((c) => (
+                    <li key={c.id}>
+                      <span className="pr-ch">
+                        {c.number != null ? `${c.number}. ` : ''}
+                        {c.title || 'Kapitel'}
+                      </span>
+                      <span className="pr-pages">
+                        {c.pages} {c.pages === 1 ? 'Seite' : 'Seiten'} (ab S. {c.startPage})
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="hint">
+                Schätzung — der endgültige Satz (Schrift, Laufweite, Umbruchregeln) weicht ab.
+              </p>
+            </div>
+          )}
         </section>
       </div>
     </div>
