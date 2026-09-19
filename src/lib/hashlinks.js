@@ -14,6 +14,29 @@ const NAME_CHAR = /[\p{L}\p{N}]/u
 // Fallback token: a single run of name characters (no spaces) after '#'.
 const WORD_TOKEN = /^[\p{L}\p{N}][\p{L}\p{N}_'’\-]*/u
 
+// German possessive / inflected endings. "#Zalvias Bogen" must reach the card
+// "Zalvia" without anybody registering "Zalvias" as an alias. Longest endings
+// first so "Amrexes" is tried as "Amrex" before "Amrexe".
+// The bare apostrophe covers names that already end in s/ß/x/z ("#Mortius'").
+const GENITIVE_SUFFIXES = ["'s", '’s', 'es', 's', "'", '’']
+
+// Candidate base forms of a typed token: the token minus one genitive ending.
+// Never used to CHANGE the prose — only to find the card behind the form.
+export function genitiveStems(name) {
+  const token = (name || '').trim()
+  const out = []
+  for (const suffix of GENITIVE_SUFFIXES) {
+    if (token.length <= suffix.length) continue
+    if (!token.toLowerCase().endsWith(suffix)) continue
+    const stem = token.slice(0, token.length - suffix.length)
+    // A leftover apostrophe means an ending was only half stripped ("Zalvia'"
+    // out of "Zalvia's") — the full strip is already in the list.
+    if (stem.endsWith("'") || stem.endsWith('’')) continue
+    if (stem && !out.includes(stem)) out.push(stem)
+  }
+  return out
+}
+
 export function escapeHtml(s) {
   return String(s).replace(
     /[&<>"']/g,
@@ -64,16 +87,39 @@ export function makeResolver(characters = [], places = [], regions = [], geoFeat
   function matchName(afterHash) {
     const lower = afterHash.toLowerCase()
     for (const nm of names) {
-      if (lower.startsWith(nm)) {
-        const endChar = afterHash[nm.length]
-        if (!endChar || !NAME_CHAR.test(endChar)) return afterHash.slice(0, nm.length)
+      if (!lower.startsWith(nm)) continue
+      // A known name followed by a genitive ending: take the LONGER token so
+      // the whole written form ("Zalvias", "Mortius'") becomes the link — the
+      // text itself is untouched, only what the link spans grows.
+      for (const suffix of GENITIVE_SUFFIXES) {
+        const end = nm.length + suffix.length
+        if (lower.slice(nm.length, end) !== suffix) continue
+        const next = afterHash[end]
+        if (!next || !NAME_CHAR.test(next)) return afterHash.slice(0, end)
       }
+      const endChar = afterHash[nm.length]
+      if (!endChar || !NAME_CHAR.test(endChar)) return afterHash.slice(0, nm.length)
     }
     return null
   }
   // All entities a typed name matches (empty = unresolved, 2+ = ambiguous).
+  // An EXACT name/alias always wins; only when nothing matches exactly do we
+  // retry the genitive base forms. If several cards become reachable that way
+  // the reference stays AMBIGUOUS — the resolver never guesses one of them.
   function lookupAll(name) {
-    return byLowerName.get((name || '').trim().toLowerCase()) || []
+    const exact = byLowerName.get((name || '').trim().toLowerCase())
+    if (exact && exact.length) return exact
+    const out = []
+    const seen = new Set()
+    for (const stem of genitiveStems(name)) {
+      for (const entry of byLowerName.get(stem.toLowerCase()) || []) {
+        const key = `${entry._kind}:${entry.id}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        out.push(entry)
+      }
+    }
+    return out
   }
   // The unique match, or null when unresolved OR ambiguous.
   function lookup(name) {
@@ -122,7 +168,7 @@ export function renderHashlink(resolver, name) {
   const matches = resolver.lookupAll(name)
   const label = escapeHtml('#' + name)
   if (!matches.length) {
-    return `<span class="hashlink unresolved" data-name="${escapeHtml(name)}" title="Kein Eintrag — Tippfehler oder noch nicht angelegt">${label}</span>`
+    return `<span class="hashlink unresolved" data-name="${escapeHtml(name)}" title="Kein Eintrag — klicken, um eine Karte anzulegen">${label}</span>`
   }
   if (matches.length > 1) {
     // Several cards carry this name → do NOT guess. Distinct style, listed in
@@ -169,8 +215,11 @@ export function hashlinkExtension(resolver) {
   }
 }
 
-// Find indices of "#name" occurrences (case-insensitive, with a trailing
-// word boundary) — used for rename detection.
+// Find "#name" occurrences (case-insensitive, with a trailing word boundary)
+// — used for rename detection. A genitive form ("#Zalvias", "#Mortius'") counts
+// as an occurrence too, so a rename doesn't leave those forms behind; the
+// ending is reported in `suffix` so it can be carried over.
+// Returns [{ index, length, suffix }].
 export function findNameOccurrences(text, name) {
   const out = []
   const target = (name || '').trim().toLowerCase()
@@ -181,24 +230,47 @@ export function findNameOccurrences(text, name) {
   while (true) {
     const i = lower.indexOf(needle, from)
     if (i < 0) break
-    const endChar = text[i + needle.length]
-    if (!endChar || !NAME_CHAR.test(endChar)) out.push(i)
+    const after = i + needle.length
+    let hit = null
+    for (const suffix of GENITIVE_SUFFIXES) {
+      const end = after + suffix.length
+      if (lower.slice(after, end) !== suffix) continue
+      const next = text[end]
+      if (!next || !NAME_CHAR.test(next)) {
+        hit = { index: i, length: end - i, suffix: text.slice(after, end) }
+        break
+      }
+    }
+    if (!hit) {
+      const endChar = text[after]
+      if (!endChar || !NAME_CHAR.test(endChar)) hit = { index: i, length: needle.length, suffix: '' }
+    }
+    if (hit) out.push(hit)
     from = i + 1
   }
   return out
 }
 
+// Attach a genitive ending to a NEW name. Names already ending in a sibilant
+// take the bare apostrophe in German ("Mortius'", not "Mortiuss").
+function genitiveJoin(newName, suffix) {
+  if (!suffix) return newName
+  const last = newName.slice(-1).toLowerCase()
+  const sibilant = last === 's' || last === 'ß' || last === 'x' || last === 'z'
+  if (sibilant && (suffix === 's' || suffix === "'s" || suffix === '’s')) return newName + "'"
+  return newName + suffix
+}
+
 // Replace "#oldName" references with "#newName" (boundary-aware, case-insensitive
-// on the old token). Returns { text, count }.
+// on the old token; genitive endings are preserved). Returns { text, count }.
 export function replaceNameReferences(text, oldName, newName) {
   const occ = findNameOccurrences(text, oldName)
   if (!occ.length) return { text, count: 0 }
-  const tokenLen = 1 + (oldName || '').trim().length
   let result = ''
   let last = 0
-  for (const i of occ) {
-    result += text.slice(last, i) + '#' + newName
-    last = i + tokenLen
+  for (const o of occ) {
+    result += text.slice(last, o.index) + '#' + genitiveJoin(newName, o.suffix)
+    last = o.index + o.length
   }
   result += text.slice(last)
   return { text: result, count: occ.length }

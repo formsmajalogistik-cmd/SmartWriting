@@ -206,14 +206,34 @@ longest-match):
 - **unresolved** → if no card matches, the link is red/wavy (catches typos and
   not-yet-carded names).
 
+**Further names (aliases):** character and place cards carry an "Aliase /
+weitere Namen" list (stored in the card jsonb). A card is findable under its
+main name **and** every alias; alias hits always show the card's main name, and
+provisional styling follows the card. If two cards end up sharing a name, the
+reference is marked **ambiguous** and listed in the Namen view — the app never
+guesses which card was meant.
+
+**German genitive / inflected forms** resolve without registering anything as an
+alias: `#Zalvias Bogen` links the card *Zalvia*, `#Mortius'` links *Mortius*,
+`#Amrexes` links *Amrex* (a trailing `s`, `es`, `'s` or a bare apostrophe is
+retried as a base form, case-insensitively). An exact name or alias always wins
+over a stripped form; if stripping could mean two different cards, the reference
+stays ambiguous. The prose is **never** rewritten — the link simply spans the
+form as written, and the Namen view does not flag it.
+
 **Rename safety:** renaming a card detects existing `#OldName` references across
 the project's chapters and **asks for confirmation** before rewriting them to
-`#NewName` — prose is never silently changed. Declined/again-missed references
-simply show as unresolved.
+`#NewName` — prose is never silently changed. Genitive forms are carried over
+with their ending (`#Zalvias` → `#Larenns`, or `#Mortius'` when the new name
+ends in a sibilant). Declined/again-missed references simply show as unresolved.
 
 The **Namen** view lists, project-wide, every unresolved `#reference` and every
 resolved link to a not-yet-final-name card — your running "names to finalize or
-fix" list, each entry linking to the chapters it appears in.
+fix" list, each entry linking to the chapters it appears in. Each unresolved
+name has a **"Karte anlegen"** button: pick Figur / Ort / Region / Geografie and
+the card is created with that name and opened for editing, after which every
+existing `#reference` to it resolves. The same offer sits on unresolved links in
+the preview pane — clicking one opens the four kinds right there.
 
 ### Events (Ereignisse)
 
@@ -235,6 +255,15 @@ event's `card.chapter_ids`, linking chapters and events **both ways**. Run
   and a **"Steuerung & Syntax"** reference guide covering headings, bold, italic,
   blockquotes, lists, links, code, and `#Name` card links (incl. the resolved /
   provisional / unresolved states).
+- **German spellcheck:** the writing area is `lang="de"` with `spellcheck` on, so
+  the **browser's own** German dictionary underlines typos. Purely local — no
+  service, no API, no grammar checking, nothing leaves the device. A `<textarea>`
+  can only be checked as a whole, so invented names cannot be excluded per word
+  (that exists only for `contenteditable`, which would cost the caret-follow,
+  the `#` popup anchoring and the guillemet substitution). Two escape hatches:
+  add a name to the browser dictionary (right-click → "Zum Wörterbuch
+  hinzufügen"), or switch the check off in the Profil tab (per device,
+  `localStorage`; default on). The preview pane is never checked.
 - **Icons:** all UI icons are [lucide-react](https://lucide.dev) SVGs — the app
   uses no emoji.
 
@@ -413,6 +442,8 @@ added as a custom root, the entry becomes redundant and can be deleted in the
 additions back into the master lexicon file maintained outside the app).
 Before shipping, run `npm run test:praemali` — it verifies the canonical
 reference sentences against the new JSON and the merge-layer guarantees.
+`npm run test:hashlinks` covers `#Name` resolution (names, aliases, German
+genitive forms, ambiguity) and rename safety.
 
 ## Not yet built (later phases, per SPEC)
 

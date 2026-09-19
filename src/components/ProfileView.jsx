@@ -274,7 +274,7 @@ const SYNTAX = [
 ]
 
 function SyntaxGuide() {
-  const { editorGuillemets, setEditorGuillemets } = useStore()
+  const { editorGuillemets, setEditorGuillemets, editorSpellcheck, setEditorSpellcheck } = useStore()
   return (
     <section className="profile-section">
       <h3>
@@ -293,6 +293,25 @@ function SyntaxGuide() {
           spitze Klammern brauchst.
         </span>
       </label>
+
+      <label className="checkbox syntax-toggle">
+        <input
+          type="checkbox"
+          checked={editorSpellcheck}
+          onChange={(e) => setEditorSpellcheck(e.target.checked)}
+        />
+        <span>
+          Deutsche Rechtschreibprüfung im Editor (Browser-Wörterbuch, rein lokal — kein Dienst,
+          keine Grammatikprüfung, nichts verlässt das Gerät).
+        </span>
+      </label>
+      <p className="hint syntax-note">
+        Erfundene Namen markiert der Browser mit, das lässt sich pro Wort nicht abschalten: ein
+        Textfeld kennt nur „prüfen“ oder „nicht prüfen“. Dauerhaft ruhig wird ein Name über
+        Rechtsklick auf das Wort → „Zum Wörterbuch hinzufügen“ (im Browser gespeichert). Wer beim
+        Schreiben gar keine Markierungen will, schaltet die Prüfung hier aus — die Vorschau prüft
+        ohnehin nie.
+      </p>
 
       <div className="syntax-table">
         {SYNTAX.map((s) => (
@@ -334,11 +353,27 @@ function SyntaxGuide() {
           </div>
         </div>
         <div className="syntax-row">
+          <code className="syntax-code">#Names</code>
+          <div className="syntax-meaning">
+            <span className="syntax-title">Genitiv &amp; Beugung</span>
+            <span className="syntax-desc">
+              #Zalvias Bogen, #Mortius’ Schwert, #Amrexes Reich — gebeugte Formen (–s, –es, –’s
+              oder nur Apostroph) finden die Karte von selbst. Kein Alias nötig, und der Text bleibt
+              genau so stehen, wie du ihn geschrieben hast.
+            </span>
+          </div>
+          <div className="syntax-sample">
+            <span className="hashlink resolved static">#Amrexes</span>
+          </div>
+        </div>
+        <div className="syntax-row">
           <code className="syntax-code">#Name</code>
           <div className="syntax-meaning">
             <span className="syntax-title">Unaufgelöst</span>
             <span className="syntax-desc">
-              Keine passende Karte (Tippfehler oder noch nicht angelegt).
+              Keine passende Karte (Tippfehler oder noch nicht angelegt). In der Vorschau genügt ein
+              Klick: Figur, Ort, Region oder Geografie wählen — die Karte entsteht mit diesem Namen
+              und öffnet sich zum Bearbeiten.
             </span>
           </div>
           <div className="syntax-sample">

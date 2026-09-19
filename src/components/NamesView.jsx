@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { User, MapPin, Check } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 import { makeResolver, extractHashRefs, KIND_LABELS_DE } from '../lib/hashlinks.js'
+import CreateCardMenu from './CreateCardMenu.jsx'
 
 // Project-wide "names to finalize or fix": every UNRESOLVED #reference (typo or
 // not-yet-carded), every AMBIGUOUS one (several cards share the name — the app
@@ -73,7 +74,8 @@ export default function NamesView() {
             Unaufgelöste Referenzen <span className="count">{unresolved.length}</span>
           </h3>
           <p className="hint">
-            <code>#Name</code> ohne passende Karte — Tippfehler oder noch nicht angelegt.
+            <code>#Name</code> ohne passende Karte — Tippfehler oder noch nicht angelegt. Mit
+            „Karte anlegen“ wird der Name direkt zu einer Karte; der Text bleibt unverändert.
           </p>
           {unresolved.length === 0 ? (
             <p className="hint names-clear">
@@ -84,6 +86,7 @@ export default function NamesView() {
               {unresolved.map((u) => (
                 <li key={u.name} className="names-row">
                   <span className="hashlink unresolved static">#{u.name}</span>
+                  <CreateCardMenu name={u.name} />
                   <ChapterChips ids={u.chapters} />
                 </li>
               ))}

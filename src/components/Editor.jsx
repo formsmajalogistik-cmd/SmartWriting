@@ -7,6 +7,7 @@ import { makeResolver, hashlinkExtension, cardAliases } from '../lib/hashlinks.j
 import { noBlockquote, GUILLEMET_MAP } from '../lib/markdown.js'
 import { getCaretCoordinates } from '../lib/caret.js'
 import CardPreview from './CardPreview.jsx'
+import { CreateCardPopover } from './CreateCardMenu.jsx'
 
 // Distraction-light Markdown editor with #Name linking.
 // - Typing "#…" opens an autocomplete over character + place cards; selecting
@@ -47,7 +48,8 @@ function caretAnchor(ta, index) {
 }
 
 export default function Editor({ value, onChange, preview, focusSelection, onFocusApplied }) {
-  const { characters, places, regions, geoFeatures, openCard, openOnMap, editorGuillemets } = useStore()
+  const { characters, places, regions, geoFeatures, openCard, openOnMap, editorGuillemets, editorSpellcheck } =
+    useStore()
   const taRef = useRef(null)
   const popRef = useRef(null)
 
@@ -287,6 +289,7 @@ export default function Editor({ value, onChange, preview, focusSelection, onFoc
 
   // ---- preview hover/tap preview --------------------------------------
   const [hover, setHover] = useState(null) // { kind, id, top, left, sticky }
+  const [newCard, setNewCard] = useState(null) // { name, anchor } — create-from-name
   const hoverPool =
     hover?.kind === 'character' ? characters
     : hover?.kind === 'place' ? places
@@ -314,6 +317,18 @@ export default function Editor({ value, onChange, preview, focusSelection, onFoc
     if (el) setHover((h) => (h && h.sticky ? h : null))
   }
   function onPreviewClick(e) {
+    // An unresolved #reference is an offer: make it a card, right here.
+    const miss = e.target.closest?.('.hashlink.unresolved[data-name]')
+    if (miss) {
+      e.preventDefault()
+      const r = miss.getBoundingClientRect()
+      setHover(null)
+      setNewCard({
+        name: miss.getAttribute('data-name'),
+        anchor: { top: r.top, bottom: r.bottom, left: r.left },
+      })
+      return
+    }
     const el = e.target.closest?.('.hashlink.resolved[data-id]')
     if (!el) return
     e.preventDefault()
@@ -376,7 +391,12 @@ export default function Editor({ value, onChange, preview, focusSelection, onFoc
           onClick={refreshAutocomplete}
           onBlur={() => setTimeout(() => setAc(null), 150)}
           placeholder="Schreib los … tippe # für Figuren & Orte"
-          spellCheck
+          // German spellcheck, done by the BROWSER — no service, no grammar
+          // check, nothing leaves the device. `lang` is what picks the German
+          // dictionary (the page is de, but state it here so the writing area
+          // keeps it even inside an embedded/other-language context).
+          lang="de"
+          spellCheck={editorSpellcheck}
           autoCapitalize="sentences"
         />
       </div>
@@ -400,6 +420,14 @@ export default function Editor({ value, onChange, preview, focusSelection, onFoc
           index={ac.index}
           onPick={selectItem}
           onHover={(i) => setAc((a) => (a ? { ...a, index: i } : a))}
+        />
+      )}
+
+      {newCard && (
+        <CreateCardPopover
+          name={newCard.name}
+          anchor={newCard.anchor}
+          onClose={() => setNewCard(null)}
         />
       )}
 

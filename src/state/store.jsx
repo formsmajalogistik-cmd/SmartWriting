@@ -16,6 +16,7 @@ import { orderedChapters, lastKnownPlaceBefore } from '../lib/timeline/timeline.
 const ACTIVE_PROJECT_KEY = 'smartwriting.activeProjectId'
 const ACTIVE_CHAPTER_KEY = 'smartwriting.activeChapterId'
 const GUILLEMETS_KEY = 'smartwriting.guillemets'
+const SPELLCHECK_KEY = 'smartwriting.spellcheck'
 
 const StoreContext = createContext(null)
 
@@ -81,6 +82,16 @@ export function StoreProvider({ children }) {
   const setEditorGuillemets = useCallback((on) => {
     setEditorGuillemetsState(!!on)
     localStorage.setItem(GUILLEMETS_KEY, on ? '1' : '0')
+  }, [])
+
+  // Editor preference: the BROWSER's own German spellcheck in the writing area.
+  // Purely local (no service, no grammar check). Default ON; per-device.
+  const [editorSpellcheck, setEditorSpellcheckState] = useState(
+    () => localStorage.getItem(SPELLCHECK_KEY) !== '0',
+  )
+  const setEditorSpellcheck = useCallback((on) => {
+    setEditorSpellcheckState(!!on)
+    localStorage.setItem(SPELLCHECK_KEY, on ? '1' : '0')
   }, [])
 
   // Top-level navigation (which view is showing) + a card to focus when its
@@ -889,6 +900,8 @@ export function StoreProvider({ children }) {
     setActiveBookSel,
     editorGuillemets,
     setEditorGuillemets,
+    editorSpellcheck,
+    setEditorSpellcheck,
     focusCard,
     openCard,
     consumeFocusCard,
