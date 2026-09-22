@@ -19,6 +19,20 @@ function unwrap({ data, error }) {
   return data
 }
 
+// One name_pool row payload (used for single inserts and bulk import alike).
+function namePoolInsert(user_id, projectId, o = {}) {
+  const row = { user_id, project_id: projectId }
+  if (o.name?.trim()) row.name = o.name.trim()
+  if (o.region_id !== undefined) row.region_id = o.region_id || null
+  if (typeof o.region_text === 'string') row.region_text = o.region_text.trim()
+  if (o.gender) row.gender = o.gender
+  if (o.category) row.category = o.category
+  if (Array.isArray(o.tags)) row.tags = o.tags
+  if (typeof o.notes === 'string') row.notes = o.notes
+  if (o.hidden != null) row.hidden = !!o.hidden
+  return row
+}
+
 export function createSupabaseRepository() {
   return {
     // ---- Projects -------------------------------------------------------
@@ -565,6 +579,45 @@ export function createSupabaseRepository() {
     },
     async deleteIdea(id) {
       unwrap(await supabase.from('ideas').delete().eq('id', id))
+    },
+
+    // ---- Name pool (Namenspool: names for minor/background characters) ----
+    async listNamePool(projectId) {
+      return unwrap(
+        await supabase
+          .from('name_pool')
+          .select('*')
+          .eq('project_id', projectId)
+          .order('name', { ascending: true }),
+      )
+    },
+    async createNamePoolEntry(projectId, opts = {}) {
+      const user_id = await currentUserId()
+      return unwrap(
+        await supabase
+          .from('name_pool')
+          .insert(namePoolInsert(user_id, projectId, opts))
+          .select()
+          .single(),
+      )
+    },
+    async createNamePoolEntries(projectId, entries = []) {
+      if (!entries.length) return []
+      const user_id = await currentUserId()
+      return unwrap(
+        await supabase
+          .from('name_pool')
+          .insert(entries.map((o) => namePoolInsert(user_id, projectId, o)))
+          .select(),
+      )
+    },
+    async updateNamePoolEntry(id, patch) {
+      return unwrap(
+        await supabase.from('name_pool').update(nullifyEmptyRefs(patch)).eq('id', id).select().single(),
+      )
+    },
+    async deleteNamePoolEntry(id) {
+      unwrap(await supabase.from('name_pool').delete().eq('id', id))
     },
 
     // ---- Praemali: custom lexicon entries + saved phrases ----------------

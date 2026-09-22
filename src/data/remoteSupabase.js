@@ -28,6 +28,8 @@ const UPSERT_ORDER = [
   'routes',
   'ideas',
   'geo_features',
+  // name_pool references regions, so it follows them.
+  'name_pool',
   'terrains',
   'custom_lexicon_entries',
   'saved_phrases',

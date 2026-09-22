@@ -1,0 +1,1806 @@
+{
+ "source": "Ilema_Generic_Names_Registry.md",
+ "collision_prefixes": [
+  "Amr",
+  "Tan",
+  "Zalv",
+  "Sol",
+  "Mort",
+  "Nekt",
+  "Val",
+  "Sham",
+  "Pal",
+  "Sawl"
+ ],
+ "names": [
+  {
+   "name": "Brendson",
+   "region": "Adneroth",
+   "gender": "männlich",
+   "category": "Patronym",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Keldason",
+   "region": "Adneroth",
+   "gender": "männlich",
+   "category": "Patronym",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Skarnson",
+   "region": "Adneroth",
+   "gender": "männlich",
+   "category": "Patronym",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Stennarson",
+   "region": "Adneroth",
+   "gender": "männlich",
+   "category": "Patronym",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Torviksson",
+   "region": "Adneroth",
+   "gender": "männlich",
+   "category": "Patronym",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Bergna",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Verdienter Name (Titel)",
+   "tags": [
+    "Alt"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Brend",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Verdienter Name (Titel)",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Brendtam",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Praemali-Patronym (-tam)",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Brunn",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Verdienter Name (Titel)",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Drosten",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Verdienter Name (Titel)",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Frida",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Verdienter Name (Titel)",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Halla",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Verdienter Name (Titel)",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Halstein",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Verdienter Name (Titel)",
+   "tags": [
+    "Alt"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Halvar",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Verdienter Name (Titel)",
+   "tags": [
+    "Wache/Soldat"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Kelda",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Verdienter Name (Titel)",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Keldatam",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Praemali-Patronym (-tam)",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Kervik",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Verdienter Name (Titel)",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Kolgrim",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Verdienter Name (Titel)",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Ragna",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Verdienter Name (Titel)",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Skalda",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Verdienter Name (Titel)",
+   "tags": [
+    "Alt"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Skarn",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Verdienter Name (Titel)",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Skarntam",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Praemali-Patronym (-tam)",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Stennar",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Verdienter Name (Titel)",
+   "tags": [
+    "Wache/Soldat"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Torgen",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Verdienter Name (Titel)",
+   "tags": [
+    "Wirt/Händler"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Torvik",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Verdienter Name (Titel)",
+   "tags": [
+    "Wache/Soldat"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Torviktam",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Praemali-Patronym (-tam)",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Ulfatam",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Praemali-Patronym (-tam)",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Ulfrid",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Verdienter Name (Titel)",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Vigga",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Verdienter Name (Titel)",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Yrsa",
+   "region": "Adneroth",
+   "gender": "neutral",
+   "category": "Verdienter Name (Titel)",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Halladotter",
+   "region": "Adneroth",
+   "gender": "weiblich",
+   "category": "Patronym",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Halvardotter",
+   "region": "Adneroth",
+   "gender": "weiblich",
+   "category": "Patronym",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Raggadotter",
+   "region": "Adneroth",
+   "gender": "weiblich",
+   "category": "Patronym",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Ulfdotter",
+   "region": "Adneroth",
+   "gender": "weiblich",
+   "category": "Patronym",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Viggadotter",
+   "region": "Adneroth",
+   "gender": "weiblich",
+   "category": "Patronym",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Aldus",
+   "region": "Agrinal",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Alt"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Bram",
+   "region": "Agrinal",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Wirt/Händler"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Durren",
+   "region": "Agrinal",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Fenrik",
+   "region": "Agrinal",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Gerlan",
+   "region": "Agrinal",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Halden",
+   "region": "Agrinal",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Bauer/Dorfvolk"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Harmen",
+   "region": "Agrinal",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Bauer/Dorfvolk"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Marun",
+   "region": "Agrinal",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Bauer/Dorfvolk"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Ostan",
+   "region": "Agrinal",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Wirt/Händler"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Petran",
+   "region": "Agrinal",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Renno",
+   "region": "Agrinal",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Bauer/Dorfvolk"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Salvik",
+   "region": "Agrinal",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Tobrin",
+   "region": "Agrinal",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Bauer/Dorfvolk"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Torsa",
+   "region": "Agrinal",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Welmar",
+   "region": "Agrinal",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Corran",
+   "region": "Agrinal",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Emrin",
+   "region": "Agrinal",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [
+    "Kind"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Lensa",
+   "region": "Agrinal",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [
+    "Kind"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Odric",
+   "region": "Agrinal",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [
+    "Kind"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Talvi",
+   "region": "Agrinal",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [
+    "Kind"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Anneth",
+   "region": "Agrinal",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Branwen",
+   "region": "Agrinal",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Edda",
+   "region": "Agrinal",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [
+    "Alt"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Gretta",
+   "region": "Agrinal",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [
+    "Bauer/Dorfvolk"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Hedra",
+   "region": "Agrinal",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Ilsa",
+   "region": "Agrinal",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Lorna",
+   "region": "Agrinal",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Marna",
+   "region": "Agrinal",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Milla",
+   "region": "Agrinal",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [
+    "Bauer/Dorfvolk",
+    "Kind"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Rosmun",
+   "region": "Agrinal",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [
+    "Alt"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Salma",
+   "region": "Agrinal",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Selda",
+   "region": "Agrinal",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [
+    "Bauer/Dorfvolk"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Tilda",
+   "region": "Agrinal",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [
+    "Bauer/Dorfvolk"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Verena",
+   "region": "Agrinal",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Wenna",
+   "region": "Agrinal",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [
+    "Bauer/Dorfvolk"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Bhorn",
+   "region": "Dwenrih",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Dorv",
+   "region": "Dwenrih",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Drav",
+   "region": "Dwenrih",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Wache/Soldat"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Dresk",
+   "region": "Dwenrih",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Halt",
+   "region": "Dwenrih",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Khest",
+   "region": "Dwenrih",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Krenn",
+   "region": "Dwenrih",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Wache/Soldat"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Marsk",
+   "region": "Dwenrih",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Wache/Soldat"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Nesk",
+   "region": "Dwenrih",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Rhak",
+   "region": "Dwenrih",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Skell",
+   "region": "Dwenrih",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Wache/Soldat"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Stragg",
+   "region": "Dwenrih",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Torm",
+   "region": "Dwenrih",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Varn",
+   "region": "Dwenrih",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Wache/Soldat"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Vek",
+   "region": "Dwenrih",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Kind"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Draven",
+   "region": "Dwenrih",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Kelt",
+   "region": "Dwenrih",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Ossk",
+   "region": "Dwenrih",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Rask",
+   "region": "Dwenrih",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Vurn",
+   "region": "Dwenrih",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Darna",
+   "region": "Dwenrih",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Dessa",
+   "region": "Dwenrih",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [
+    "Wirt/Händler"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Hesk",
+   "region": "Dwenrih",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Karn",
+   "region": "Dwenrih",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Malla",
+   "region": "Dwenrih",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Morva",
+   "region": "Dwenrih",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Reska",
+   "region": "Dwenrih",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Skava",
+   "region": "Dwenrih",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Tesk",
+   "region": "Dwenrih",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Thala",
+   "region": "Dwenrih",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Threna",
+   "region": "Dwenrih",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Valsk",
+   "region": "Dwenrih",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": "Klingt ähnlich wie Hauptfigur-Präfix: Val-"
+  },
+  {
+   "name": "Vess",
+   "region": "Dwenrih",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Vrenn",
+   "region": "Dwenrih",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Yrsk",
+   "region": "Dwenrih",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Adristan",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Almeric",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Corvinal",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Lorvanus",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Maldrin",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Marcellus",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Ordanus",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Ostavian",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Alt"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Peldrin",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Wirt/Händler"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Ravendal",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Sertorius",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Priester/Gelehrter"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Tandric",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": "Klingt ähnlich wie Hauptfigur-Präfix: Tan-"
+  },
+  {
+   "name": "Tersandus",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Velsorin",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Priester/Gelehrter"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Veskarin",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Priester/Gelehrter"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Celdara",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Meridian",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Orvin",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Tessarin",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Valdesse",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": "Klingt ähnlich wie Hauptfigur-Präfix: Val-"
+  },
+  {
+   "name": "Adrisella",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Aldenia",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [
+    "Priester/Gelehrter"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Corvessa",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Lorvena",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Marcella",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Mirandia",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Ordessa",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [
+    "Priester/Gelehrter"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Ostella",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Peldrina",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Ravessa",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Selvina",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Sertana",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Tandrea",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": "Klingt ähnlich wie Hauptfigur-Präfix: Tan-"
+  },
+  {
+   "name": "Velmira",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Veslia",
+   "region": "Porsiran (Hauptstadt)",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Calvero",
+   "region": "Rumatia",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Wirt/Händler"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Delfin",
+   "region": "Rumatia",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Larento",
+   "region": "Rumatia",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Maleno",
+   "region": "Rumatia",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Mavero",
+   "region": "Rumatia",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Nereo",
+   "region": "Rumatia",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Ondrio",
+   "region": "Rumatia",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Orenzo",
+   "region": "Rumatia",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Palmiro",
+   "region": "Rumatia",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Alt"
+   ],
+   "collision_warning": "Klingt ähnlich wie Hauptfigur-Präfix: Pal-"
+  },
+  {
+   "name": "Rumano",
+   "region": "Rumatia",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Serram",
+   "region": "Rumatia",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Wache/Soldat"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Solano",
+   "region": "Rumatia",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": "Klingt ähnlich wie Hauptfigur-Präfix: Sol-"
+  },
+  {
+   "name": "Talvio",
+   "region": "Rumatia",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Terrin",
+   "region": "Rumatia",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Valdio",
+   "region": "Rumatia",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": "Klingt ähnlich wie Hauptfigur-Präfix: Val-"
+  },
+  {
+   "name": "Avena",
+   "region": "Rumatia",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [
+    "Kind"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Corrin",
+   "region": "Rumatia",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Marell",
+   "region": "Rumatia",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Silvano",
+   "region": "Rumatia",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Tessio",
+   "region": "Rumatia",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [
+    "Kind"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Adriana",
+   "region": "Rumatia",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Alvena",
+   "region": "Rumatia",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Calvenna",
+   "region": "Rumatia",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Corella",
+   "region": "Rumatia",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Delmira",
+   "region": "Rumatia",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [
+    "Alt"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Liviana",
+   "region": "Rumatia",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Maretta",
+   "region": "Rumatia",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Marisa",
+   "region": "Rumatia",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Neriss",
+   "region": "Rumatia",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Ondina",
+   "region": "Rumatia",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Rosalia",
+   "region": "Rumatia",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Serina",
+   "region": "Rumatia",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Solenna",
+   "region": "Rumatia",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": "Klingt ähnlich wie Hauptfigur-Präfix: Sol-"
+  },
+  {
+   "name": "Talia",
+   "region": "Rumatia",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Verilia",
+   "region": "Rumatia",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Ashwin",
+   "region": "Wanilomnir",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Halash",
+   "region": "Wanilomnir",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Mashun",
+   "region": "Wanilomnir",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Moshel",
+   "region": "Wanilomnir",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Priester/Gelehrter"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Neshun",
+   "region": "Wanilomnir",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Oshel",
+   "region": "Wanilomnir",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Rashal",
+   "region": "Wanilomnir",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Rushan",
+   "region": "Wanilomnir",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Shalen",
+   "region": "Wanilomnir",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Priester/Gelehrter"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Shalvo",
+   "region": "Wanilomnir",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Shemra",
+   "region": "Wanilomnir",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Shindar",
+   "region": "Wanilomnir",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Shonal",
+   "region": "Wanilomnir",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Wirt/Händler"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Tarash",
+   "region": "Wanilomnir",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [
+    "Wache/Soldat"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Toshan",
+   "region": "Wanilomnir",
+   "gender": "männlich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Ashiri",
+   "region": "Wanilomnir",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Elshin",
+   "region": "Wanilomnir",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Mesha",
+   "region": "Wanilomnir",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [
+    "Kind"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Shaan",
+   "region": "Wanilomnir",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [
+    "Kind"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Shovan",
+   "region": "Wanilomnir",
+   "gender": "neutral",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Alsha",
+   "region": "Wanilomnir",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Ashenna",
+   "region": "Wanilomnir",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Isharra",
+   "region": "Wanilomnir",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Mashua",
+   "region": "Wanilomnir",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Moshalla",
+   "region": "Wanilomnir",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Neshara",
+   "region": "Wanilomnir",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [
+    "Priester/Gelehrter"
+   ],
+   "collision_warning": null
+  },
+  {
+   "name": "Rashida",
+   "region": "Wanilomnir",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Shalia",
+   "region": "Wanilomnir",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Shanel",
+   "region": "Wanilomnir",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Shilva",
+   "region": "Wanilomnir",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Shimara",
+   "region": "Wanilomnir",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Shonna",
+   "region": "Wanilomnir",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Tarsha",
+   "region": "Wanilomnir",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Vesharin",
+   "region": "Wanilomnir",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [],
+   "collision_warning": null
+  },
+  {
+   "name": "Welsha",
+   "region": "Wanilomnir",
+   "gender": "weiblich",
+   "category": "Vorname",
+   "tags": [
+    "Alt"
+   ],
+   "collision_warning": null
+  }
+ ]
+}

@@ -958,6 +958,65 @@ select:focus, input:focus, textarea:focus {
 .names-matches { display: inline-flex; flex-wrap: wrap; gap: 4px; }
 .names-match { font-style: italic; }
 
+/* ===================== Namenspool ===================== */
+.names-tabs { margin: 4px 0 14px; }
+.pool { display: flex; flex-direction: column; gap: 10px; }
+.pool-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pool-bar select { width: auto; min-width: 130px; }
+.pool-search { flex: 1; min-width: 200px; }
+.pool-bar-2 { gap: 16px; font-size: 13px; }
+.pool-counts { color: var(--text-dim); font-size: 12px; margin-left: auto; }
+.pool-random { white-space: nowrap; }
+
+.pool-pick {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  background: var(--bg-3); border: 1px solid var(--accent-2);
+  border-radius: 10px; padding: 10px 12px;
+}
+.pool-pick-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim); }
+.pool-pick-name { font-size: 17px; }
+
+.pool-list { list-style: none; margin: 0; padding: 0; }
+.pool-row {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 7px 0; border-bottom: 1px solid var(--border);
+}
+.pool-row.used { opacity: 0.55; }
+.pool-row.hidden-row .pool-name { text-decoration: line-through; }
+.pool-name { font-weight: 600; min-width: 120px; }
+.pool-meta { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.badge.small {
+  font-size: 10px; padding: 2px 7px;
+  background: var(--bg-3); border: 1px solid var(--border); color: var(--text-dim);
+  text-transform: none; letter-spacing: 0;
+}
+.badge.small.pool-tag { border-color: var(--accent-2); color: var(--text); }
+.pool-warn {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; border-radius: 999px; padding: 2px 8px;
+  background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);
+}
+.pool-used-chip { display: inline-flex; align-items: center; gap: 4px; }
+.pool-notes { font-size: 12px; color: var(--text-dim); }
+.pool-actions { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
+.pool-empty { padding: 12px 0; }
+
+.pool-form { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.pool-form-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+.pool-form-row .field { flex: 1; min-width: 150px; }
+.pool-notes-field { flex: 2; }
+.pool-form-actions { display: flex; gap: 8px; }
+.pool-add { padding-top: 4px; }
+.pool-import { display: flex; flex-wrap: wrap; gap: 8px; }
+.pool-file { display: none; }
+.pool-msg-ok { color: var(--text); }
+.pool-msg-err { color: var(--danger); }
+
+@media (max-width: 700px) {
+  .pool-counts { margin-left: 0; }
+  .pool-actions { margin-left: 0; width: 100%; }
+}
+
 /* ---- Karte anlegen: turn an unresolved #Name into a card ---- */
 .create-card-wrap { position: relative; display: inline-flex; align-items: center; gap: 6px; }
 .create-card-btn { display: inline-flex; align-items: center; gap: 4px; }

@@ -4,7 +4,7 @@
 import { openDB } from 'idb'
 
 const DB_NAME = 'smartwriting'
-const DB_VERSION = 12
+const DB_VERSION = 13
 
 export const STORES = {
   projects: 'projects',
@@ -22,6 +22,8 @@ export const STORES = {
   ideas: 'ideas',
   // Named geography (rivers/forests/…): map text labels, #-linkable.
   geo_features: 'geo_features',
+  // Reservoir of available names for minor/background characters (Namenspool).
+  name_pool: 'name_pool',
   // Praemali translator: user lexicon additions (project_id NULLABLE — null =
   // global) and the saved-phrase library. Soft-deleted via deleted_at.
   custom_lexicon_entries: 'custom_lexicon_entries',
@@ -55,6 +57,7 @@ export const SYNCED_STORES = new Set([
   STORES.routes,
   STORES.ideas,
   STORES.geo_features,
+  STORES.name_pool,
   STORES.terrains,
   STORES.custom_lexicon_entries,
   STORES.saved_phrases,
@@ -183,6 +186,10 @@ export function getDb() {
         }
         if (!db.objectStoreNames.contains(STORES.geo_features)) {
           const s = db.createObjectStore(STORES.geo_features, { keyPath: 'id' })
+          s.createIndex('project_id', 'project_id')
+        }
+        if (!db.objectStoreNames.contains(STORES.name_pool)) {
+          const s = db.createObjectStore(STORES.name_pool, { keyPath: 'id' })
           s.createIndex('project_id', 'project_id')
         }
         if (!db.objectStoreNames.contains(STORES.custom_lexicon_entries)) {

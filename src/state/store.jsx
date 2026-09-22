@@ -11,6 +11,7 @@ import {
   onPullApplied,
 } from '../data/syncEngine.js'
 import { findNameOccurrences, replaceNameReferences } from '../lib/hashlinks.js'
+import { planNamePoolImport } from '../lib/namePool.js'
 import { orderedChapters, lastKnownPlaceBefore } from '../lib/timeline/timeline.js'
 
 const ACTIVE_PROJECT_KEY = 'smartwriting.activeProjectId'
@@ -66,6 +67,7 @@ export function StoreProvider({ children }) {
   const [routes, setRoutes] = useState([])
   const [ideas, setIdeas] = useState([])
   const [geoFeatures, setGeoFeatures] = useState([])
+  const [namePool, setNamePool] = useState([])
   const [customLexicon, setCustomLexicon] = useState([])
   const [savedPhrases, setSavedPhrases] = useState([])
   // Versions of the currently open chapter (PROSE only; metadata stays on the chapter).
@@ -138,6 +140,9 @@ export function StoreProvider({ children }) {
   const refreshGeoFeatures = useCallback(async (pid) => {
     setGeoFeatures(pid ? await repo.listGeoFeatures(pid) : [])
   }, [])
+  const refreshNamePool = useCallback(async (pid) => {
+    setNamePool(pid ? await repo.listNamePool(pid) : [])
+  }, [])
   const refreshCustomLexicon = useCallback(async (pid) => {
     setCustomLexicon(pid ? await repo.listCustomLexicon(pid) : [])
   }, [])
@@ -189,6 +194,7 @@ export function StoreProvider({ children }) {
           refreshRoutes(activeProjectId),
           refreshIdeas(activeProjectId),
           refreshGeoFeatures(activeProjectId),
+          refreshNamePool(activeProjectId),
           refreshCustomLexicon(activeProjectId),
           refreshSavedPhrases(activeProjectId),
         ])
@@ -197,7 +203,7 @@ export function StoreProvider({ children }) {
         /* error already surfaced via the guarded repo */
       }
     })()
-  }, [activeProjectId, refreshChapters, refreshCharacters, refreshPlaces, refreshLocations, refreshEvents, refreshRegions, refreshRoutes, refreshIdeas, refreshGeoFeatures, refreshCustomLexicon, refreshSavedPhrases])
+  }, [activeProjectId, refreshChapters, refreshCharacters, refreshPlaces, refreshLocations, refreshEvents, refreshRegions, refreshRoutes, refreshIdeas, refreshGeoFeatures, refreshNamePool, refreshCustomLexicon, refreshSavedPhrases])
 
   // Persist the active chapter so a reload reopens it.
   useEffect(() => {
@@ -221,6 +227,7 @@ export function StoreProvider({ children }) {
         if (t.has('routes')) await refreshRoutes(activeProjectId)
         if (t.has('ideas')) await refreshIdeas(activeProjectId)
         if (t.has('geo_features')) await refreshGeoFeatures(activeProjectId)
+        if (t.has('name_pool')) await refreshNamePool(activeProjectId)
         if (t.has('custom_lexicon_entries')) await refreshCustomLexicon(activeProjectId)
         if (t.has('saved_phrases')) await refreshSavedPhrases(activeProjectId)
         if (t.has('chapter_versions') && activeChapterId) {
@@ -243,6 +250,7 @@ export function StoreProvider({ children }) {
     refreshRoutes,
     refreshIdeas,
     refreshGeoFeatures,
+    refreshNamePool,
     refreshCustomLexicon,
     refreshSavedPhrases,
     refreshChapterVersions,
@@ -711,6 +719,106 @@ export function StoreProvider({ children }) {
     [activeProjectId, refreshIdeas],
   )
 
+  // --- name pool actions (Namenspool) -----------------------------------
+  const createNamePoolEntry = useCallback(
+    async (opts) => {
+      const entry = await repo.createNamePoolEntry(activeProjectId, opts || {})
+      await refreshNamePool(activeProjectId)
+      return entry
+    },
+    [activeProjectId, refreshNamePool],
+  )
+  const updateNamePoolEntry = useCallback(async (id, patch) => {
+    const updated = await repo.updateNamePoolEntry(id, patch)
+    setNamePool((prev) => prev.map((e) => (e.id === id ? updated : e)))
+    return updated
+  }, [])
+  const deleteNamePoolEntry = useCallback(
+    async (id) => {
+      await repo.deleteNamePoolEntry(id)
+      await refreshNamePool(activeProjectId)
+    },
+    [activeProjectId, refreshNamePool],
+  )
+  // The per-project list of protected name prefixes (main cast) — kept in
+  // project.settings, so it syncs with the project row and needs no schema.
+  const namePoolPrefixes = useMemo(
+    () =>
+      Array.isArray(activeProject?.settings?.namePoolPrefixes)
+        ? activeProject.settings.namePoolPrefixes
+        : [],
+    [activeProject],
+  )
+  const setNamePoolPrefixes = useCallback(
+    async (list) => {
+      if (!activeProjectId) return
+      await repo.updateProject(activeProjectId, {
+        settings: {
+          ...(activeProject?.settings || {}),
+          namePoolPrefixes: (list || []).map((p) => String(p).trim()).filter(Boolean),
+        },
+      })
+      await refreshProjects()
+    },
+    [activeProject, activeProjectId, refreshProjects],
+  )
+  // Import a parsed registry ({ names, prefixes }) into the ACTIVE project.
+  // Idempotent: names already in this project's pool for the same region are
+  // skipped, so re-importing the same file changes nothing. Returns
+  // { imported, skipped, matchedRegions }.
+  const importNamePool = useCallback(
+    async (parsed) => {
+      if (!activeProjectId) return { imported: 0, skipped: 0 }
+      const { create, skipped, matchedRegions } = planNamePoolImport(parsed?.names || [], {
+        pool: namePool,
+        regions,
+      })
+      if (create.length) await repo.createNamePoolEntries(activeProjectId, create)
+      // Seed the collision prefixes once; never overwrite an edited list.
+      const seedPrefixes = parsed?.prefixes || []
+      if (seedPrefixes.length && !namePoolPrefixes.length) {
+        await repo.updateProject(activeProjectId, {
+          settings: { ...(activeProject?.settings || {}), namePoolPrefixes: seedPrefixes },
+        })
+        await refreshProjects()
+      }
+      await refreshNamePool(activeProjectId)
+      return { imported: create.length, skipped, matchedRegions }
+    },
+    [
+      activeProject,
+      activeProjectId,
+      namePool,
+      namePoolPrefixes,
+      regions,
+      refreshNamePool,
+      refreshProjects,
+    ],
+  )
+  // "Als Figur anlegen": a Randfigur prefilled from a pool entry. Geschlecht
+  // goes to card.sex (männlich/weiblich; "neutral" means the name works either
+  // way, so it stays for the author to set), Herkunft to the region card when
+  // there is one, else to the legacy free-text origin.
+  const createCharacterFromPoolName = useCallback(
+    async (entry) => {
+      const name = (entry?.name || '').trim()
+      if (!name) return null
+      const created = await repo.createCharacter(activeProjectId, { name })
+      const region = entry.region_id ? regions.find((r) => r.id === entry.region_id) : null
+      const patch = {
+        role: 'randfigur',
+        origin_region_id: region?.id || null,
+        origin: region ? '' : entry.region_text || '',
+        card: { ...(created.card || {}) },
+      }
+      if (entry.gender === 'männlich' || entry.gender === 'weiblich') patch.card.sex = entry.gender
+      const updated = await repo.updateCharacter(created.id, patch)
+      await refreshCharacters(activeProjectId)
+      return updated
+    },
+    [activeProjectId, regions, refreshCharacters],
+  )
+
   const createEvent = useCallback(
     async (title) => {
       const e = await repo.createEvent(activeProjectId, { title })
@@ -761,9 +869,10 @@ export function StoreProvider({ children }) {
       regions,
       routes,
       geoFeatures,
+      namePool,
       lexicon,
     }
-  }, [activeProjectId, activeProject, chapters, characters, places, events, locations, regions, routes, geoFeatures])
+  }, [activeProjectId, activeProject, chapters, characters, places, events, locations, regions, routes, geoFeatures, namePool])
 
   // --- Drive backup linkage (read/write; Drive logic lives in DriveProvider) -
   const getDriveLink = useCallback(() => repo.getDriveLink(), [])
@@ -955,6 +1064,14 @@ export function StoreProvider({ children }) {
     updateIdea,
     deleteIdea,
     createGeoFeature,
+    namePool,
+    createNamePoolEntry,
+    updateNamePoolEntry,
+    deleteNamePoolEntry,
+    namePoolPrefixes,
+    setNamePoolPrefixes,
+    importNamePool,
+    createCharacterFromPoolName,
     updateGeoFeature,
     deleteGeoFeature,
     mapFocus,

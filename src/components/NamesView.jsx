@@ -1,14 +1,19 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { User, MapPin, Check } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 import { makeResolver, extractHashRefs, KIND_LABELS_DE } from '../lib/hashlinks.js'
 import CreateCardMenu from './CreateCardMenu.jsx'
+import NamePoolView from './NamePoolView.jsx'
 
 // Project-wide "names to finalize or fix": every UNRESOLVED #reference (typo or
 // not-yet-carded), every AMBIGUOUS one (several cards share the name — the app
 // never guesses), and every resolved link to a card whose name is not final.
 // Alias-resolved references count as resolved and are NOT flagged.
+//
+// Second subtab: the NAMENSPOOL — the reservoir of unused names for minor
+// characters (own component).
 export default function NamesView() {
+  const [tab, setTab] = useState('offen')
   const { chapters, characters, places, regions, geoFeatures, setActiveChapterId, setView, openCard, openOnMap } = useStore()
 
   const { unresolved, ambiguous, provisional } = useMemo(() => {
@@ -67,8 +72,28 @@ export default function NamesView() {
   return (
     <div className="names-view">
       <div className="names-inner">
-        <h2>Namen prüfen &amp; finalisieren</h2>
+        <h2>Namen</h2>
+        <nav className="seg names-tabs" aria-label="Namen-Bereiche">
+          <button
+            className={`seg-btn ${tab === 'offen' ? 'on' : ''}`}
+            aria-pressed={tab === 'offen'}
+            onClick={() => setTab('offen')}
+          >
+            Offene Namen
+          </button>
+          <button
+            className={`seg-btn ${tab === 'pool' ? 'on' : ''}`}
+            aria-pressed={tab === 'pool'}
+            onClick={() => setTab('pool')}
+          >
+            Namenspool
+          </button>
+        </nav>
 
+        {tab === 'pool' && <NamePoolView />}
+
+        {tab === 'offen' && (
+        <>
         <section className="names-section">
           <h3>
             Unaufgelöste Referenzen <span className="count">{unresolved.length}</span>
@@ -159,6 +184,8 @@ export default function NamesView() {
             </ul>
           )}
         </section>
+        </>
+        )}
       </div>
     </div>
   )

@@ -65,6 +65,16 @@
 //     updateIdea(id, patch)                -> Idea
 //     deleteIdea(id)                       -> void
 //
+//   Name pool (Namenspool: names for minor/background characters; whether a
+//   name is USED is derived live from the character cards, never stored)
+//     listNamePool(projectId)              -> NamePoolEntry[] (by name)
+//     createNamePoolEntry(projectId, { name, region_id?, region_text?, gender?,
+//                                      category?, tags?, notes?, hidden? })
+//                                          -> NamePoolEntry
+//     createNamePoolEntries(projectId, entries[]) -> NamePoolEntry[] (import)
+//     updateNamePoolEntry(id, patch)       -> NamePoolEntry
+//     deleteNamePoolEntry(id)              -> void
+//
 //   Praemali translator (user layer on top of the bundled base lexicon)
 //     listCustomLexicon(projectId)         -> Entry[] (project rows + global
 //                                             project_id-null rows; no deleted)

@@ -67,6 +67,19 @@ The `events` table already exists (from `0001_init.sql`) with `title`,
 `card jsonb` column (holding `description`, `involved_character_ids`,
 `chapter_ids`, `notes`). Re-runnable; no new RLS needed.
 
+### 1c-2. Add the `name_pool` table (Namenspool)
+For the name pool (Namen → Namenspool), run:
+
+```
+supabase/migrations/0016_name_pool.sql
+```
+
+Creates `name_pool` (per project: `name`, `region_id` → `regions` with a
+`region_text` fallback, `gender`, `category`, `tags`, `notes`, `hidden`) with
+indexes, the `set_updated_at` trigger and user-scoped RLS. Re-runnable
+(additive `add column if not exists` for every column). The editable
+collision-prefix list needs no schema — it lives in `projects.settings`.
+
 ### 1d. (Optional) Google Drive backup table
 Only needed if you offer the opt-in **Google Drive backup**. Run:
 
@@ -234,6 +247,46 @@ name has a **"Karte anlegen"** button: pick Figur / Ort / Region / Geografie and
 the card is created with that name and opened for editing, after which every
 existing `#reference` to it resolves. The same offer sits on unresolved links in
 the preview pane — clicking one opens the four kinds right there.
+
+### Namenspool (Namen → Namenspool)
+
+A per-project reservoir of names for minor and background characters, in the
+second subtab of the **Namen** view (the first one, "Offene Namen", is the
+unresolved/ambiguous/provisional list described above).
+
+- **Import:** "Ilema-Namenspool importieren" loads the bundled registry
+  (`seed/ilema-namenspool.json`, 210 names, lazily fetched — never part of the
+  start-up bundle) into the **active project only**; "Eigene JSON-Datei …"
+  imports any file in the same shape (`{ collision_prefixes: [], names: [{name,
+  region, gender, category, tags}] }`, or a bare array of names). Each entry's
+  region is matched to a **region card by name** (case-insensitive); without a
+  match the region stays as free text (e.g. "Porsiran (Hauptstadt)"). The import
+  is **idempotent**: a name already in this project's pool for the same region
+  is skipped, so re-importing never duplicates — including after the region card
+  is created later. The report says how many were imported and skipped.
+- **Used names are derived, never stored.** A pool name counts as used when a
+  character card in the project carries it as its **name or alias**
+  (case-insensitively). Used names are hidden by default; "auch verwendete
+  anzeigen" lists them greyed out with a chip linking to the character. Deleting
+  the character returns the name to the pool by itself.
+- **Browsing:** filters for region, gender, category and role tag plus a text
+  search over name/region/category/tags/notes, and a "Zufällig" button that
+  picks a random **unused, not-hidden** name matching the current filters.
+- **Collision warnings:** names starting with a protected prefix (the main
+  cast's name beginnings — seeded from the file's `collision_prefixes` on the
+  first import, then editable per project under "Geschützte Namensanfänge") get
+  a warning badge. The check runs **live** against that list, so editing it
+  updates every warning at once. It warns, never blocks.
+- **"Als Figur anlegen"** creates a character card prefilled with the name,
+  `role = Randfigur`, Herkunft = the matched region card (or the free text), and
+  Geschlecht in `card.sex` for männlich/weiblich ("neutral" means the name works
+  either way, so it is left for the author), then opens the card. The name then
+  counts as used automatically.
+- **Manual management:** add names by hand (name, region card or free text,
+  gender, category, role tags, notes), edit them inline, hide one so it is never
+  suggested again ("auch ausgeblendete anzeigen" brings it back), or delete it.
+- The pool syncs like every other table (local-first: IndexedDB first, pushed to
+  Supabase in the background) and is part of the recoverable JSON backup.
 
 ### Events (Ereignisse)
 
@@ -443,7 +496,9 @@ additions back into the master lexicon file maintained outside the app).
 Before shipping, run `npm run test:praemali` — it verifies the canonical
 reference sentences against the new JSON and the merge-layer guarantees.
 `npm run test:hashlinks` covers `#Name` resolution (names, aliases, German
-genitive forms, ambiguity) and rename safety.
+genitive forms, ambiguity) and rename safety. `npm run test:namepool` covers the
+Namenspool: live "used" derivation, region matching, collision warnings, the
+filters/random pick, and the idempotent import of the real seed registry.
 
 ## Not yet built (later phases, per SPEC)
 

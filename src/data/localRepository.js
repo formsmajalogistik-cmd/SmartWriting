@@ -15,6 +15,7 @@ import {
   makeRoute,
   makeGeoFeature,
   makeIdea,
+  makeNamePoolEntry,
   makeCustomLexiconEntry,
   makeSavedPhrase,
   nowIso,
@@ -61,6 +62,7 @@ export function createLocalRepository() {
         STORES.places,
         STORES.character_locations,
         STORES.events,
+        STORES.name_pool,
       ]) {
         const rows = await db.getAllFromIndex(store, 'project_id', id)
         const tx = db.transaction(store, 'readwrite')
@@ -513,6 +515,42 @@ export function createLocalRepository() {
     async deleteIdea(id) {
       const db = await getDb()
       await db.delete(STORES.ideas, id)
+    },
+
+    // ---- Name pool (Namenspool: names for minor/background characters) ----
+    async listNamePool(projectId) {
+      const rows = await byProject(STORES.name_pool, projectId)
+      return rows.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'de'))
+    },
+    async createNamePoolEntry(projectId, opts = {}) {
+      const db = await getDb()
+      const entry = makeNamePoolEntry({ project_id: projectId, ...opts })
+      await db.put(STORES.name_pool, entry)
+      return entry
+    },
+    // Bulk insert (import). One row per entry, written in one transaction-ish
+    // loop; each write is still recorded individually for sync.
+    async createNamePoolEntries(projectId, entries = []) {
+      const db = await getDb()
+      const made = []
+      for (const opts of entries) {
+        const entry = makeNamePoolEntry({ project_id: projectId, ...opts })
+        await db.put(STORES.name_pool, entry)
+        made.push(entry)
+      }
+      return made
+    },
+    async updateNamePoolEntry(id, patch) {
+      const db = await getDb()
+      const existing = await db.get(STORES.name_pool, id)
+      if (!existing) throw new Error(`NamePoolEntry ${id} not found`)
+      const updated = { ...existing, ...patch, updated_at: nowIso() }
+      await db.put(STORES.name_pool, updated)
+      return updated
+    },
+    async deleteNamePoolEntry(id) {
+      const db = await getDb()
+      await db.delete(STORES.name_pool, id)
     },
 
     // ---- Praemali: custom lexicon entries + saved phrases ----------------

@@ -187,6 +187,54 @@ export function makeIdea({ project_id, title, content, tags, pinned }) {
   }
 }
 
+// name_pool — a per-project reservoir of names for minor/background characters.
+// region_id points at a region card when one matches; region_text keeps the
+// imported region name otherwise (e.g. "Porsiran (Hauptstadt)"). Whether a name
+// is USED is never stored — it is derived live from the character cards.
+export const NAME_POOL_GENDERS = ['männlich', 'weiblich', 'neutral']
+export const NAME_POOL_CATEGORIES = [
+  'Vorname',
+  'Verdienter Name (Titel)',
+  'Patronym',
+  'Praemali-Patronym (-tam)',
+]
+// Role tags used by the seed registry; the field stays free-form.
+export const NAME_POOL_TAGS = [
+  'Wache/Soldat',
+  'Priester/Gelehrter',
+  'Wirt/Händler',
+  'Bauer/Dorfvolk',
+  'Kind',
+  'Alt',
+]
+export function makeNamePoolEntry({
+  project_id,
+  name,
+  region_id,
+  region_text,
+  gender,
+  category,
+  tags,
+  notes,
+  hidden,
+}) {
+  return {
+    id: newId(),
+    user_id: LOCAL_USER_ID,
+    project_id,
+    name: name?.trim() || '',
+    region_id: region_id || null,
+    region_text: region_text?.trim() || '',
+    gender: NAME_POOL_GENDERS.includes(gender) ? gender : 'neutral',
+    category: category?.trim() || 'Vorname',
+    tags: Array.isArray(tags) ? tags.filter(Boolean) : [],
+    notes: notes ?? '',
+    hidden: !!hidden,
+    created_at: nowIso(),
+    updated_at: nowIso(),
+  }
+}
+
 // custom_lexicon_entries — user additions to the Praemali base lexicon.
 // payload mirrors the base lexicon entry shape for its entry_type; `override`
 // entries shadow a base root by payload.root. project_id null = all projects.
