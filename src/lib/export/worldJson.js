@@ -70,6 +70,7 @@ export function buildWorldJson(snapshot, exportedAt = new Date().toISOString()) 
     routes: snapshot.routes ?? [],
     geo_features: snapshot.geoFeatures ?? [],
     name_pool: snapshot.namePool ?? [],
+    relationships: snapshot.relationships ?? [],
     lexicon: snapshot.lexicon ?? [],
   }
 }

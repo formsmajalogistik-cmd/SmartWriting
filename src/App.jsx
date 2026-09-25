@@ -10,6 +10,7 @@ import CharactersView from './components/CharactersView.jsx'
 import PlacesView from './components/PlacesView.jsx'
 import EventsView from './components/EventsView.jsx'
 import NamesView from './components/NamesView.jsx'
+import RelationsView from './components/RelationsView.jsx'
 import ProfileView from './components/ProfileView.jsx'
 import ExportView from './components/ExportView.jsx'
 import CompileView from './components/CompileView.jsx'
@@ -33,6 +34,7 @@ const NAV_VIEWS = [
   { key: 'characters', label: 'Figuren' },
   { key: 'places', label: 'Orte' },
   { key: 'events', label: 'Ereignisse' },
+  { key: 'relations', label: 'Beziehungen' },
   { key: 'names', label: 'Namen' },
   { key: 'export', label: 'Export' },
 ]
@@ -148,6 +150,7 @@ export default function App() {
     if (view === 'map') return <MapView />
     if (view === 'praemali') return <PraemaliView />
     if (view === 'names') return <NamesView />
+    if (view === 'relations') return <RelationsView />
     if (view === 'export') return <ExportView />
     return activeChapter ? (
       <ChapterView key={activeChapter.id} />

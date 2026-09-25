@@ -75,6 +75,16 @@
 //     updateNamePoolEntry(id, patch)       -> NamePoolEntry
 //     deleteNamePoolEntry(id)              -> void
 //
+//   Relationships (character relationships; ONE row per fact — the inverse and
+//   every derived family link are computed at read time, see lib/relationships)
+//     listRelationships(projectId)         -> Relationship[] (oldest first)
+//     createRelationship(projectId, { from_character_id, to_character_id, type,
+//                                     note?, started_book?, ended_book?,
+//                                     uncertain? }) -> Relationship
+//     updateRelationship(id, patch)        -> Relationship
+//     deleteRelationship(id)               -> void
+//     (deleteCharacter also removes that character's relationships)
+//
 //   Praemali translator (user layer on top of the bundled base lexicon)
 //     listCustomLexicon(projectId)         -> Entry[] (project rows + global
 //                                             project_id-null rows; no deleted)

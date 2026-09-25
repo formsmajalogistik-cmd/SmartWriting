@@ -17,6 +17,8 @@ export const CHARACTER_CONFIG = {
   bookStatus: true,
   // "Aliase / weitere Namen" (card.aliases): the card resolves via #Alias too.
   aliases: true,
+  // Relationship block (Beziehungen) — characters only.
+  relations: true,
   // Subtabs organise the CARDS VIEW only — # autocomplete and metadata
   // selectors always see every character regardless of tier.
   subtabs: [

@@ -187,6 +187,46 @@ export function makeIdea({ project_id, title, content, tags, pinned }) {
   }
 }
 
+// relationships — one row per character relationship. The row is stored in ONE
+// direction (from = the Elternteil / Mentor / Herr for directional types); the
+// counterpart is presented automatically (see src/lib/relationships.js).
+// started_book / ended_book are book ids (uuid) from project.settings.books —
+// '' must never reach those columns, hence the explicit coercion here and in
+// cleanRelationshipPatch below (the generic ''→null guard only covers *_id).
+export function makeRelationship({
+  project_id,
+  from_character_id,
+  to_character_id,
+  type,
+  note,
+  started_book,
+  ended_book,
+  uncertain,
+}) {
+  return {
+    id: newId(),
+    user_id: LOCAL_USER_ID,
+    project_id,
+    from_character_id: from_character_id || null,
+    to_character_id: to_character_id || null,
+    type: type || 'freund',
+    note: note ?? '',
+    started_book: started_book || null,
+    ended_book: ended_book || null,
+    uncertain: !!uncertain,
+    created_at: nowIso(),
+    updated_at: nowIso(),
+  }
+}
+// Book columns are uuid but aren't named *_id, so normalise them explicitly.
+export function cleanRelationshipPatch(patch = {}) {
+  const out = { ...patch }
+  for (const k of ['started_book', 'ended_book']) {
+    if (k in out && !out[k]) out[k] = null
+  }
+  return out
+}
+
 // name_pool — a per-project reservoir of names for minor/background characters.
 // region_id points at a region card when one matches; region_text keeps the
 // imported region name otherwise (e.g. "Porsiran (Hauptstadt)"). Whether a name

@@ -7,6 +7,7 @@
 // appropriate project_id. Books still live in projects.settings.books.
 import { supabase, currentUserId } from './supabaseClient.js'
 import { nullifyEmptyRefs } from './db.js'
+import { cleanRelationshipPatch } from './types.js'
 
 // Private Storage bucket for character portraits. Access is governed by the
 // bucket's RLS policies (user-scoped by path); images are served via short-
@@ -618,6 +619,45 @@ export function createSupabaseRepository() {
     },
     async deleteNamePoolEntry(id) {
       unwrap(await supabase.from('name_pool').delete().eq('id', id))
+    },
+
+    // ---- Relationships (one row per fact; inverses are derived) ----------
+    async listRelationships(projectId) {
+      return unwrap(
+        await supabase
+          .from('relationships')
+          .select('*')
+          .eq('project_id', projectId)
+          .order('created_at', { ascending: true }),
+      )
+    },
+    async createRelationship(projectId, opts = {}) {
+      const user_id = await currentUserId()
+      const insert = {
+        user_id,
+        project_id: projectId,
+        from_character_id: opts.from_character_id || null,
+        to_character_id: opts.to_character_id || null,
+        type: opts.type || 'freund',
+        note: opts.note ?? '',
+        started_book: opts.started_book || null,
+        ended_book: opts.ended_book || null,
+        uncertain: !!opts.uncertain,
+      }
+      return unwrap(await supabase.from('relationships').insert(insert).select().single())
+    },
+    async updateRelationship(id, patch) {
+      return unwrap(
+        await supabase
+          .from('relationships')
+          .update(nullifyEmptyRefs(cleanRelationshipPatch(patch)))
+          .eq('id', id)
+          .select()
+          .single(),
+      )
+    },
+    async deleteRelationship(id) {
+      unwrap(await supabase.from('relationships').delete().eq('id', id))
     },
 
     // ---- Praemali: custom lexicon entries + saved phrases ----------------

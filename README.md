@@ -80,6 +80,20 @@ indexes, the `set_updated_at` trigger and user-scoped RLS. Re-runnable
 (additive `add column if not exists` for every column). The editable
 collision-prefix list needs no schema — it lives in `projects.settings`.
 
+### 1c-3. Add the `relationships` table (Beziehungen)
+For character relationships (the **Beziehungen** view and the block on each
+character card), run:
+
+```
+supabase/migrations/0017_relationships.sql
+```
+
+Creates `relationships` (per project: `from_character_id`, `to_character_id`,
+`type`, `note`, `started_book`, `ended_book`, `uncertain`) with indexes, the
+`set_updated_at` trigger, user-scoped RLS, `ON DELETE CASCADE` on both character
+FKs and a CHECK against self-relationships. Re-runnable (additive
+`add column if not exists` for every column).
+
 ### 1d. (Optional) Google Drive backup table
 Only needed if you offer the opt-in **Google Drive backup**. Run:
 
@@ -247,6 +261,58 @@ name has a **"Karte anlegen"** button: pick Figur / Ort / Region / Geografie and
 the card is created with that name and opened for editing, after which every
 existing `#reference` to it resolves. The same offer sits on unresolved links in
 the preview pane — clicking one opens the four kinds right there.
+
+### Beziehungen (character relationships)
+
+**One row per fact.** A relationship is entered once, `from → to`, and the other
+side is presented automatically — nothing is ever typed twice:
+
+- **symmetric** types read the same from both sides: Geschwister, Ehepartner,
+  Partner, Freund, Rivale, Feind, Verbündeter;
+- **directional** types carry an inverse: Elternteil ↔ **Kind**, Mentor ↔
+  **Schüler**, Herr ↔ **Dienender**. `from_character_id` is always the
+  first-named side, and the form states the direction in plain German
+  ("Zalvia ist Elternteil von Brend") with a "Richtung tauschen" button.
+
+**Derived family links** (`src/lib/relationships.js`) are computed from the
+parent/child chain at read time and never stored: Großeltern, Enkel, Geschwister
+that merely share a parent, Tante/Onkel, Nichte/Neffe, Cousine/Cousin,
+Schwager/Schwägerin, Schwiegereltern, Schwiegerkind. They are shown distinctly —
+dashed edges in the graph, dashed chips under "Abgeleitet aus der Abstammung" on
+the card — and a pair that carries an entered family relationship is never also
+reported as derived.
+
+**Uncertain / secret:** a relationship can be flagged `unsicher / geheim` (an
+unrevealed parentage, say). It lives in the notes without being asserted as
+fact; hiding uncertain relationships in the overview also hides what follows
+from them, and a derived link that only exists because of a secret row is marked
+as uncertain too.
+
+**Per character** (block on the character card): the immediate family (Eltern /
+Partner + Geschwister / Kinder) as a small tree, every other connection grouped
+by type with its note, book range and flags, the derived relatives, and add /
+edit / remove with a searchable selector over **all** characters (independent of
+the cards view's subtab).
+
+**Overview** (nav tab **Beziehungen**): a graph of the whole cast — portrait
+thumbnail or initials per node, provisional names in amber, edges labelled by
+type with an arrow for directional ones. Filters: relationship types, subtab
+group (Hauptliste / Randfiguren / Pantheon), book appearance (characters without
+appearance data are never hidden), derived on/off, uncertain on/off. **"nur
+Familie"** switches to a proper family tree: generations top to bottom
+(longest-path depth over the parent edges), children under their parents,
+spouses side by side, parent edges drawn as elbows. Drag to pan, wheel to zoom,
+"Ansicht einpassen" to reset; clicking a node opens that character's card, and
+the small cross on a node isolates its neighbourhood (1–3 steps). The graph pane
+is **lazily loaded** — the layouts are hand-written (no graph library), so
+nothing heavy is pulled into the start-up bundle.
+
+**Integrity:** no self-relationships (the selector never offers the character
+itself; a CHECK constraint backs it in Postgres), no duplicate identical
+relationships (symmetric types in either direction), a warning before creating a
+parent/child cycle or the contradicting reverse of a directional fact, and
+deleting a character removes its relationships (both backends cascade).
+Relationships are part of the recoverable world JSON.
 
 ### Namenspool (Namen → Namenspool)
 
@@ -499,6 +565,9 @@ reference sentences against the new JSON and the merge-layer guarantees.
 genitive forms, ambiguity) and rename safety. `npm run test:namepool` covers the
 Namenspool: live "used" derivation, region matching, collision warnings, the
 filters/random pick, and the idempotent import of the real seed registry.
+`npm run test:relations` covers relationships: symmetric vs directional
+inverses, derived family links, the integrity rules, the graph filters and both
+layouts.
 
 ## Not yet built (later phases, per SPEC)
 

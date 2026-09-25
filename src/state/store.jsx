@@ -12,6 +12,7 @@ import {
 } from '../data/syncEngine.js'
 import { findNameOccurrences, replaceNameReferences } from '../lib/hashlinks.js'
 import { planNamePoolImport } from '../lib/namePool.js'
+import { findDuplicate, wouldCycle } from '../lib/relationships.js'
 import { orderedChapters, lastKnownPlaceBefore } from '../lib/timeline/timeline.js'
 
 const ACTIVE_PROJECT_KEY = 'smartwriting.activeProjectId'
@@ -68,6 +69,7 @@ export function StoreProvider({ children }) {
   const [ideas, setIdeas] = useState([])
   const [geoFeatures, setGeoFeatures] = useState([])
   const [namePool, setNamePool] = useState([])
+  const [relationships, setRelationships] = useState([])
   const [customLexicon, setCustomLexicon] = useState([])
   const [savedPhrases, setSavedPhrases] = useState([])
   // Versions of the currently open chapter (PROSE only; metadata stays on the chapter).
@@ -143,6 +145,9 @@ export function StoreProvider({ children }) {
   const refreshNamePool = useCallback(async (pid) => {
     setNamePool(pid ? await repo.listNamePool(pid) : [])
   }, [])
+  const refreshRelationships = useCallback(async (pid) => {
+    setRelationships(pid ? await repo.listRelationships(pid) : [])
+  }, [])
   const refreshCustomLexicon = useCallback(async (pid) => {
     setCustomLexicon(pid ? await repo.listCustomLexicon(pid) : [])
   }, [])
@@ -195,6 +200,7 @@ export function StoreProvider({ children }) {
           refreshIdeas(activeProjectId),
           refreshGeoFeatures(activeProjectId),
           refreshNamePool(activeProjectId),
+          refreshRelationships(activeProjectId),
           refreshCustomLexicon(activeProjectId),
           refreshSavedPhrases(activeProjectId),
         ])
@@ -203,7 +209,7 @@ export function StoreProvider({ children }) {
         /* error already surfaced via the guarded repo */
       }
     })()
-  }, [activeProjectId, refreshChapters, refreshCharacters, refreshPlaces, refreshLocations, refreshEvents, refreshRegions, refreshRoutes, refreshIdeas, refreshGeoFeatures, refreshNamePool, refreshCustomLexicon, refreshSavedPhrases])
+  }, [activeProjectId, refreshChapters, refreshCharacters, refreshPlaces, refreshLocations, refreshEvents, refreshRegions, refreshRoutes, refreshIdeas, refreshGeoFeatures, refreshNamePool, refreshRelationships, refreshCustomLexicon, refreshSavedPhrases])
 
   // Persist the active chapter so a reload reopens it.
   useEffect(() => {
@@ -228,6 +234,9 @@ export function StoreProvider({ children }) {
         if (t.has('ideas')) await refreshIdeas(activeProjectId)
         if (t.has('geo_features')) await refreshGeoFeatures(activeProjectId)
         if (t.has('name_pool')) await refreshNamePool(activeProjectId)
+        if (t.has('relationships')) await refreshRelationships(activeProjectId)
+        // A character delivered by a pull may have taken relationships with it.
+        if (t.has('characters')) await refreshRelationships(activeProjectId)
         if (t.has('custom_lexicon_entries')) await refreshCustomLexicon(activeProjectId)
         if (t.has('saved_phrases')) await refreshSavedPhrases(activeProjectId)
         if (t.has('chapter_versions') && activeChapterId) {
@@ -251,6 +260,7 @@ export function StoreProvider({ children }) {
     refreshIdeas,
     refreshGeoFeatures,
     refreshNamePool,
+    refreshRelationships,
     refreshCustomLexicon,
     refreshSavedPhrases,
     refreshChapterVersions,
@@ -582,8 +592,10 @@ export function StoreProvider({ children }) {
       await repo.deleteCharacter(id)
       await refreshCharacters(activeProjectId)
       await refreshLocations(activeProjectId)
+      // The character's relationships went with it (both backends cascade).
+      await refreshRelationships(activeProjectId)
     },
-    [activeProjectId, refreshCharacters, refreshLocations],
+    [activeProjectId, refreshCharacters, refreshLocations, refreshRelationships],
   )
 
   // --- portrait image (Supabase Storage / local blob store) -----------
@@ -717,6 +729,73 @@ export function StoreProvider({ children }) {
       await refreshIdeas(activeProjectId)
     },
     [activeProjectId, refreshIdeas],
+  )
+
+  // --- relationship actions (Beziehungen) -------------------------------
+  // ONE row per fact: the inverse side and every derived family link are
+  // computed on read (src/lib/relationships.js). The guards here are the last
+  // line — the UI checks the same rules first and explains them in German.
+  const createRelationship = useCallback(
+    async ({ from_character_id, to_character_id, type, note, started_book, ended_book, uncertain, allowCycle } = {}) => {
+      if (!from_character_id || !to_character_id) throw new Error('Beide Figuren müssen gewählt sein.')
+      if (from_character_id === to_character_id) {
+        throw new Error('Eine Figur kann keine Beziehung zu sich selbst haben.')
+      }
+      if (findDuplicate(relationships, { from_character_id, to_character_id, type })) {
+        throw new Error('Diese Beziehung ist schon eingetragen.')
+      }
+      if (type === 'elternteil' && !allowCycle && wouldCycle(relationships, from_character_id, to_character_id)) {
+        throw new Error('Das würde einen Kreis in der Abstammung erzeugen.')
+      }
+      const rel = await repo.createRelationship(activeProjectId, {
+        from_character_id,
+        to_character_id,
+        type,
+        note,
+        started_book,
+        ended_book,
+        uncertain,
+      })
+      await refreshRelationships(activeProjectId)
+      return rel
+    },
+    [activeProjectId, relationships, refreshRelationships],
+  )
+  const updateRelationship = useCallback(
+    async (id, patch) => {
+      const current = relationships.find((r) => r.id === id)
+      const next = { ...current, ...patch }
+      if (next.from_character_id === next.to_character_id) {
+        throw new Error('Eine Figur kann keine Beziehung zu sich selbst haben.')
+      }
+      if (findDuplicate(relationships, next, id)) throw new Error('Diese Beziehung ist schon eingetragen.')
+      if (
+        next.type === 'elternteil' &&
+        !patch.allowCycle &&
+        (next.from_character_id !== current?.from_character_id ||
+          next.to_character_id !== current?.to_character_id ||
+          next.type !== current?.type) &&
+        wouldCycle(
+          relationships.filter((r) => r.id !== id),
+          next.from_character_id,
+          next.to_character_id,
+        )
+      ) {
+        throw new Error('Das würde einen Kreis in der Abstammung erzeugen.')
+      }
+      const { allowCycle, ...clean } = patch
+      const updated = await repo.updateRelationship(id, clean)
+      setRelationships((prev) => prev.map((r) => (r.id === id ? updated : r)))
+      return updated
+    },
+    [relationships],
+  )
+  const deleteRelationship = useCallback(
+    async (id) => {
+      await repo.deleteRelationship(id)
+      await refreshRelationships(activeProjectId)
+    },
+    [activeProjectId, refreshRelationships],
   )
 
   // --- name pool actions (Namenspool) -----------------------------------
@@ -870,9 +949,10 @@ export function StoreProvider({ children }) {
       routes,
       geoFeatures,
       namePool,
+      relationships,
       lexicon,
     }
-  }, [activeProjectId, activeProject, chapters, characters, places, events, locations, regions, routes, geoFeatures, namePool])
+  }, [activeProjectId, activeProject, chapters, characters, places, events, locations, regions, routes, geoFeatures, namePool, relationships])
 
   // --- Drive backup linkage (read/write; Drive logic lives in DriveProvider) -
   const getDriveLink = useCallback(() => repo.getDriveLink(), [])
@@ -1064,6 +1144,10 @@ export function StoreProvider({ children }) {
     updateIdea,
     deleteIdea,
     createGeoFeature,
+    relationships,
+    createRelationship,
+    updateRelationship,
+    deleteRelationship,
     namePool,
     createNamePoolEntry,
     updateNamePoolEntry,

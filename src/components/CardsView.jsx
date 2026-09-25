@@ -5,6 +5,7 @@ import { ROLE_LABELS } from '../data/types.js'
 import { BOOK_STATUSES, deriveCharacterStatus } from '../lib/characterStatus.js'
 import PortraitField from './PortraitField.jsx'
 import ListField from './ListField.jsx'
+import CharacterRelations from './CharacterRelations.jsx'
 
 // Generic worldbuilding cards view: a list of cards on the left, a detail
 // editor on the right. Driven by a config (see cardConfig.js) so Characters
@@ -571,6 +572,8 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
           </label>
         ))}
       </div>
+
+      {config.relations && <CharacterRelations characterId={card.id} />}
 
       {hasPhysical && (
         <div className="card-physical">

@@ -30,6 +30,8 @@ const UPSERT_ORDER = [
   'geo_features',
   // name_pool references regions, so it follows them.
   'name_pool',
+  // relationships reference two characters, so they follow those.
+  'relationships',
   'terrains',
   'custom_lexicon_entries',
   'saved_phrases',

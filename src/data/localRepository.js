@@ -16,6 +16,8 @@ import {
   makeGeoFeature,
   makeIdea,
   makeNamePoolEntry,
+  makeRelationship,
+  cleanRelationshipPatch,
   makeCustomLexiconEntry,
   makeSavedPhrase,
   nowIso,
@@ -316,6 +318,16 @@ export function createLocalRepository() {
       const tx = db.transaction(STORES.character_locations, 'readwrite')
       await Promise.all(locs.map((l) => tx.store.delete(l.id)))
       await tx.done
+      // A character takes its relationships with it (the server's ON DELETE
+      // CASCADE does the same when the recorded character delete is pushed).
+      const rels = (await db.getAll(STORES.relationships)).filter(
+        (r) => r.from_character_id === id || r.to_character_id === id,
+      )
+      if (rels.length) {
+        const rtx = db.transaction(STORES.relationships, 'readwrite')
+        await Promise.all(rels.map((r) => rtx.store.delete(r.id)))
+        await rtx.done
+      }
       await db.delete(STORES.characters, id)
     },
 
@@ -551,6 +563,30 @@ export function createLocalRepository() {
     async deleteNamePoolEntry(id) {
       const db = await getDb()
       await db.delete(STORES.name_pool, id)
+    },
+
+    // ---- Relationships (one row per fact; inverses are derived) ----------
+    async listRelationships(projectId) {
+      const rows = await byProject(STORES.relationships, projectId)
+      return rows.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''))
+    },
+    async createRelationship(projectId, opts = {}) {
+      const db = await getDb()
+      const rel = makeRelationship({ project_id: projectId, ...opts })
+      await db.put(STORES.relationships, rel)
+      return rel
+    },
+    async updateRelationship(id, patch) {
+      const db = await getDb()
+      const existing = await db.get(STORES.relationships, id)
+      if (!existing) throw new Error(`Relationship ${id} not found`)
+      const updated = { ...existing, ...cleanRelationshipPatch(patch), updated_at: nowIso() }
+      await db.put(STORES.relationships, updated)
+      return updated
+    },
+    async deleteRelationship(id) {
+      const db = await getDb()
+      await db.delete(STORES.relationships, id)
     },
 
     // ---- Praemali: custom lexicon entries + saved phrases ----------------
