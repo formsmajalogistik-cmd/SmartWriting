@@ -4,7 +4,7 @@
 import { openDB } from 'idb'
 
 const DB_NAME = 'smartwriting'
-const DB_VERSION = 14
+const DB_VERSION = 15
 
 export const STORES = {
   projects: 'projects',
@@ -216,6 +216,16 @@ export function getDb() {
         }
         if (!db.objectStoreNames.contains(STORES.sync_meta)) {
           db.createObjectStore(STORES.sync_meta, { keyPath: 'key' })
+        }
+        // v15: every existing chapter link becomes "anwesend" (present). Written
+        // straight through the upgrade transaction, so it is NOT queued for
+        // sync — the server's column default migrates its rows the same way.
+        if (oldVersion > 0 && oldVersion < 15) {
+          tx.objectStore(STORES.character_locations).openCursor().then(function step(cursor) {
+            if (!cursor) return
+            if (!cursor.value.presence) cursor.update({ ...cursor.value, presence: 'anwesend' })
+            return cursor.continue().then(step)
+          })
         }
         // Backfill (lose no text): every existing chapter gets a "Version 1"
         // copying its current body, set as the active version.

@@ -174,7 +174,8 @@ export default function ExportView() {
             </div>
             <p className="hint">
               Serifenschrift, Blocksatz, Kapitel auf neuer Seite, Kolumnentitel und Seitenzahlen.
-              Infoseiten (POV, Figuren mit Weg, Orte, Ereignisse, Wörter) stehen vor jedem Kapitel und
+              Infoseiten (POV, anwesende Figuren mit Weg, erwähnte Figuren getrennt, Orte, Ereignisse,
+              Wörter) stehen vor jedem Kapitel und
               zählen <strong>nicht</strong> zur Seitenzählung des Textkörpers.
             </p>
           </div>

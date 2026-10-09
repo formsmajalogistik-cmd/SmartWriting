@@ -1,13 +1,37 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { PanelRightClose } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 import { countWords } from '../lib/progress.js'
 import Editor from './Editor.jsx'
 import MetadataPanel from './MetadataPanel.jsx'
+import ChapterCastPanel from './ChapterCastPanel.jsx'
+import BottomSheet from './BottomSheet.jsx'
+import { panelMode } from './chapterLayout.js'
 import VersionBar from './VersionBar.jsx'
 import CompareModal from './CompareModal.jsx'
 
+// ---- side panels: Metadaten + Figuren im Kapitel ---------------------------
+// The layout rule (split / tabs / drawer) lives in chapterLayout.js; which
+// panels are shown (and the last tab) is remembered per device.
+const PANELS_KEY = 'smartwriting.chapterPanels'
+const PANEL_DEFAULTS = { meta: true, cast: true, side: true, tab: 'meta' }
+
+function loadPanels() {
+  try {
+    return { ...PANEL_DEFAULTS, ...JSON.parse(localStorage.getItem(PANELS_KEY) || '{}') }
+  } catch {
+    return { ...PANEL_DEFAULTS }
+  }
+}
+function columnWidth() {
+  const root = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+  const raw = getComputedStyle(document.documentElement).getPropertyValue('--editor-page-w').trim()
+  const rem = raw.endsWith('rem') ? parseFloat(raw) : 42
+  return rem * root
+}
+
 // The writing surface: chapter title, version toolbar, the Markdown editor, and
-// a toggleable metadata panel. Body edits are kept in local state and saved
+// the metadata + character panels. Body edits are kept in local state and saved
 // debounced into the ACTIVE version (chapters.body mirrors it) so typing never
 // blocks on the data layer. Metadata stays on the single logical chapter.
 export default function ChapterView() {
@@ -21,10 +45,39 @@ export default function ChapterView() {
     setActiveVersion,
     focusMatch,
     consumeFocusMatch,
+    locations,
   } = useStore()
   const [body, setBody] = useState(activeChapter?.body ?? '')
   const [preview, setPreview] = useState(false)
-  const [showMeta, setShowMeta] = useState(true)
+  const [panels, setPanelsState] = useState(loadPanels)
+  const setPanels = useCallback((patch) => {
+    setPanelsState((cur) => {
+      const next = { ...cur, ...patch }
+      try {
+        localStorage.setItem(PANELS_KEY, JSON.stringify(next))
+      } catch {
+        /* per-device convenience only */
+      }
+      return next
+    })
+  }, [])
+  // The drawer is never remembered open: the writing surface starts clean.
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const mainRef = useRef(null)
+  const [mode, setMode] = useState('split')
+  useLayoutEffect(() => {
+    const el = mainRef.current
+    if (!el) return undefined
+    const measure = () => setMode(panelMode(el.getBoundingClientRect().width, columnWidth()))
+    measure()
+    if (typeof ResizeObserver === 'undefined') return undefined
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [activeChapter?.id])
+  useEffect(() => {
+    if (mode !== 'drawer') setDrawerOpen(false)
+  }, [mode])
   const [saved, setSaved] = useState(true)
   const [compareOpen, setCompareOpen] = useState(false)
   const saveTimer = useRef(null)
@@ -122,7 +175,56 @@ export default function ChapterView() {
     }
   }, [])
 
+  const castCount = useMemo(() => {
+    if (!chapterId) return 0
+    return new Set(locations.filter((l) => l.chapter_id === chapterId && l.character_id).map((l) => l.character_id)).size
+  }, [locations, chapterId])
+
+  // Is a panel visible right now, in the current layout?
+  const shown = (key) =>
+    mode === 'split' ? !!panels[key] : mode === 'tabs' ? panels.side && panels.tab === key : drawerOpen && panels.tab === key
+  // Toolbar buttons: toggle a panel (split), switch/close the tabbed sidebar
+  // (tabs), or open the drawer on that tab (drawer).
+  function togglePanel(key) {
+    if (mode === 'split') return setPanels({ [key]: !panels[key] })
+    if (mode === 'tabs') {
+      if (panels.side && panels.tab === key) return setPanels({ side: false })
+      return setPanels({ side: true, tab: key })
+    }
+    if (drawerOpen && panels.tab === key) return setDrawerOpen(false)
+    setPanels({ tab: key })
+    setDrawerOpen(true)
+  }
+  const closeDrawer = useCallback(() => setDrawerOpen(false), [])
+
   if (!activeChapter) return null
+
+  const panelTabs = (
+    <nav className="seg panel-tabs" aria-label="Seitenleiste">
+      <button
+        type="button"
+        className={`seg-btn ${panels.tab === 'meta' ? 'on' : ''}`}
+        aria-pressed={panels.tab === 'meta'}
+        onClick={() => setPanels({ tab: 'meta' })}
+      >
+        Metadaten
+      </button>
+      <button
+        type="button"
+        className={`seg-btn ${panels.tab === 'cast' ? 'on' : ''}`}
+        aria-pressed={panels.tab === 'cast'}
+        onClick={() => setPanels({ tab: 'cast' })}
+      >
+        Figuren{castCount ? ` (${castCount})` : ''}
+      </button>
+    </nav>
+  )
+  const panelBody =
+    panels.tab === 'cast' ? (
+      <ChapterCastPanel chapter={activeChapter} body={body} />
+    ) : (
+      <MetadataPanel chapter={activeChapter} />
+    )
 
   return (
     <div className="chapter-view">
@@ -146,11 +248,20 @@ export default function ChapterView() {
             Vorschau
           </button>
           <button
-            className={`toggle ${showMeta ? 'on' : ''}`}
-            onClick={() => setShowMeta((v) => !v)}
-            title="Metadaten-Panel"
+            className={`toggle ${shown('meta') ? 'on' : ''}`}
+            onClick={() => togglePanel('meta')}
+            title="Kapitel-Metadaten"
+            aria-pressed={shown('meta')}
           >
             Metadaten
+          </button>
+          <button
+            className={`toggle ${shown('cast') ? 'on' : ''}`}
+            onClick={() => togglePanel('cast')}
+            title="Figuren im Kapitel"
+            aria-pressed={shown('cast')}
+          >
+            Figuren{castCount ? ` (${castCount})` : ''}
           </button>
         </div>
       </div>
@@ -165,7 +276,7 @@ export default function ChapterView() {
         onCompare={() => setCompareOpen(true)}
       />
 
-      <div className="chapter-main">
+      <div className={`chapter-main mode-${mode}`} ref={mainRef} data-panel-mode={mode}>
         <Editor
           value={body}
           onChange={onBodyChange}
@@ -173,12 +284,43 @@ export default function ChapterView() {
           focusSelection={focusSelection}
           onFocusApplied={consumeFocusMatch}
         />
-        {showMeta && (
-          <aside className="meta-aside">
+        {mode === 'split' && panels.meta && (
+          <aside className="meta-aside" aria-label="Kapitel-Metadaten">
             <MetadataPanel chapter={activeChapter} />
           </aside>
         )}
+        {mode === 'split' && panels.cast && (
+          <aside className="meta-aside cast-aside" aria-label="Figuren im Kapitel">
+            <ChapterCastPanel chapter={activeChapter} body={body} />
+          </aside>
+        )}
+        {mode === 'tabs' && panels.side && (
+          <aside className="meta-aside side-tabs" aria-label="Kapitel-Seitenleiste">
+            <div className="side-tabs-head">
+              {panelTabs}
+              <button
+                type="button"
+                className="icon-btn"
+                title="Seitenleiste einklappen"
+                aria-label="Seitenleiste einklappen"
+                onClick={() => setPanels({ side: false })}
+              >
+                <PanelRightClose size={16} />
+              </button>
+            </div>
+            {panelBody}
+          </aside>
+        )}
       </div>
+
+      <BottomSheet
+        open={mode === 'drawer' && drawerOpen}
+        onClose={closeDrawer}
+        title={panels.tab === 'cast' ? 'Figuren im Kapitel' : 'Kapitel-Metadaten'}
+        header={panelTabs}
+      >
+        {panelBody}
+      </BottomSheet>
 
       {compareOpen && (
         <CompareModal

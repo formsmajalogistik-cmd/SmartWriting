@@ -5,6 +5,7 @@
 // ONE ROW PER FACT. A relationship is stored once, from → to. For a SYMMETRIC
 // type both sides read the same; for a DIRECTIONAL type the other side reads
 // the inverse label (Elternteil ↔ Kind). Nothing is ever entered twice.
+import { matchesBookFilter } from './presence.js'
 
 export const REL_TYPES = [
   // Family (these are the edges the "nur Familie" tree is built from).
@@ -247,6 +248,7 @@ export function buildGraph({
   types = null, // null = all
   groupMatch = null, // (character) => boolean
   bookId = null,
+  includeMentioned = true,
   showUncertain = true,
   showDerived = true,
   familyOnly = false,
@@ -261,12 +263,9 @@ export function buildGraph({
 
   const inGroup = (c) => {
     if (groupMatch && !groupMatch(c)) return false
-    if (bookId) {
-      const books = c.card?.books
-      // Characters without appearance data are always shown (same rule as the
-      // cards list), so filtering by book never hides unfilled cards.
-      if (Array.isArray(books) && books.length && !books.includes(bookId)) return false
-    }
+    // Same rule as the cards list: characters without appearance data are
+    // always shown; "nur erwähnt" in that book counts unless excluded.
+    if (bookId && !matchesBookFilter(c, bookId, { includeMentioned })) return false
     return true
   }
   const byId = new Map(characters.map((c) => [c.id, c]))

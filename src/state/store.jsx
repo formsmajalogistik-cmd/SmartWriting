@@ -617,6 +617,25 @@ export function StoreProvider({ children }) {
   // that timer on every refresh (auto-backup would never fire).
   const charactersRef = useRef([])
   charactersRef.current = characters
+
+  // Merge a few card fields into a character WITHOUT a stale read: quick edits
+  // (e.g. the chapter's Figuren panel) are serialised per character and always
+  // merge into the freshest card, so two fast edits never undo each other.
+  const cardPatchChain = useRef(new Map())
+  const patchCharacterCard = useCallback((id, partial) => {
+    const prev = cardPatchChain.current.get(id) || Promise.resolve()
+    const next = prev
+      .catch(() => {})
+      .then(async () => {
+        const current = charactersRef.current.find((c) => c.id === id)
+        const updated = await repo.updateCharacter(id, { card: { ...(current?.card || {}), ...partial } })
+        charactersRef.current = charactersRef.current.map((c) => (c.id === id ? updated : c))
+        setCharacters((list) => list.map((c) => (c.id === id ? updated : c)))
+        return updated
+      })
+    cardPatchChain.current.set(id, next)
+    return next
+  }, [])
   const healLocalPortraits = useCallback(async () => {
     if (DATA_BACKEND !== 'localfirst') return { healed: 0, failed: 0 }
     if (typeof navigator !== 'undefined' && !navigator.onLine) return { healed: 0, failed: 0 }
@@ -1013,21 +1032,55 @@ export function StoreProvider({ children }) {
   )
 
   // --- character_locations actions ------------------------------------
+  // Where a character ENDED the previous chapter (their most recent end, else
+  // start) — the prefill for a newly present character's start place.
+  const prefillStartPlace = useCallback(
+    (chapterId, characterId) => {
+      const ordered = orderedChapters(chapters, activeProject?.settings?.books ?? []).map((c) => c.id)
+      const idx = ordered.indexOf(chapterId)
+      return idx >= 0 ? lastKnownPlaceBefore(locations, ordered, idx, characterId) : null
+    },
+    [chapters, activeProject, locations],
+  )
+  // Link (present = true) or unlink a character. `presence` = 'anwesend'
+  // (default; start place PREFILLED from the previous chapter, freely editable)
+  // or 'erwaehnt' (only mentioned — never gets a place).
   const setCharacterPresent = useCallback(
-    async (chapterId, characterId, present) => {
+    async (chapterId, characterId, present, presence = 'anwesend') => {
       if (present) {
-        // PREFILL the start place with where the character ENDED the previous
-        // chapter (their most recent end, else start) — freely editable after.
-        const ordered = orderedChapters(chapters, activeProject?.settings?.books ?? []).map((c) => c.id)
-        const idx = ordered.indexOf(chapterId)
-        const prefill = idx >= 0 ? lastKnownPlaceBefore(locations, ordered, idx, characterId) : null
-        await repo.setCharacterLocation(activeProjectId, { chapterId, characterId, placeId: prefill })
+        const mentioned = presence === 'erwaehnt'
+        await repo.setCharacterLocation(activeProjectId, {
+          chapterId,
+          characterId,
+          presence: mentioned ? 'erwaehnt' : 'anwesend',
+          placeId: mentioned ? null : prefillStartPlace(chapterId, characterId),
+        })
       } else {
         await repo.removeCharacterLocation(activeProjectId, { chapterId, characterId })
       }
       await refreshLocations(activeProjectId)
     },
-    [activeProjectId, refreshLocations, chapters, activeProject, locations],
+    [activeProjectId, refreshLocations, prefillStartPlace],
+  )
+  // One-click switch between "anwesend" and "erwähnt" for a linked character.
+  // To erwähnt: the location fields are cleared (no token, no route). Back to
+  // anwesend: the start place is prefilled again like a fresh link.
+  const setCharacterPresence = useCallback(
+    async (chapterId, characterId, presence) => {
+      const mentioned = presence === 'erwaehnt'
+      const current = locations.find((l) => l.chapter_id === chapterId && l.character_id === characterId)
+      // Already that presence → nothing to do (and never re-prefill a start
+      // place the author has set by hand).
+      if (current && (current.presence === 'erwaehnt') === mentioned) return
+      await repo.setCharacterLocation(activeProjectId, {
+        chapterId,
+        characterId,
+        presence: mentioned ? 'erwaehnt' : 'anwesend',
+        ...(mentioned ? {} : { placeId: prefillStartPlace(chapterId, characterId) }),
+      })
+      await refreshLocations(activeProjectId)
+    },
+    [activeProjectId, refreshLocations, prefillStartPlace, locations],
   )
   // Start place ("von") of the chapter. Leaves the end place untouched.
   const setCharacterPlace = useCallback(
@@ -1166,6 +1219,8 @@ export function StoreProvider({ children }) {
     deleteEvent,
     setEventInChapter,
     setCharacterPresent,
+    setCharacterPresence,
+    patchCharacterCard,
     setCharacterPlace,
     setCharacterEndPlace,
     setPlacePresent,

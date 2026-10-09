@@ -94,6 +94,19 @@ Creates `relationships` (per project: `from_character_id`, `to_character_id`,
 FKs and a CHECK against self-relationships. Re-runnable (additive
 `add column if not exists` for every column).
 
+### 1c-4. Add `character_locations.presence` (anwesend / erwähnt)
+For the "anwesend" vs. "erwähnt" distinction on chapter links, run:
+
+```
+supabase/migrations/0018_character_presence.sql
+```
+
+Adds `presence text not null default 'anwesend'` (ASCII values `anwesend` |
+`erwaehnt`, guarded by a CHECK). Every existing chapter link becomes
+`anwesend` — the column default fills existing rows, and an explicit UPDATE
+makes it idempotent. Re-runnable. On the device, IndexedDB v15 backfills the
+same value locally (without queueing anything for sync).
+
 ### 1d. (Optional) Google Drive backup table
 Only needed if you offer the opt-in **Google Drive backup**. Run:
 
@@ -364,6 +377,54 @@ diesem Kapitel"** multi-select; selecting an event adds the chapter to that
 event's `card.chapter_ids`, linking chapters and events **both ways**. Run
 `supabase/migrations/0003_events_card.sql` once (adds the `card` jsonb column).
 
+### Schreiben: Metadaten, Figuren im Kapitel, anwesend vs. erwähnt
+
+**The writing column never shrinks for a side panel.** `ChapterView` measures
+the space next to the editor and picks a layout (`src/components/chapterLayout.js`):
+
+- **nebeneinander** — room for the 42rem column plus both panels: *Kapitel-
+  Metadaten* and *Figuren im Kapitel* sit side by side;
+- **Tabs** — room for the column plus one panel: both share one sidebar with
+  the tabs "Metadaten | Figuren" (collapsible);
+- **Drawer** — not even that (phones in portrait, narrow windows): both live in
+  a bottom sheet with the same two tabs, opened from the "Metadaten" /
+  "Figuren" buttons in the chapter toolbar. It is **closed by default** (never
+  reopened by a reload), dismissible by tapping outside, Escape, × or a swipe
+  down, scrolls inside itself, docks above the on-screen keyboard and never
+  takes more than ~70% of the visible height.
+
+Which panels are shown, and the last tab, are remembered per device
+(`localStorage`).
+
+**Figuren im Kapitel** lists every character linked to the chapter, grouped
+*Anwesend* / *Erwähnt*: portrait, name (provisional styling), role and the
+derived status for the active book; expanded, the continuity fields — Alter,
+Spezies, Größe, wiederkehrende Beschreibungen, Angewohnheiten, Aliase (with the
+duplicate-alias warning) — editable in place. Quick edits are serialised per
+character in the store, so two fast edits never undo each other. "Karte öffnen"
+jumps to the full card; characters are added from the same searchable selector
+as the metadata (incl. inline stub-create), as anwesend or erwähnt.
+
+**"erwähnt" is a presence type, not a life status** (lebt/stirbt/tot/unbekannt
+stay untouched):
+
+- *Chapter:* each linked character is `anwesend` or `erwaehnt`
+  (`character_locations.presence`). One click switches; switching to erwähnt
+  clears the start/end place, and a mentioned row never gets a place. The map
+  timeline, journeys/routes and the carry-forward prefill all skip mentioned
+  rows (even a stale place on one is ignored), so a mention never yields a map
+  token or a route segment. The per-chapter PDF info page lists "Figuren
+  (anwesend)" with their way and "Erwähnt" separately; the Markdown frontmatter
+  gains `characters_mentioned`.
+- *Book:* each book row on the character card is "tritt auf" or "nur erwähnt"
+  (`card.books` / `card.books_mentioned`, kept disjoint). The Figuren book filter
+  has "Auch „nur erwähnt“ in diesem Buch" to include or exclude them.
+- *Assist (suggestion only):* a `#Name` in the chapter text that resolves to a
+  character not linked to the chapter (aliases and genitive forms included)
+  shows up in the Figuren panel — "Im Text erwähnt, nicht verknüpft —
+  hinzufügen?" — with "als erwähnt" / "als anwesend". Nothing is linked
+  automatically.
+
 ### Editor formatting + Profile
 
 - **Bold / italic:** the editor has a small toolbar (B / I) plus **Strg/Cmd+B**
@@ -567,7 +628,9 @@ Namenspool: live "used" derivation, region matching, collision warnings, the
 filters/random pick, and the idempotent import of the real seed registry.
 `npm run test:relations` covers relationships: symmetric vs directional
 inverses, derived family links, the integrity rules, the graph filters and both
-layouts.
+layouts. `npm run test:presence` covers anwesend vs. erwähnt: map tokens,
+carry-forward and journeys, the PDF info page and Markdown export, the book
+filter, the text-mention assist and the panel layout rule.
 
 ## Not yet built (later phases, per SPEC)
 

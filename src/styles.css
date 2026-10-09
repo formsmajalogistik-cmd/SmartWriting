@@ -451,12 +451,7 @@ select:focus, input:focus, textarea:focus {
     z-index: 20;
   }
   .chapter-main { flex-direction: column; }
-  .meta-aside {
-    width: 100%;
-    border-left: none;
-    border-top: 1px solid var(--border);
-    max-height: 45%;
-  }
+  /* (No side panels here: narrow layouts use the bottom-sheet drawer.) */
   .editor.split { flex-direction: column; }
   /* Phones: the column takes the full available width (never wider than the
      fixed measure) with tighter padding — the only case where width varies. */
@@ -957,6 +952,86 @@ select:focus, input:focus, textarea:focus {
 /* Ambiguous rows: the candidate cards a duplicate name matches. */
 .names-matches { display: inline-flex; flex-wrap: wrap; gap: 4px; }
 .names-match { font-style: italic; }
+
+/* ===================== Kapitel: Seitenleisten & Figuren im Kapitel ===================== */
+/* The column never shrinks for these panels: ChapterView only renders them
+   side by side when they fit (mode-split / mode-tabs); otherwise they live in
+   the bottom sheet. Panels never shrink either. */
+.chapter-main .meta-aside { flex-shrink: 0; }
+.cast-aside { width: 300px; }
+.side-tabs { display: flex; flex-direction: column; }
+.side-tabs-head {
+  position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; background: var(--bg-2); border-bottom: 1px solid var(--border);
+}
+.panel-tabs { flex: 1; }
+.panel-tabs .seg-btn { flex: 1; justify-content: center; }
+
+.cast-panel { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.cast-panel h3 {
+  margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 6px;
+}
+.cast-panel .count, .cast-group .count { font-size: 11px; color: var(--text-dim); font-weight: 400; }
+.cast-add { display: flex; flex-direction: column; gap: 6px; }
+.cast-add-mode .seg-btn { font-size: 12px; padding: 4px 9px; }
+.cast-group h4 { margin: 4px 0 6px; font-size: 12px; color: var(--text-dim); font-weight: 600; }
+.cast-group.erwaehnt h4 { font-style: italic; }
+
+.cast-suggest {
+  background: var(--bg-3); border: 1px dashed var(--accent-2); border-radius: 8px; padding: 8px 10px;
+}
+.cast-suggest-head { margin: 0 0 6px; font-size: 12px; color: var(--text-dim); }
+.cast-suggest ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.cast-suggest-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.cast-suggest-name { font-weight: 600; margin-right: auto; }
+.toggle.sm { font-size: 11px; padding: 3px 8px; }
+
+.cast-card { border: 1px solid var(--border); border-radius: 8px; background: var(--bg-2); margin-bottom: 6px; }
+.cast-card.mentioned { border-style: dashed; }
+.cast-card-head { display: flex; align-items: center; gap: 8px; padding: 6px 8px; }
+.cast-thumb {
+  width: 34px; height: 34px; flex-shrink: 0; border-radius: 50%; overflow: hidden;
+  background: var(--bg-3); display: grid; place-items: center; color: var(--text-dim);
+}
+.cast-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.cast-id {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start;
+  background: none; border: none; padding: 0; text-align: left; color: var(--text); cursor: pointer;
+}
+.cast-name { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.cast-name.provisional { color: #fbbf24; }
+.cast-sub { font-size: 11px; color: var(--text-dim); }
+.cast-details { padding: 4px 10px 10px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--border); }
+.cast-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.cast-field input, .cast-field textarea { font-size: 13px; }
+.cast-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Metadata: present vs. mentioned characters + the one-click switch. */
+.presence-switch { color: var(--text-dim); }
+.presence-switch:hover { color: var(--accent-2); }
+.mentioned-list .present-item { border-style: dashed; }
+.mentioned-list .present-name { font-style: italic; }
+
+/* ---- bottom sheet (narrow screens) ---- */
+.sheet-root { position: fixed; inset: 0; z-index: 70; }
+.sheet-scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.45); }
+.sheet {
+  position: absolute; left: 0; right: 0; display: flex; flex-direction: column;
+  background: var(--bg-2); border-top: 1px solid var(--border);
+  border-radius: 14px 14px 0 0; box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.5);
+  transition: transform 0.18s ease;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.sheet-grip { display: grid; place-items: center; padding: 8px 0 4px; touch-action: none; cursor: grab; }
+.sheet-handle { width: 42px; height: 5px; border-radius: 3px; background: var(--border); }
+.sheet-head { display: flex; align-items: center; gap: 8px; padding: 0 12px 8px; border-bottom: 1px solid var(--border); }
+.sheet-body { overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.sheet-body .meta-panel, .sheet-body .cast-panel { padding: 12px 14px 20px; }
+@media (pointer: coarse) {
+  .sheet .seg-btn { padding: 8px 12px; }
+  .cast-card-head .icon-btn { width: 36px; height: 36px; }
+}
 
 /* ===================== Beziehungen (relationships) ===================== */
 /* ---- overview view ---- */
@@ -1713,6 +1788,10 @@ select:focus, input:focus, textarea:focus {
 .book-status-list li { display: flex; align-items: center; gap: 8px; border-radius: 6px; padding: 1px 4px; }
 .book-status-list li.active-book { background: var(--bg-3); }
 .bs-appear { display: inline-flex; align-items: center; }
+/* tritt auf / nur erwähnt per book (a presence, not a life status). */
+.bs-appear-select { width: auto; min-width: 104px; font-size: 12px; padding: 3px 6px; color: var(--text-dim); }
+.bs-appear-select.on.auftritt { color: var(--text); border-color: var(--accent-2); }
+.bs-appear-select.on.erwaehnt { color: var(--text); border-style: dashed; }
 .bs-intro { color: var(--text-dim); }
 .bs-intro.on { color: var(--accent); opacity: 1; }
 .bs-legend { margin: 0 0 6px; font-size: 11px; }

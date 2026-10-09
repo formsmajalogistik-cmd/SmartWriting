@@ -45,6 +45,7 @@ import {
   journeyWaypoints,
   JOURNEY_COLORS,
 } from '../../lib/timeline/timeline.js'
+import { isPlacedLoc } from '../../lib/presence.js'
 import {
   DEFAULT_SETTINGS,
   PAINT_TYPES,
@@ -431,7 +432,9 @@ export default function MapBuilder({ terrain }) {
   // Characters that have at least one location row → journey candidates (keeps
   // the selector uncluttered). Each gets a stable colour by character order.
   const journeyCandidates = useMemo(() => {
-    const withLoc = new Set(locations.filter((l) => l.place_id).map((l) => l.character_id))
+    // Only PRESENT rows with a place count — a merely mentioned character
+    // never travels on the map.
+    const withLoc = new Set(locations.filter(isPlacedLoc).map((l) => l.character_id))
     return characters.filter((c) => withLoc.has(c.id))
   }, [characters, locations])
   const journeyColour = useCallback(

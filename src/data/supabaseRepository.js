@@ -393,7 +393,7 @@ export function createSupabaseRepository() {
 
     // placeId = START; endPlaceId = optional END. `undefined` leaves a field
     // unchanged on an existing row; null clears it.
-    async setCharacterLocation(projectId, { chapterId, characterId, placeId, endPlaceId }) {
+    async setCharacterLocation(projectId, { chapterId, characterId, placeId, endPlaceId, presence }) {
       const rows = unwrap(
         await supabase
           .from('character_locations')
@@ -403,8 +403,16 @@ export function createSupabaseRepository() {
       )
       if (rows.length) {
         const patch = {}
-        if (placeId !== undefined) patch.place_id = placeId ?? null
-        if (endPlaceId !== undefined) patch.end_place_id = endPlaceId ?? null
+        if (presence !== undefined) patch.presence = presence === 'erwaehnt' ? 'erwaehnt' : 'anwesend'
+        const mentioned = (patch.presence ?? rows[0].presence) === 'erwaehnt'
+        if (mentioned) {
+          // A mentioned character never has a place.
+          patch.place_id = null
+          patch.end_place_id = null
+        } else {
+          if (placeId !== undefined) patch.place_id = placeId ?? null
+          if (endPlaceId !== undefined) patch.end_place_id = endPlaceId ?? null
+        }
         return unwrap(
           await supabase
             .from('character_locations')
@@ -423,8 +431,9 @@ export function createSupabaseRepository() {
             project_id: projectId,
             chapter_id: chapterId,
             character_id: characterId,
-            place_id: placeId ?? null,
-            end_place_id: endPlaceId ?? null,
+            place_id: presence === 'erwaehnt' ? null : placeId ?? null,
+            end_place_id: presence === 'erwaehnt' ? null : endPlaceId ?? null,
+            presence: presence === 'erwaehnt' ? 'erwaehnt' : 'anwesend',
           })
           .select()
           .single(),

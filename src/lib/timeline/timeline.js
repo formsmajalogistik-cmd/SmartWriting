@@ -2,6 +2,11 @@
 // so it stays unit-testable and reusable (the route/journey layer, built later,
 // can read the same ordering + per-chapter placements). It joins three tables:
 //   chapters (+ project books for order) · character_locations · events.
+//
+// A character only MENTIONED in a chapter (presence 'erwaehnt') is never
+// placed: such rows give no token, no waypoint and no carry-forward — even if
+// a stale place were still stored on them.
+import { isMentionedLoc } from '../presence.js'
 
 // Flatten this project's chapters into a single book → chapter reading order:
 // books in their stored order, each book's chapters by `number`, then loose
@@ -36,7 +41,7 @@ export function placementsForChapterIndex(locations, orderedChapterIds, index) {
   const pos = new Map(orderedChapterIds.map((id, i) => [id, i]))
   const best = new Map() // character_id → { pos, loc } at the latest pos ≤ index
   for (const loc of locations) {
-    if (!loc.character_id || !loc.place_id) continue
+    if (!loc.character_id || !loc.place_id || isMentionedLoc(loc)) continue
     const p = pos.get(loc.chapter_id)
     if (p === undefined || p > index) continue // unknown chapter, or in the future
     const cur = best.get(loc.character_id)
@@ -60,7 +65,7 @@ export function lastKnownPlaceBefore(locations, orderedChapterIds, index, charac
   const pos = new Map(orderedChapterIds.map((id, i) => [id, i]))
   let best = null
   for (const loc of locations) {
-    if (loc.character_id !== characterId || !loc.place_id) continue
+    if (loc.character_id !== characterId || !loc.place_id || isMentionedLoc(loc)) continue
     const p = pos.get(loc.chapter_id)
     if (p === undefined || p >= index) continue
     if (!best || p >= best.p) best = { p, placeId: loc.end_place_id || loc.place_id }
@@ -97,7 +102,7 @@ export function journeyWaypoints(locations, orderedChapterIds, upToIndex, charac
   const pos = new Map(orderedChapterIds.map((id, i) => [id, i]))
   const rows = []
   for (const loc of locations) {
-    if (loc.character_id !== characterId || !loc.place_id) continue
+    if (loc.character_id !== characterId || !loc.place_id || isMentionedLoc(loc)) continue
     const p = pos.get(loc.chapter_id)
     if (p === undefined || p > upToIndex) continue
     rows.push({ p, seq: 0, placeId: loc.place_id })

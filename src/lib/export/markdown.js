@@ -1,5 +1,6 @@
 // Build human-readable Markdown for chapters + a compiled manuscript.
 import { slugify, pad, toFrontmatter } from './util.js'
+import { isMentionedLoc } from '../presence.js'
 
 // Order chapters by book (project.settings.books order) then chapter number;
 // chapters without a book go into a trailing "Ohne Buch" group.
@@ -19,13 +20,15 @@ export function groupChaptersByBook(project, chapters) {
 }
 
 // Distinct present character / place names for a chapter (from locations).
+// Characters only MENTIONED (presence 'erwaehnt') are listed separately.
 export function presentForChapter(chapterId, { locations, characters, places }) {
   const locs = locations.filter((l) => l.chapter_id === chapterId)
-  const charIds = [...new Set(locs.filter((l) => l.character_id).map((l) => l.character_id))]
-  const placeIds = [...new Set(locs.filter((l) => l.place_id).map((l) => l.place_id))]
+  const charIds = [...new Set(locs.filter((l) => l.character_id && !isMentionedLoc(l)).map((l) => l.character_id))]
+  const mentionedIds = [...new Set(locs.filter((l) => l.character_id && isMentionedLoc(l)).map((l) => l.character_id))]
+  const placeIds = [...new Set(locs.filter((l) => l.place_id && !isMentionedLoc(l)).map((l) => l.place_id))]
   const cName = (id) => characters.find((c) => c.id === id)?.name || id
   const pName = (id) => places.find((p) => p.id === id)?.name || id
-  return { characters: charIds.map(cName), places: placeIds.map(pName) }
+  return { characters: charIds.map(cName), mentioned: mentionedIds.map(cName), places: placeIds.map(pName) }
 }
 
 // One chapter as a Markdown file: frontmatter (incl. ids for a faithful
@@ -44,6 +47,7 @@ export function chapterToMarkdown(ch, snapshot) {
     pov: ch.pov || '',
     summary: ch.summary || '',
     characters_present: present.characters,
+    characters_mentioned: present.mentioned,
     places_present: present.places,
     updated_at: ch.updated_at || '',
   })

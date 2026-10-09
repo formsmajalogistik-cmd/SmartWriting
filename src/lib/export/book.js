@@ -15,6 +15,7 @@
 //     position on the sheet differs (every page looks like a recto).
 //   • no hyphenation support, so justified German lines can run loose.
 import { countWords } from '../progress.js'
+import { isMentionedLoc } from '../presence.js'
 
 const MM = 2.834645669 // 1 mm in PDF points
 
@@ -115,10 +116,14 @@ export function shapeProse(nodes) {
 
 // ---- per-chapter info page -------------------------------------------------
 
-// Where each present character starts and (optionally) ends this chapter.
+// Where each PRESENT character starts and (optionally) ends this chapter.
+// Characters only mentioned are listed separately (mentionedLines) and never
+// carry a place.
 function characterLines(chapter, snapshot) {
   const placeName = (id) => snapshot.places?.find((p) => p.id === id)?.name || null
-  const rows = (snapshot.locations || []).filter((l) => l.chapter_id === chapter.id && l.character_id)
+  const rows = (snapshot.locations || []).filter(
+    (l) => l.chapter_id === chapter.id && l.character_id && !isMentionedLoc(l),
+  )
   return rows
     .map((l) => {
       const name = snapshot.characters?.find((c) => c.id === l.character_id)?.name || '(unbekannt)'
@@ -132,10 +137,17 @@ function characterLines(chapter, snapshot) {
     .sort((a, b) => a.localeCompare(b))
 }
 
+function mentionedLines(chapter, snapshot) {
+  return (snapshot.locations || [])
+    .filter((l) => l.chapter_id === chapter.id && l.character_id && isMentionedLoc(l))
+    .map((l) => snapshot.characters?.find((c) => c.id === l.character_id)?.name || '(unbekannt)')
+    .sort((a, b) => a.localeCompare(b))
+}
+
 function placeLines(chapter, snapshot) {
   const ids = new Set(
     (snapshot.locations || [])
-      .filter((l) => l.chapter_id === chapter.id)
+      .filter((l) => l.chapter_id === chapter.id && !isMentionedLoc(l))
       .flatMap((l) => [l.place_id, l.end_place_id])
       .filter(Boolean),
   )
@@ -175,7 +187,8 @@ export function infoPageNodes(chapter, snapshot, uid) {
   row('POV', chapter.pov)
   row('Status', chapter.status)
   row('Zusammenfassung', chapter.summary)
-  row('Figuren', characterLines(chapter, snapshot))
+  row('Figuren (anwesend)', characterLines(chapter, snapshot))
+  row('Erwähnt', mentionedLines(chapter, snapshot))
   row('Orte', placeLines(chapter, snapshot))
   row('Ereignisse', eventLines(chapter, snapshot))
   row('Wörter', countWords(chapter.body).toLocaleString('de-DE'))

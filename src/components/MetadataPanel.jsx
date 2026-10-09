@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { X } from 'lucide-react'
+import { X, MessageCircle, Footprints } from 'lucide-react'
 import { useStore } from '../state/store.jsx'
 import { CHAPTER_STATUSES } from '../data/types.js'
 import { countWords } from '../lib/progress.js'
 import AddCombo from './AddCombo.jsx'
+import { isMentionedLoc } from '../lib/presence.js'
 
 // Per-chapter metadata. Characters and places present are SELECTED from the
-// project's cards (storing ids, never names). Each present character gets a
+// project's cards (storing ids, never names). Each PRESENT character gets a
 // START place ("von") and an optional END place ("bis") — both written to its
 // character_locations row (place_id / end_place_id). Empty end = no movement.
+// A character can instead be only MENTIONED ("erwähnt"): linked to the chapter
+// but never placed — no von/bis, no map token, no route. One click switches.
 export default function MetadataPanel({ chapter }) {
   const {
     characters,
@@ -22,6 +25,7 @@ export default function MetadataPanel({ chapter }) {
     setEventInChapter,
     openCard,
     setCharacterPresent,
+    setCharacterPresence,
     setCharacterPlace,
     setCharacterEndPlace,
     setPlacePresent,
@@ -41,11 +45,20 @@ export default function MetadataPanel({ chapter }) {
     () => locations.filter((l) => l.chapter_id === chapter.id),
     [locations, chapter.id],
   )
-  const presentCharIds = chapterLocs.filter((l) => l.character_id).map((l) => l.character_id)
+  const linkedCharIds = chapterLocs.filter((l) => l.character_id).map((l) => l.character_id)
+  const presentCharIds = chapterLocs
+    .filter((l) => l.character_id && !isMentionedLoc(l))
+    .map((l) => l.character_id)
+  const mentionedCharIds = chapterLocs
+    .filter((l) => l.character_id && isMentionedLoc(l))
+    .map((l) => l.character_id)
   // A place counts as present when anything references it — as a plain present
   // place, a character's start place, or a character's END place.
-  const presentPlaceIds = chapterLocs.flatMap((l) => [l.place_id, l.end_place_id]).filter(Boolean)
-  const presentCharSet = new Set(presentCharIds)
+  const presentPlaceIds = chapterLocs
+    .filter((l) => !isMentionedLoc(l))
+    .flatMap((l) => [l.place_id, l.end_place_id])
+    .filter(Boolean)
+  const presentCharSet = new Set(linkedCharIds)
   const presentPlaceSet = new Set(presentPlaceIds)
 
   const byId = (list, id) => list.find((x) => x.id === id)
@@ -55,6 +68,10 @@ export default function MetadataPanel({ chapter }) {
 
   // Present characters as full card objects, in name order.
   const presentCharacters = presentCharIds
+    .map((id) => byId(characters, id))
+    .filter(Boolean)
+    .sort((a, b) => a.name.localeCompare(b.name))
+  const mentionedCharacters = mentionedCharIds
     .map((id) => byId(characters, id))
     .filter(Boolean)
     .sort((a, b) => a.name.localeCompare(b.name))
@@ -86,6 +103,13 @@ export default function MetadataPanel({ chapter }) {
   async function createCharacterPresent(name) {
     const c = await createCharacter(name)
     if (c) await setCharacterPresent(chapter.id, c.id, true)
+  }
+  async function pickMentioned(id) {
+    await setCharacterPresent(chapter.id, id, true, 'erwaehnt')
+  }
+  async function createCharacterMentioned(name) {
+    const c = await createCharacter(name)
+    if (c) await setCharacterPresent(chapter.id, c.id, true, 'erwaehnt')
   }
   async function pickPlace(id) {
     await setPlacePresent(chapter.id, id, true)
@@ -187,6 +211,14 @@ export default function MetadataPanel({ chapter }) {
                     {!c.name_final && <span className="badge provisional small">prov.</span>}
                   </span>
                   <button
+                    className="icon-btn presence-switch"
+                    title="Nur erwähnt (kein Ort, keine Kartenmarke)"
+                    aria-label={`${c.name} als erwähnt markieren`}
+                    onClick={() => setCharacterPresence(chapter.id, c.id, 'erwaehnt')}
+                  >
+                    <MessageCircle size={15} />
+                  </button>
+                  <button
                     className="icon-btn"
                     title="Aus Kapitel entfernen"
                     onClick={() => setCharacterPresent(chapter.id, c.id, false)}
@@ -227,6 +259,50 @@ export default function MetadataPanel({ chapter }) {
                       ))}
                     </select>
                   </label>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Characters only mentioned ------------------------------------------ */}
+      <div className="field">
+        <div className="field-head">
+          <span>Erwähnte Figuren</span>
+        </div>
+        <AddCombo
+          placeholder="Erwähnte Figur suchen oder anlegen …"
+          options={unselectedCharacters}
+          onPick={pickMentioned}
+          onCreate={createCharacterMentioned}
+        />
+        {mentionedCharacters.length === 0 ? (
+          <p className="hint">Niemand nur erwähnt.</p>
+        ) : (
+          <ul className="present-list mentioned-list">
+            {mentionedCharacters.map((c) => (
+              <li key={c.id} className="present-item mentioned">
+                <div className="present-row">
+                  <span className="present-name">
+                    {c.name}
+                    {!c.name_final && <span className="badge provisional small">prov.</span>}
+                  </span>
+                  <button
+                    className="icon-btn presence-switch"
+                    title="Anwesend (mit Ort)"
+                    aria-label={`${c.name} als anwesend markieren`}
+                    onClick={() => setCharacterPresence(chapter.id, c.id, 'anwesend')}
+                  >
+                    <Footprints size={15} />
+                  </button>
+                  <button
+                    className="icon-btn"
+                    title="Aus Kapitel entfernen"
+                    onClick={() => setCharacterPresent(chapter.id, c.id, false)}
+                  >
+                    <X size={15} />
+                  </button>
                 </div>
               </li>
             ))}

@@ -11,7 +11,8 @@
     "test:praemali": "node src/lib/praemali/engine.test.mjs",
     "test:hashlinks": "node src/lib/hashlinks.test.mjs",
     "test:namepool": "node src/lib/namePool.test.mjs",
-    "test:relations": "node src/lib/relationships.test.mjs"
+    "test:relations": "node src/lib/relationships.test.mjs",
+    "test:presence": "node src/lib/presence.test.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",

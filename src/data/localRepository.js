@@ -377,17 +377,26 @@ export function createLocalRepository() {
       return chapterId ? rows.filter((r) => r.chapter_id === chapterId) : rows
     },
 
-    // placeId = START of the chapter; endPlaceId = optional END (movement).
-    // Pass `undefined` for a field to leave it unchanged on an existing row;
-    // pass null to clear it.
-    async setCharacterLocation(projectId, { chapterId, characterId, placeId, endPlaceId }) {
+    // placeId = START of the chapter; endPlaceId = optional END (movement);
+    // presence = 'anwesend' | 'erwaehnt'. Pass `undefined` for a field to leave
+    // it unchanged on an existing row; pass null to clear it. A MENTIONED
+    // character never has a place: switching to 'erwaehnt' clears both, and a
+    // place set on a mentioned row is ignored.
+    async setCharacterLocation(projectId, { chapterId, characterId, placeId, endPlaceId, presence }) {
       const db = await getDb()
       const rows = await db.getAllFromIndex(STORES.character_locations, 'chapter_id', chapterId)
       const existing = rows.find((r) => r.character_id === characterId)
       if (existing) {
         const updated = { ...existing }
-        if (placeId !== undefined) updated.place_id = placeId ?? null
-        if (endPlaceId !== undefined) updated.end_place_id = endPlaceId ?? null
+        if (presence !== undefined) updated.presence = presence === 'erwaehnt' ? 'erwaehnt' : 'anwesend'
+        if (!updated.presence) updated.presence = 'anwesend'
+        if (updated.presence === 'erwaehnt') {
+          updated.place_id = null
+          updated.end_place_id = null
+        } else {
+          if (placeId !== undefined) updated.place_id = placeId ?? null
+          if (endPlaceId !== undefined) updated.end_place_id = endPlaceId ?? null
+        }
         await db.put(STORES.character_locations, updated)
         return updated
       }
@@ -397,6 +406,7 @@ export function createLocalRepository() {
         character_id: characterId,
         place_id: placeId ?? null,
         end_place_id: endPlaceId ?? null,
+        presence,
       })
       await db.put(STORES.character_locations, row)
       return row

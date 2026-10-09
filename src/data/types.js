@@ -366,14 +366,18 @@ export function makePlace({ project_id, name }) {
 //   character_id null, place_id set  -> place present in chapter (no character)
 // end_place_id (optional) = where the character ENDS the chapter; null means
 // they did not move. Legacy rows (no end) keep their single place as the start.
-export function makeCharacterLocation({ project_id, character_id, chapter_id, place_id, end_place_id }) {
+// presence = 'anwesend' (on stage) | 'erwaehnt' (only mentioned — never has a
+// place). Rows from before the column existed read as 'anwesend'.
+export function makeCharacterLocation({ project_id, character_id, chapter_id, place_id, end_place_id, presence }) {
+  const mentioned = presence === 'erwaehnt'
   return {
     id: newId(),
     project_id,
     character_id: character_id ?? null,
     chapter_id,
-    place_id: place_id ?? null,
-    end_place_id: end_place_id ?? null,
+    place_id: mentioned ? null : place_id ?? null,
+    end_place_id: mentioned ? null : end_place_id ?? null,
+    presence: mentioned ? 'erwaehnt' : 'anwesend',
   }
 }
 

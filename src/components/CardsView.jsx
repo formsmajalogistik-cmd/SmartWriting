@@ -6,6 +6,8 @@ import { BOOK_STATUSES, deriveCharacterStatus } from '../lib/characterStatus.js'
 import PortraitField from './PortraitField.jsx'
 import ListField from './ListField.jsx'
 import CharacterRelations from './CharacterRelations.jsx'
+import { aliasWarning as sharedAliasWarning } from '../lib/aliases.js'
+import { matchesBookFilter, bookPresence, setBookPresencePatch } from '../lib/presence.js'
 
 // Generic worldbuilding cards view: a list of cards on the left, a detail
 // editor on the right. Driven by a config (see cardConfig.js) so Characters
@@ -36,6 +38,8 @@ export default function CardsView({ config, items, onCreate, onUpdate, onDelete,
   // book, or all. Characters without appearance data are always shown.
   const [bookFilter, setBookFilter] = useState('__active__')
   const bookFilterId = bookFilter === '__active__' ? activeBookId : bookFilter || null
+  // Whether characters only MENTIONED in that book count as "in the book".
+  const [includeMentioned, setIncludeMentioned] = useState(true)
 
   const subtitleValue = (it, key) => {
     if (key in REGION_LEGACY) {
@@ -60,15 +64,16 @@ export default function CardsView({ config, items, onCreate, onUpdate, onDelete,
       if (activeTab && !activeTab.match(it)) return false
       if (roleFilter && it.role !== roleFilter) return false
       if (statusFilter && deriveCharacterStatus(it, books, activeBookId) !== statusFilter) return false
-      if (config.filters && bookFilterId) {
-        const appears = it.card?.books
-        if (Array.isArray(appears) && appears.length && !appears.includes(bookFilterId)) return false
+      // Characters without appearance data are always shown; "nur erwähnt"
+      // ones follow the include toggle.
+      if (config.filters && bookFilterId && !matchesBookFilter(it, bookFilterId, { includeMentioned })) {
+        return false
       }
       if (onlyProvisional && it.name_final) return false
       if (q && !it.name.toLowerCase().includes(q)) return false
       return true
     })
-  }, [items, search, onlyProvisional, activeTab, roleFilter, statusFilter, books, activeBookId, bookFilterId, config.filters])
+  }, [items, search, onlyProvisional, activeTab, roleFilter, statusFilter, books, activeBookId, bookFilterId, includeMentioned, config.filters])
 
   const selected = items.find((it) => it.id === selectedId) || null
 
@@ -128,6 +133,16 @@ export default function CardsView({ config, items, onCreate, onUpdate, onDelete,
               ))}
             </select>
           </div>
+        )}
+        {config.filters && bookFilterId && (
+          <label className="cards-filter">
+            <input
+              type="checkbox"
+              checked={includeMentioned}
+              onChange={(e) => setIncludeMentioned(e.target.checked)}
+            />
+            <span>Auch „nur erwähnt“ in diesem Buch</span>
+          </label>
         )}
         <label className="cards-filter">
           <input
@@ -226,6 +241,7 @@ function buildDraft(config, card) {
   if (config.bookStatus) {
     cardObj.book_status = card.card?.book_status ?? {}
     cardObj.books = Array.isArray(card.card?.books) ? card.card.books : []
+    cardObj.books_mentioned = Array.isArray(card.card?.books_mentioned) ? card.card.books_mentioned : []
     cardObj.introduced_in = card.card?.introduced_in ?? ''
   }
   if (config.aliases) {
@@ -280,31 +296,16 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
     if (ok) await renameReferences(oldName, newName)
   }
 
-  // Duplicate check for a new alias: any card's main name or alias, region or
-  // geo-feature name, or an alias already on THIS card. Duplicates are allowed
-  // (the reference just becomes ambiguous) — but never silently.
+  // Duplicate check for a new alias (shared with the chapter's Figuren panel).
   function aliasWarning(value) {
-    const v = value.trim().toLowerCase()
-    const hits = []
-    const scanCards = (rows, kindLabel) => {
-      for (const r of rows) {
-        if ((r.name || '').trim().toLowerCase() === v) hits.push(`${kindLabel} „${r.name}“`)
-        const al = Array.isArray(r.card?.aliases) ? r.card.aliases : []
-        if (r.id !== card.id && al.some((a) => (a || '').trim().toLowerCase() === v))
-          hits.push(`Alias von ${kindLabel} „${r.name}“`)
-      }
-    }
-    scanCards(characters, 'Figur')
-    scanCards(places, 'Ort')
-    for (const r of regions) if ((r.name || '').trim().toLowerCase() === v) hits.push(`Region „${r.name}“`)
-    for (const g of geoFeatures) if ((g.name || '').trim().toLowerCase() === v) hits.push(`Geografie „${g.name}“`)
-    if ((draft.card.aliases || []).some((a) => (a || '').trim().toLowerCase() === v))
-      hits.push('bereits Alias dieser Karte')
-    if (!hits.length) return null
-    return (
-      `„${value.trim()}“ wird bereits verwendet: ${hits.join(', ')}. ` +
-      `#Referenzen mit diesem Namen werden dadurch mehrdeutig. Trotzdem hinzufügen?`
-    )
+    return sharedAliasWarning(value, {
+      selfId: card.id,
+      selfAliases: draft.card.aliases || [],
+      characters,
+      places,
+      regions,
+      geoFeatures,
+    })
   }
 
   function buildPatch(next) {
@@ -440,28 +441,25 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
             <p className="hint">Noch keine Bücher im Projekt — lege in der Übersicht eines an.</p>
           ) : (
             <>
-              <p className="hint bs-legend">Häkchen = tritt auf · Stern = wird eingeführt · Auswahl = Status im Buch</p>
+              <p className="hint bs-legend">Auftritt: tritt auf / nur erwähnt · Stern = wird eingeführt · rechts = Lebensstatus im Buch</p>
               <ul className="book-status-list">
                 {books.map((b) => {
-                  const appears = (draft.card.books || []).includes(b.id)
+                  const presence = bookPresence({ card: draft.card }, b.id)
                   const introduced = draft.card.introduced_in === b.id
                   return (
                     <li key={b.id} className={activeBookId === b.id ? 'active-book' : ''}>
-                      <label className="bs-appear" title={appears ? 'Tritt in diesem Buch auf' : 'Tritt (noch) nicht auf'}>
-                        <input
-                          type="checkbox"
-                          aria-label={`Tritt auf in ${b.title}`}
-                          checked={appears}
-                          onChange={(e) => {
-                            const set = new Set(draft.card.books || [])
-                            if (e.target.checked) set.add(b.id)
-                            else set.delete(b.id)
-                            const patch = { books: [...set] }
-                            if (!e.target.checked && introduced) patch.introduced_in = ''
-                            setCardPatch(patch)
-                          }}
-                        />
-                      </label>
+                      {/* tritt auf / nur erwähnt — a presence, NOT a life status. */}
+                      <select
+                        className={`bs-appear-select ${presence ? `on ${presence}` : ''}`}
+                        aria-label={`Auftritt in ${b.title}`}
+                        value={presence || ''}
+                        onChange={(e) => setCardPatch(setBookPresencePatch(draft.card, b.id, e.target.value || null))}
+                        title="Tritt die Figur in diesem Buch auf — oder wird sie nur erwähnt?"
+                      >
+                        <option value="">—</option>
+                        <option value="auftritt">tritt auf</option>
+                        <option value="erwaehnt">nur erwähnt</option>
+                      </select>
                       <span className="bs-book" title={b.title}>{b.title}</span>
                       <button
                         type="button"
@@ -469,8 +467,9 @@ function CardEditor({ config, card, onUpdate, onDelete }) {
                         title={introduced ? 'Wird in diesem Buch eingeführt (Klick entfernt die Markierung)' : 'Als Einführungsbuch markieren'}
                         aria-label={`Eingeführt in ${b.title}`}
                         onClick={() => {
-                          const patch = { introduced_in: introduced ? '' : b.id }
-                          if (!introduced) patch.books = [...new Set([...(draft.card.books || []), b.id])]
+                          const patch = introduced
+                            ? { introduced_in: '' }
+                            : { ...setBookPresencePatch(draft.card, b.id, 'auftritt'), introduced_in: b.id }
                           setCardPatch(patch)
                         }}
                       >
