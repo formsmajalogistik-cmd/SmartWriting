@@ -107,6 +107,22 @@ Adds `presence text not null default 'anwesend'` (ASCII values `anwesend` |
 makes it idempotent. Re-runnable. On the device, IndexedDB v15 backfills the
 same value locally (without queueing anything for sync).
 
+### 1c-5. Add the `timeline_entries` table (Chronik)
+For the in-universe timeline (nav entry **Chronik**), run:
+
+```
+supabase/migrations/0019_timeline_entries.sql
+```
+
+Creates `timeline_entries` (per project: `title`, `description`, `year_offset`
+relative to the start of Book 1, `year_precision`, `duration_years`,
+`era_label`, `related_character_ids` / `related_place_ids` /
+`related_region_ids` as jsonb arrays, `event_id` → `events` with
+`ON DELETE SET NULL`, `visibility`), CHECKs for the enumerations, indexes, the
+`set_updated_at` trigger and user-scoped RLS. Re-runnable (`add column if not
+exists` for every column). The start offsets of later books need no schema —
+they live in `projects.settings.bookYearOffsets`.
+
 ### 1d. (Optional) Google Drive backup table
 Only needed if you offer the opt-in **Google Drive backup**. Run:
 
@@ -377,6 +393,36 @@ diesem Kapitel"** multi-select; selecting an event adds the chapter to that
 event's `card.chapter_ids`, linking chapters and events **both ways**. Run
 `supabase/migrations/0003_events_card.sql` once (adds the `card` jsonb column).
 
+### Chronik (in-universe timeline)
+
+Dated world history, relative to the story: `year_offset` counts whole years
+from the **start of Book 1 (Jahr 0)**; negative = before. Later books begin at
+offsets set under "Buchanfänge auf der Zeitachse" (Book 1 is fixed at 0).
+
+- **Honest fuzzy dating** (`src/lib/chronik.js`): *exakt* "312 Jahre vor Buch
+  1", *ungefähr* "~200 Jahre vor Buch 1", *aufs Jahrzehnt* "um 250 Jahre vor
+  Buch 1 (aufs Jahrzehnt)", *aufs Jahrhundert* "im 3. Jahrhundert vor Buch 1";
+  compact forms "-312 Jahre", "Jahr 0", "+4 Jahre". Spans add their length
+  ("12 Jahre lang (bis -300 Jahre)").
+- **One source of truth:** an entry can link an existing event instead of
+  copying it — title, description, involved characters and place then come from
+  the event. Entries without an event hold history that never appears in a
+  chapter. If the event is deleted, the entry keeps its dating (and the event's
+  last title as a fallback label).
+- **Two scales**, because deep history must not squash the trilogy's own years:
+  *Übersicht* is a symmetric logarithmic axis (1, 10, 100, 1000 years from Book
+  1 equally far apart); *Erzählzeit* is linear over the story's years, counting
+  earlier/later entries at the edges. Points are markers, spans bars, eras
+  bands (all entries sharing an era label), fuzzy dates show their uncertainty,
+  hidden entries are dashed; Jahr 0 and every placed book start are marked.
+- Below the axis, the **chronological list** with readable offsets and the book
+  starts as milestones. **Filters:** Epoche, Figur, Ort, Region (a place inside
+  the region counts too), Sichtbarkeit (öffentlich bekannt / verborgen). Click
+  an entry (axis or list) to edit it; linked characters, places, regions and
+  events open on click.
+- Synced like every other table and part of `world-data.json`
+  (`timeline_entries`; book offsets in `project.settings`).
+
 ### Schreiben: Metadaten, Figuren im Kapitel, anwesend vs. erwähnt
 
 **The writing column never shrinks for a side panel.** `ChapterView` measures
@@ -630,7 +676,9 @@ filters/random pick, and the idempotent import of the real seed registry.
 inverses, derived family links, the integrity rules, the graph filters and both
 layouts. `npm run test:presence` covers anwesend vs. erwähnt: map tokens,
 carry-forward and journeys, the PDF info page and Markdown export, the book
-filter, the text-mention assist and the panel layout rule.
+filter, the text-mention assist and the panel layout rule. `npm run
+test:chronik` covers the Chronik: honest fuzzy dating, the event link, filters,
+era bands, book starts, both scales and the world-JSON export.
 
 ## Not yet built (later phases, per SPEC)
 

@@ -85,6 +85,17 @@
 //     deleteRelationship(id)               -> void
 //     (deleteCharacter also removes that character's relationships)
 //
+//   Chronik (in-universe timeline; year_offset = years relative to the start
+//   of Book 1; later books' starts live in project.settings.bookYearOffsets)
+//     listTimelineEntries(projectId)       -> TimelineEntry[] (by year_offset)
+//     createTimelineEntry(projectId, { title?, description?, year_offset?,
+//       year_precision?, duration_years?, era_label?, related_character_ids?,
+//       related_place_ids?, related_region_ids?, event_id?, visibility? })
+//                                          -> TimelineEntry
+//     updateTimelineEntry(id, patch)       -> TimelineEntry
+//     deleteTimelineEntry(id)              -> void
+//     (deleteEvent nulls event_id on linked entries — they keep their dating)
+//
 //   Praemali translator (user layer on top of the bundled base lexicon)
 //     listCustomLexicon(projectId)         -> Entry[] (project rows + global
 //                                             project_id-null rows; no deleted)

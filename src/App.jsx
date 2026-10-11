@@ -11,6 +11,7 @@ import PlacesView from './components/PlacesView.jsx'
 import EventsView from './components/EventsView.jsx'
 import NamesView from './components/NamesView.jsx'
 import RelationsView from './components/RelationsView.jsx'
+import ChronikView from './components/ChronikView.jsx'
 import ProfileView from './components/ProfileView.jsx'
 import ExportView from './components/ExportView.jsx'
 import CompileView from './components/CompileView.jsx'
@@ -32,9 +33,10 @@ const NAV_VIEWS = [
   { key: 'search', label: 'Suche' },
   { key: 'progress', label: 'Fortschritt' },
   { key: 'characters', label: 'Figuren' },
+  { key: 'relations', label: 'Beziehungen' },
   { key: 'places', label: 'Orte' },
   { key: 'events', label: 'Ereignisse' },
-  { key: 'relations', label: 'Beziehungen' },
+  { key: 'chronik', label: 'Chronik' },
   { key: 'names', label: 'Namen' },
   { key: 'export', label: 'Export' },
 ]
@@ -151,6 +153,7 @@ export default function App() {
     if (view === 'praemali') return <PraemaliView />
     if (view === 'names') return <NamesView />
     if (view === 'relations') return <RelationsView />
+    if (view === 'chronik') return <ChronikView />
     if (view === 'export') return <ExportView />
     return activeChapter ? (
       <ChapterView key={activeChapter.id} />

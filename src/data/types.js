@@ -227,6 +227,61 @@ export function cleanRelationshipPatch(patch = {}) {
   return out
 }
 
+// timeline_entries — the in-universe CHRONIK. year_offset = whole years
+// relative to the START of Book 1 (0 = Beginn Buch 1, negative = before).
+// Precision / visibility use ASCII machine values (labels live in lib/chronik).
+// event_id links an existing event instead of duplicating it.
+export const TIMELINE_PRECISIONS = ['exakt', 'ungefaehr', 'jahrzehnt', 'jahrhundert']
+export const TIMELINE_VISIBILITIES = ['oeffentlich', 'verborgen']
+const intOrNull = (v) => {
+  if (v === '' || v == null) return null
+  const n = Math.round(Number(v))
+  return Number.isFinite(n) ? n : null
+}
+const idList = (v) => (Array.isArray(v) ? [...new Set(v.filter(Boolean))] : [])
+// Normalise a (partial) timeline entry patch: integers stay integers, '' never
+// reaches the event_id uuid column, id lists are de-duplicated arrays, and the
+// enumerations only ever hold known values.
+export function cleanTimelinePatch(patch = {}) {
+  const out = { ...patch }
+  if ('year_offset' in out) out.year_offset = intOrNull(out.year_offset) ?? 0
+  if ('duration_years' in out) {
+    const d = intOrNull(out.duration_years)
+    out.duration_years = d == null ? null : Math.max(0, d)
+  }
+  if ('year_precision' in out && !TIMELINE_PRECISIONS.includes(out.year_precision)) out.year_precision = 'exakt'
+  if ('visibility' in out && !TIMELINE_VISIBILITIES.includes(out.visibility)) out.visibility = 'oeffentlich'
+  if ('event_id' in out) out.event_id = out.event_id || null
+  for (const k of ['related_character_ids', 'related_place_ids', 'related_region_ids']) {
+    if (k in out) out[k] = idList(out[k])
+  }
+  for (const k of ['title', 'description', 'era_label']) {
+    if (k in out) out[k] = typeof out[k] === 'string' ? out[k] : ''
+  }
+  return out
+}
+export function makeTimelineEntry({ project_id, ...opts } = {}) {
+  return {
+    id: newId(),
+    user_id: LOCAL_USER_ID,
+    project_id,
+    title: '',
+    description: '',
+    year_offset: 0,
+    year_precision: 'exakt',
+    duration_years: null,
+    era_label: '',
+    related_character_ids: [],
+    related_place_ids: [],
+    related_region_ids: [],
+    event_id: null,
+    visibility: 'oeffentlich',
+    ...cleanTimelinePatch(opts),
+    created_at: nowIso(),
+    updated_at: nowIso(),
+  }
+}
+
 // name_pool — a per-project reservoir of names for minor/background characters.
 // region_id points at a region card when one matches; region_text keeps the
 // imported region name otherwise (e.g. "Porsiran (Hauptstadt)"). Whether a name

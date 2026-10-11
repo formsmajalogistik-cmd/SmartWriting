@@ -18,6 +18,8 @@ import {
   makeNamePoolEntry,
   makeRelationship,
   cleanRelationshipPatch,
+  makeTimelineEntry,
+  cleanTimelinePatch,
   makeCustomLexiconEntry,
   makeSavedPhrase,
   nowIso,
@@ -65,6 +67,7 @@ export function createLocalRepository() {
         STORES.character_locations,
         STORES.events,
         STORES.name_pool,
+        STORES.timeline_entries,
       ]) {
         const rows = await db.getAllFromIndex(store, 'project_id', id)
         const tx = db.transaction(store, 'readwrite')
@@ -575,6 +578,30 @@ export function createLocalRepository() {
       await db.delete(STORES.name_pool, id)
     },
 
+    // ---- Chronik (in-universe timeline; years relative to Book 1) --------
+    async listTimelineEntries(projectId) {
+      const rows = await byProject(STORES.timeline_entries, projectId)
+      return rows.sort((a, b) => (a.year_offset ?? 0) - (b.year_offset ?? 0) || (a.created_at || '').localeCompare(b.created_at || ''))
+    },
+    async createTimelineEntry(projectId, opts = {}) {
+      const db = await getDb()
+      const entry = makeTimelineEntry({ project_id: projectId, ...opts })
+      await db.put(STORES.timeline_entries, entry)
+      return entry
+    },
+    async updateTimelineEntry(id, patch) {
+      const db = await getDb()
+      const existing = await db.get(STORES.timeline_entries, id)
+      if (!existing) throw new Error(`TimelineEntry ${id} not found`)
+      const updated = { ...existing, ...cleanTimelinePatch(patch), updated_at: nowIso() }
+      await db.put(STORES.timeline_entries, updated)
+      return updated
+    },
+    async deleteTimelineEntry(id) {
+      const db = await getDb()
+      await db.delete(STORES.timeline_entries, id)
+    },
+
     // ---- Relationships (one row per fact; inverses are derived) ----------
     async listRelationships(projectId) {
       const rows = await byProject(STORES.relationships, projectId)
@@ -693,6 +720,14 @@ export function createLocalRepository() {
 
     async deleteEvent(id) {
       const db = await getDb()
+      // Chronik entries pointing at this event keep their dating and fall back
+      // to their own title (the server's ON DELETE SET NULL does the same).
+      const linked = (await db.getAll(STORES.timeline_entries)).filter((t) => t.event_id === id)
+      if (linked.length) {
+        const tx = db.transaction(STORES.timeline_entries, 'readwrite')
+        await Promise.all(linked.map((t) => tx.store.put({ ...t, event_id: null })))
+        await tx.done
+      }
       await db.delete(STORES.events, id)
     },
 

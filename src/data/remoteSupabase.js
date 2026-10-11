@@ -32,6 +32,8 @@ const UPSERT_ORDER = [
   'name_pool',
   // relationships reference two characters, so they follow those.
   'relationships',
+  // timeline_entries reference events (event_id), so they follow them.
+  'timeline_entries',
   'terrains',
   'custom_lexicon_entries',
   'saved_phrases',

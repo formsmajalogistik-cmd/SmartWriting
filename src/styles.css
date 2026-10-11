@@ -953,6 +953,89 @@ select:focus, input:focus, textarea:focus {
 .names-matches { display: inline-flex; flex-wrap: wrap; gap: 4px; }
 .names-match { font-style: italic; }
 
+/* ===================== Chronik (in-universe timeline) ===================== */
+.chronik-view { flex: 1; min-width: 0; overflow-y: auto; padding: 16px clamp(12px, 3vw, 28px) 40px; display: flex; flex-direction: column; gap: 10px; }
+.chronik-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+.chronik-head h2 { margin: 0; font-size: 20px; color: var(--text); }
+.chronik-head .toggle { margin-left: auto; }
+.chronik-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.chronik-bar select { width: auto; min-width: 130px; }
+.chronik-count { margin-left: auto; font-size: 12px; color: var(--text-dim); }
+
+.chronik-axis { background: var(--bg-2); border: 1px solid var(--border); border-radius: 10px; padding: 6px 0 2px; overflow: hidden; }
+.chronik-axis svg { display: block; }
+.chronik-legend { margin: 2px 12px 6px; font-size: 11px; }
+.ch-axis-line { stroke: var(--text-dim); stroke-width: 1.5px; }
+.ch-tick line { stroke: var(--text-dim); }
+.ch-tick text { font-size: 10px; fill: var(--text-dim); }
+.ch-band rect { fill: rgba(129, 140, 248, 0.16); stroke: rgba(129, 140, 248, 0.45); }
+.ch-band text { font-size: 10px; fill: var(--text); }
+.ch-book line { stroke: #6b7ba8; stroke-dasharray: 4 4; }
+.ch-book text { font-size: 10px; fill: var(--text-dim); }
+.ch-book.zero line { stroke: var(--accent-2); stroke-width: 2px; stroke-dasharray: none; }
+.ch-book.zero text { fill: var(--text); font-weight: 600; }
+.ch-entry { cursor: pointer; }
+.ch-dot { fill: var(--accent-2); stroke: var(--bg-2); stroke-width: 2px; }
+.ch-bar { fill: var(--accent-2); opacity: 0.85; }
+.ch-fuzz { fill: rgba(129, 140, 248, 0.22); }
+.ch-entry.fuzzy .ch-dot { fill: var(--bg-2); stroke: var(--accent-2); stroke-dasharray: 2 2; stroke-width: 2px; }
+.ch-entry.hidden-entry .ch-dot, .ch-entry.hidden-entry .ch-bar { fill: var(--bg-3); stroke: #fbbf24; stroke-dasharray: 3 2; stroke-width: 1.5px; }
+.ch-entry.selected .ch-dot, .ch-entry.selected .ch-bar { stroke: #fff; stroke-width: 2.5px; }
+.ch-entry:hover .ch-label, .ch-entry:focus .ch-label { fill: #fff; }
+.ch-label { font-size: 11px; fill: var(--text); paint-order: stroke; stroke: var(--bg-2); stroke-width: 3px; }
+.ch-edge { font-size: 11px; fill: var(--text-dim); }
+
+.chronik-books { font-size: 13px; }
+.chronik-books summary { cursor: pointer; color: var(--text-dim); display: inline-flex; align-items: center; gap: 6px; }
+.chronik-books ul { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.chronik-books li { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.cb-title { font-weight: 600; min-width: 140px; }
+.cb-offset { display: inline-flex; align-items: center; gap: 6px; }
+.cb-offset input { width: 90px; }
+
+.chronik-body { display: flex; gap: 16px; align-items: flex-start; }
+.chronik-empty { padding: 16px 0; }
+.chronik-list { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 0; }
+.chronik-list li { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.cl-offset { width: 120px; flex-shrink: 0; font-variant-numeric: tabular-nums; color: var(--text-dim); font-size: 13px; text-align: right; }
+.cl-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.cl-title { background: none; border: none; padding: 0; color: var(--text); font-weight: 600; font-size: 15px; text-align: left; cursor: pointer; }
+.cl-title:hover { color: var(--accent-2); }
+.cl-date { font-size: 12px; color: var(--text-dim); }
+.cl-desc { margin: 2px 0; font-size: 13px; color: var(--text); white-space: pre-wrap; }
+.cl-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.cl-chips .names-chip { display: inline-flex; align-items: center; gap: 3px; }
+.cl-hidden { display: inline-flex; align-items: center; gap: 3px; border-color: rgba(245, 158, 11, 0.5); color: #fbbf24; }
+.chronik-row.selected { background: var(--bg-3); }
+.chronik-row.hidden-entry .cl-title { font-style: italic; }
+.chronik-milestone { background: transparent; }
+.chronik-milestone .cl-milestone-text { font-size: 13px; color: var(--text-dim); font-weight: 600; }
+.chronik-milestone.zero { border-top: 2px solid var(--accent-2); border-bottom: 2px solid var(--accent-2); }
+.chronik-milestone.zero .cl-offset, .chronik-milestone.zero .cl-milestone-text { color: var(--text); }
+
+.chronik-editor {
+  width: 380px; flex-shrink: 0; position: sticky; top: 0;
+  background: var(--bg-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.ce-head { display: flex; align-items: center; justify-content: space-between; }
+.ce-head h3 { margin: 0; font-size: 15px; color: var(--text); }
+.ce-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.ce-row .field { flex: 1; min-width: 110px; }
+.ce-preview { margin: -2px 0 0; }
+.ce-event { background: var(--bg-3); border-radius: 8px; padding: 8px 10px; font-size: 13px; }
+.ce-event p { margin: 4px 0; }
+.ce-msg { color: var(--danger); }
+.ce-actions { display: flex; gap: 8px; align-items: center; }
+.ce-delete { margin-left: auto; }
+
+@media (max-width: 900px) {
+  .chronik-body { flex-direction: column-reverse; }
+  .chronik-editor { width: 100%; position: static; }
+  .cl-offset { width: 84px; font-size: 12px; }
+  .chronik-count { margin-left: 0; }
+}
+
 /* ===================== Kapitel: Seitenleisten & Figuren im Kapitel ===================== */
 /* The column never shrinks for these panels: ChapterView only renders them
    side by side when they fit (mode-split / mode-tabs); otherwise they live in

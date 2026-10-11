@@ -138,8 +138,13 @@ export function initPwaUpdates() {
   if (document.readyState === 'complete') register()
   else window.addEventListener('load', register)
 
-  // 3) A new worker took control of this tab: its deploy is now the live one.
+  // 3) A new worker took control of this tab: its deploy is now the live one —
+  //    but ONLY if an older worker controlled the page before. On a first visit
+  //    the brand-new worker claims the page too (clientsClaim), which is not an
+  //    update; announcing one there showed a bogus "neue Version" banner that
+  //    covered the bottom of the screen (on phones: the last menu entry).
+  const hadController = !!navigator.serviceWorker.controller
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    setState({ updateReady: true })
+    if (hadController) setState({ updateReady: true })
   })
 }

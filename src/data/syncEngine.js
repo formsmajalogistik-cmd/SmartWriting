@@ -51,6 +51,8 @@ const PULL_TABLES = [
   'name_pool',
   // relationships AFTER characters (it carries two character ids).
   'relationships',
+  // timeline_entries AFTER events (event_id FK).
+  'timeline_entries',
   'terrains',
   'custom_lexicon_entries',
   'saved_phrases',
@@ -96,6 +98,7 @@ export const TABLE_LABELS = {
   geo_features: 'Geografie',
   name_pool: 'Namenspool-Eintrag',
   relationships: 'Beziehung',
+  timeline_entries: 'Chronik-Eintrag',
   terrains: 'Terrain',
   custom_lexicon_entries: 'Wörterbuch-Eintrag',
   saved_phrases: 'Phrase',
@@ -247,6 +250,15 @@ async function applyRemoteDelete(db, table, id) {
       (r) => r.from_character_id === id || r.to_character_id === id,
     )
     await del(STORES.relationships, rels)
+  } else if (table === 'events') {
+    // Chronik entries keep their dating when their event disappears (the
+    // server's ON DELETE SET NULL does the same).
+    const linked = (await db.getAll(STORES.timeline_entries)).filter((t) => t.event_id === id)
+    if (linked.length) {
+      const tx = db.transaction(STORES.timeline_entries, 'readwrite')
+      for (const t of linked) tx.store.put({ ...t, event_id: null })
+      await tx.done
+    }
   } else if (table === 'places') {
     const locs = (await db.getAll(STORES.character_locations)).filter((l) => l.place_id === id)
     const tx = db.transaction(STORES.character_locations, 'readwrite')
@@ -260,6 +272,7 @@ async function applyRemoteDelete(db, table, id) {
       STORES.chapters, STORES.chapter_versions, STORES.terrains, STORES.characters,
       STORES.places, STORES.character_locations, STORES.events, STORES.regions, STORES.routes,
       STORES.ideas, STORES.geo_features, STORES.name_pool, STORES.relationships,
+      STORES.timeline_entries,
     ]) {
       await del(store, await byIndex(store, 'project_id', id))
     }

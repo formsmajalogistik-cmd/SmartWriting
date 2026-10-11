@@ -8,7 +8,8 @@ import { Plus } from 'lucide-react'
 //   placeholder
 //   options        — [{ id, name }] of items NOT yet selected
 //   onPick(id)     — add an existing item
-//   onCreate(name) — create a new stub and add it
+//   onCreate(name) — create a new stub and add it (optional: without it the
+//                    list only picks existing items, no "anlegen" entry)
 export default function AddCombo({ placeholder, options, onPick, onCreate }) {
   const [q, setQ] = useState('')
   const [open, setOpen] = useState(false)
@@ -19,7 +20,7 @@ export default function AddCombo({ placeholder, options, onPick, onCreate }) {
     return options.filter((o) => o.name.toLowerCase().includes(lc)).slice(0, 8)
   }, [options, query])
   const exact = options.some((o) => o.name.toLowerCase() === query.toLowerCase())
-  const canCreate = query.length > 0 && !exact
+  const canCreate = !!onCreate && query.length > 0 && !exact
 
   function pick(id) {
     onPick(id)

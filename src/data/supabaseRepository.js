@@ -7,7 +7,7 @@
 // appropriate project_id. Books still live in projects.settings.books.
 import { supabase, currentUserId } from './supabaseClient.js'
 import { nullifyEmptyRefs } from './db.js'
-import { cleanRelationshipPatch } from './types.js'
+import { cleanRelationshipPatch, cleanTimelinePatch } from './types.js'
 
 // Private Storage bucket for character portraits. Access is governed by the
 // bucket's RLS policies (user-scoped by path); images are served via short-
@@ -628,6 +628,36 @@ export function createSupabaseRepository() {
     },
     async deleteNamePoolEntry(id) {
       unwrap(await supabase.from('name_pool').delete().eq('id', id))
+    },
+
+    // ---- Chronik (in-universe timeline; years relative to Book 1) --------
+    async listTimelineEntries(projectId) {
+      return unwrap(
+        await supabase
+          .from('timeline_entries')
+          .select('*')
+          .eq('project_id', projectId)
+          .order('year_offset', { ascending: true })
+          .order('created_at', { ascending: true }),
+      )
+    },
+    async createTimelineEntry(projectId, opts = {}) {
+      const user_id = await currentUserId()
+      const insert = { user_id, project_id: projectId, ...cleanTimelinePatch(opts) }
+      return unwrap(await supabase.from('timeline_entries').insert(insert).select().single())
+    },
+    async updateTimelineEntry(id, patch) {
+      return unwrap(
+        await supabase
+          .from('timeline_entries')
+          .update(nullifyEmptyRefs(cleanTimelinePatch(patch)))
+          .eq('id', id)
+          .select()
+          .single(),
+      )
+    },
+    async deleteTimelineEntry(id) {
+      unwrap(await supabase.from('timeline_entries').delete().eq('id', id))
     },
 
     // ---- Relationships (one row per fact; inverses are derived) ----------

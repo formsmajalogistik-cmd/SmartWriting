@@ -71,6 +71,8 @@ export function buildWorldJson(snapshot, exportedAt = new Date().toISOString()) 
     geo_features: snapshot.geoFeatures ?? [],
     name_pool: snapshot.namePool ?? [],
     relationships: snapshot.relationships ?? [],
+    // The in-universe Chronik; book start offsets live in project.settings.
+    timeline_entries: snapshot.timelineEntries ?? [],
     lexicon: snapshot.lexicon ?? [],
   }
 }

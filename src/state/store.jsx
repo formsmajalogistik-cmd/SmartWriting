@@ -70,6 +70,7 @@ export function StoreProvider({ children }) {
   const [geoFeatures, setGeoFeatures] = useState([])
   const [namePool, setNamePool] = useState([])
   const [relationships, setRelationships] = useState([])
+  const [timelineEntries, setTimelineEntries] = useState([])
   const [customLexicon, setCustomLexicon] = useState([])
   const [savedPhrases, setSavedPhrases] = useState([])
   // Versions of the currently open chapter (PROSE only; metadata stays on the chapter).
@@ -145,6 +146,9 @@ export function StoreProvider({ children }) {
   const refreshNamePool = useCallback(async (pid) => {
     setNamePool(pid ? await repo.listNamePool(pid) : [])
   }, [])
+  const refreshTimelineEntries = useCallback(async (pid) => {
+    setTimelineEntries(pid ? await repo.listTimelineEntries(pid) : [])
+  }, [])
   const refreshRelationships = useCallback(async (pid) => {
     setRelationships(pid ? await repo.listRelationships(pid) : [])
   }, [])
@@ -201,6 +205,7 @@ export function StoreProvider({ children }) {
           refreshGeoFeatures(activeProjectId),
           refreshNamePool(activeProjectId),
           refreshRelationships(activeProjectId),
+          refreshTimelineEntries(activeProjectId),
           refreshCustomLexicon(activeProjectId),
           refreshSavedPhrases(activeProjectId),
         ])
@@ -209,7 +214,7 @@ export function StoreProvider({ children }) {
         /* error already surfaced via the guarded repo */
       }
     })()
-  }, [activeProjectId, refreshChapters, refreshCharacters, refreshPlaces, refreshLocations, refreshEvents, refreshRegions, refreshRoutes, refreshIdeas, refreshGeoFeatures, refreshNamePool, refreshRelationships, refreshCustomLexicon, refreshSavedPhrases])
+  }, [activeProjectId, refreshChapters, refreshCharacters, refreshPlaces, refreshLocations, refreshEvents, refreshRegions, refreshRoutes, refreshIdeas, refreshGeoFeatures, refreshNamePool, refreshRelationships, refreshTimelineEntries, refreshCustomLexicon, refreshSavedPhrases])
 
   // Persist the active chapter so a reload reopens it.
   useEffect(() => {
@@ -235,6 +240,8 @@ export function StoreProvider({ children }) {
         if (t.has('geo_features')) await refreshGeoFeatures(activeProjectId)
         if (t.has('name_pool')) await refreshNamePool(activeProjectId)
         if (t.has('relationships')) await refreshRelationships(activeProjectId)
+        // A pulled event delete may have released Chronik entries (event_id → null).
+        if (t.has('timeline_entries') || t.has('events')) await refreshTimelineEntries(activeProjectId)
         // A character delivered by a pull may have taken relationships with it.
         if (t.has('characters')) await refreshRelationships(activeProjectId)
         if (t.has('custom_lexicon_entries')) await refreshCustomLexicon(activeProjectId)
@@ -261,6 +268,7 @@ export function StoreProvider({ children }) {
     refreshGeoFeatures,
     refreshNamePool,
     refreshRelationships,
+    refreshTimelineEntries,
     refreshCustomLexicon,
     refreshSavedPhrases,
     refreshChapterVersions,
@@ -750,6 +758,51 @@ export function StoreProvider({ children }) {
     [activeProjectId, refreshIdeas],
   )
 
+  // --- Chronik actions (in-universe timeline) ---------------------------
+  const createTimelineEntry = useCallback(
+    async (opts) => {
+      const entry = await repo.createTimelineEntry(activeProjectId, opts || {})
+      await refreshTimelineEntries(activeProjectId)
+      return entry
+    },
+    [activeProjectId, refreshTimelineEntries],
+  )
+  const updateTimelineEntry = useCallback(
+    async (id, patch) => {
+      const updated = await repo.updateTimelineEntry(id, patch)
+      await refreshTimelineEntries(activeProjectId) // keeps the year order
+      return updated
+    },
+    [activeProjectId, refreshTimelineEntries],
+  )
+  const deleteTimelineEntry = useCallback(
+    async (id) => {
+      await repo.deleteTimelineEntry(id)
+      await refreshTimelineEntries(activeProjectId)
+    },
+    [activeProjectId, refreshTimelineEntries],
+  )
+  // Where each LATER book begins on the Chronik axis (Book 1 is year 0 by
+  // definition). Kept in project.settings — syncs with the project row.
+  const bookYearOffsets = useMemo(
+    () => activeProject?.settings?.bookYearOffsets || {},
+    [activeProject],
+  )
+  const setBookYearOffset = useCallback(
+    async (bookId, value) => {
+      if (!activeProjectId || !bookId) return
+      const next = { ...(activeProject?.settings?.bookYearOffsets || {}) }
+      const n = value === '' || value == null ? null : Math.round(Number(value))
+      if (n == null || !Number.isFinite(n)) delete next[bookId]
+      else next[bookId] = n
+      await repo.updateProject(activeProjectId, {
+        settings: { ...(activeProject?.settings || {}), bookYearOffsets: next },
+      })
+      await refreshProjects()
+    },
+    [activeProject, activeProjectId, refreshProjects],
+  )
+
   // --- relationship actions (Beziehungen) -------------------------------
   // ONE row per fact: the inverse side and every derived family link are
   // computed on read (src/lib/relationships.js). The guards here are the last
@@ -937,8 +990,10 @@ export function StoreProvider({ children }) {
     async (id) => {
       await repo.deleteEvent(id)
       await refreshEvents(activeProjectId)
+      // Its Chronik entries were released (event_id → null, dating kept).
+      await refreshTimelineEntries(activeProjectId)
     },
-    [activeProjectId, refreshEvents],
+    [activeProjectId, refreshEvents, refreshTimelineEntries],
   )
   // Two-way chapter<->event link lives in the event's card.chapter_ids list.
   const setEventInChapter = useCallback(
@@ -969,9 +1024,10 @@ export function StoreProvider({ children }) {
       geoFeatures,
       namePool,
       relationships,
+      timelineEntries,
       lexicon,
     }
-  }, [activeProjectId, activeProject, chapters, characters, places, events, locations, regions, routes, geoFeatures, namePool, relationships])
+  }, [activeProjectId, activeProject, chapters, characters, places, events, locations, regions, routes, geoFeatures, namePool, relationships, timelineEntries])
 
   // --- Drive backup linkage (read/write; Drive logic lives in DriveProvider) -
   const getDriveLink = useCallback(() => repo.getDriveLink(), [])
@@ -1197,6 +1253,12 @@ export function StoreProvider({ children }) {
     updateIdea,
     deleteIdea,
     createGeoFeature,
+    timelineEntries,
+    createTimelineEntry,
+    updateTimelineEntry,
+    deleteTimelineEntry,
+    bookYearOffsets,
+    setBookYearOffset,
     relationships,
     createRelationship,
     updateRelationship,
